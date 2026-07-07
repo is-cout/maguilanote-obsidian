@@ -8,19 +8,71 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 
 Legend: ✅ implemented · 🔜 roadmap · ❌ out of scope
 
-**Boards & organization** — infinite canvas with pan/zoom ✅ · nested boards with clickable breadcrumb ✅ · board-to-board shortcuts ✅ · broken-reference detection & re-linking ✅ · content preview on board cards ✅ · lock an item ✅ · move/duplicate content across boards ✅ · built-in + custom templates ✅ · unsorted-notes inbox 🔜 · trash with restore 🔜 (undo/redo covers this for now).
+**Boards & organization**
+- Infinite canvas with pan/zoom ✅
+- Nested boards with clickable breadcrumb ✅
+- Board-to-board shortcuts ✅
+- Broken-reference detection & re-linking ✅
+- Content preview on board cards ✅
+- Lock an item ✅
+- Move/duplicate content across boards ✅
+- Built-in + custom templates ✅
+- Unsorted-notes inbox 🔜
+- Trash with restore 🔜 (undo/redo covers this for now)
 
-**Card types** — text note (Markdown) ✅ · image via drag & drop ✅ · link card with auto-fetched title & YouTube embeds ✅ · file card (any type, with audio/video players) ✅ · vault file drag & drop (`.board` files become nested boards) ✅ · to-do list with progress bar ✅ · column (stack cards vertically, collapsible) ✅ · color swatch with live picker ✅ · comment card ✅ · document card (linked vault `.md` note, inline preview) ✅ · draw/annotate on image 🔜 · color palette from image 🔜 · table with formulas 🔜 · freehand sketch 🔜 · synced notes across boards 🔜 · map card ❌ (external API).
+**Card types**
+- Text note (Markdown) ✅
+- Image via drag & drop ✅
+- Link card with auto-fetched title & YouTube embeds ✅
+- File card (any type, with audio/video players) ✅
+- Vault file drag & drop (`.board` files become nested boards) ✅
+- To-do list with progress bar ✅
+- Column (stack cards vertically, collapsible) ✅
+- Color swatch with live picker ✅
+- Comment card ✅
+- Document card (linked vault `.md` note, inline preview) ✅
+- Draw/annotate on image 🔜
+- Color palette from image 🔜
+- Table with formulas 🔜
+- Freehand sketch 🔜
+- Synced notes across boards 🔜
+- Map card ❌ (external API)
 
-**Connections & diagrams** — arrows between cards ✅ · solid/dashed lines, with/without arrowhead, reversible ✅ · labels on arrows ✅ · standalone divider line 🔜.
+**Connections & diagrams**
+- Arrows between cards ✅
+- Solid/dashed lines, with/without arrowhead, reversible ✅
+- Labels on arrows ✅
+- Standalone divider line 🔜
 
-**Text editing** — headings/bold/italic/strikethrough, lists, quotes, code blocks, inline links, `[[wikilinks]]` ✅ (it's Markdown) · card background colors ✅.
+**Text editing**
+- Headings/bold/italic/strikethrough, lists, quotes, code blocks, inline links, `[[wikilinks]]` ✅ (it's Markdown)
+- Card background colors ✅
 
-**Canvas interaction** — click selects/drag moves, inert until selected ✅ · multi-select (rubber band + Shift) ✅ · group move ✅ · resize (horizontal + vertical, never clips text) ✅ · Alt+drag duplicate ✅ · snap-to-grid toggle (Ctrl inverts) ✅ · undo/redo ✅ · cut/copy/paste across boards ✅ · keyboard shortcuts cheat sheet (`/`) ✅ · zoom in/out, 100%, fit ✅.
+**Canvas interaction**
+- Click selects/drag moves, inert until selected ✅
+- Multi-select (rubber band + Shift) ✅
+- Group move ✅
+- Resize (horizontal + vertical, never clips text) ✅
+- Alt+drag duplicate ✅
+- Snap-to-grid toggle (Ctrl inverts) ✅
+- Undo/redo ✅
+- Cut/copy/paste across boards ✅
+- Keyboard shortcuts cheat sheet (`/`) ✅
+- Zoom in/out, 100%, fit ✅
 
-**Search & export** — in-board search (Ctrl+F) ✅, global search 🔜 · export to Markdown ✅, PDF/PNG export 🔜 · word count 🔜 · import from OS or vault file explorer ✅ · web clipper ❌ (use Obsidian's own Web Clipper and paste the link).
+**Search & export**
+- In-board search (Ctrl+F) ✅, global search 🔜
+- Export to Markdown ✅, PDF/PNG export 🔜
+- Word count 🔜
+- Import from OS or vault file explorer ✅
+- Web clipper ❌ (use Obsidian's own Web Clipper and paste the link)
 
-**Collaboration & cloud (out of scope)** — real-time multi-user editing ❌ · public share links ❌ · mentions/notifications ❌ (local comment cards ✅) · presentation/read-only mode 🔜 · unlimited local storage ✅ (it's your disk).
+**Collaboration & cloud (out of scope)**
+- Real-time multi-user editing ❌
+- Public share links ❌
+- Mentions/notifications ❌ (local comment cards ✅)
+- Presentation/read-only mode 🔜
+- Unlimited local storage ✅ (it's your disk)
 
 ## Manual installation
 
