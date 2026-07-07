@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output — built via CI / attached to GitHub Releases, not committed
+main.js
+*.js.map
+
+# Obsidian plugin runtime data (per-vault settings, never commit)
+data.json
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Env / secrets
+.env
+.env.local
+
+# TypeScript build info
+*.tsbuildinfo

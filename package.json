@@ -1,0 +1,17 @@
+{
+  "name": "maguilanote",
+  "version": "0.1.0",
+  "description": "Visual workspace boards for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.0",
+    "builtin-modules": "3.3.0",
+    "esbuild": "0.20.0",
+    "obsidian": "1.4.0",
+    "typescript": "5.4.0"
+  }
+}

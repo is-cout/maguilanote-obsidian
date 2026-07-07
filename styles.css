@@ -1,0 +1,810 @@
+/* ============ Maguilanote — visual workspace look ============ */
+
+.mgn-root {
+  padding: 0 !important;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+
+/* dark dotted canvas */
+.mgn-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  outline: none;
+  cursor: default;
+  background-color: #31303b;
+  background-image: radial-gradient(#44434f 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  touch-action: none;
+}
+
+.mgn-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+.mgn-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #8a8996;
+  font-size: 15px;
+  pointer-events: none;
+  text-align: center;
+  max-width: 380px;
+}
+
+/* ------------ cards ------------ */
+.mgn-card {
+  position: absolute;
+  background: #fff;
+  color: #33343d;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.45;
+  user-select: none;
+  cursor: grab;
+  overflow: visible; /* content is never clipped; cards grow vertically */
+}
+.mgn-card:active {
+  cursor: grabbing;
+}
+.mgn-card.mgn-selected {
+  outline: 2px solid #4ab3ff;
+  outline-offset: 1px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+.mgn-card.mgn-locked {
+  cursor: default;
+}
+.mgn-card.mgn-dim {
+  opacity: 0.25;
+}
+.mgn-card.mgn-hit {
+  outline: 2px solid #ffd84a;
+}
+
+/* UNSELECTED cards are inert: first click selects/moves, only a selected card
+   exposes its inputs for editing */
+.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-todo-del, .mgn-col-collapse, .mgn-swatch-input) {
+  pointer-events: none !important;
+}
+
+/* broken references */
+.mgn-card.mgn-missing {
+  outline: 2px dashed #e05252;
+  outline-offset: 1px;
+}
+.mgn-missing-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c93c3c;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  pointer-events: none;
+}
+.mgn-missing-label svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mgn-placeholder {
+  color: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* markdown body inside notes — force readable dark text on the light card,
+   overriding any Obsidian theme rule */
+.mgn-note-body {
+  pointer-events: none;
+  min-height: 22px;
+}
+.mgn-note-body,
+.mgn-note-body p,
+.mgn-note-body li,
+.mgn-note-body h1,
+.mgn-note-body h2,
+.mgn-note-body h3,
+.mgn-note-body h4,
+.mgn-note-body h5,
+.mgn-note-body h6,
+.mgn-note-body strong,
+.mgn-note-body em,
+.mgn-note-body span,
+.mgn-note-body td,
+.mgn-note-body th,
+.mgn-note-body blockquote {
+  color: inherit !important;
+  background: transparent !important;
+}
+.mgn-note-body a {
+  color: #2f6fbd !important;
+}
+.mgn-note-body pre,
+.mgn-note-body code {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: inherit !important;
+}
+.mgn-note-body p:first-child {
+  margin-top: 0;
+}
+.mgn-note-body p:last-child {
+  margin-bottom: 0;
+}
+.mgn-note-body h1,
+.mgn-note-body h2,
+.mgn-note-body h3 {
+  margin: 0.3em 0 0.2em 0;
+}
+.mgn-note-body ul,
+.mgn-note-body ol {
+  margin: 0.2em 0;
+  padding-left: 1.3em;
+}
+.mgn-note-body blockquote {
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  margin: 0.3em 0;
+  padding-left: 0.7em;
+  opacity: 0.85;
+}
+.mgn-note-body pre {
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.mgn-note-body a {
+  pointer-events: auto;
+}
+
+.mgn-note-edit {
+  width: 100% !important;
+  min-height: 60px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  resize: none;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  padding: 0 !important;
+  pointer-events: auto;
+}
+.mgn-card input[type="text"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+/* comment card */
+.mgn-comment {
+  border-left: 4px solid #f0b429;
+}
+.mgn-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+.mgn-comment-head svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* image card */
+.mgn-image {
+  padding: 5px;
+}
+.mgn-image img {
+  display: block;
+  width: 100%;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.mgn-caption {
+  font-size: 12px;
+  padding: 5px 3px 1px;
+  opacity: 0.75;
+}
+
+/* link card */
+.mgn-link-head,
+.mgn-file-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+}
+.mgn-link-ico svg {
+  width: 15px;
+  height: 15px;
+  opacity: 0.6;
+}
+.mgn-link-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mgn-link-url {
+  font-size: 11px;
+  opacity: 0.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+  pointer-events: none;
+}
+
+/* board card (nested board) */
+.mgn-board {
+  text-align: center;
+  padding: 16px 12px 14px;
+  background: #fbfbfd;
+}
+.mgn-board-inner {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mgn-board-ico svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.65;
+}
+.mgn-board-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.mgn-board-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.mgn-board-summary {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+/* compact board card when stacked inside a column */
+.mgn-col-body .mgn-board {
+  text-align: left;
+  padding: 9px 12px;
+}
+.mgn-col-body .mgn-board-inner {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.mgn-col-body .mgn-board-ico svg {
+  width: 20px;
+  height: 20px;
+}
+.mgn-col-body .mgn-board-text {
+  align-items: flex-start;
+}
+.mgn-col-body .mgn-board-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mgn-col-body .mgn-board-summary {
+  font-size: 10px;
+}
+
+/* swatch card */
+.mgn-swatch {
+  height: 110px;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+}
+.mgn-swatch-label {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 9px;
+  cursor: text;
+}
+.mgn-swatch-input {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+.mgn-swatch:hover .mgn-swatch-input {
+  opacity: 1;
+}
+
+/* todo card */
+.mgn-todo-title {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 14px;
+  color: inherit;
+  padding: 0 0 4px 0;
+  outline: none;
+}
+.mgn-todo-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.mgn-todo-progress-fill {
+  height: 100%;
+  background: #35c26e;
+  transition: width 0.15s ease;
+}
+.mgn-todo-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+.mgn-todo-row input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+.mgn-todo-text {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.mgn-todo-text.mgn-done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.mgn-todo-del {
+  opacity: 0;
+  cursor: pointer;
+  display: flex;
+}
+.mgn-todo-del svg {
+  width: 12px;
+  height: 12px;
+}
+.mgn-todo-row:hover .mgn-todo-del {
+  opacity: 0.5;
+}
+.mgn-todo-add {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  opacity: 0.55;
+  outline: none;
+  margin-top: 4px;
+}
+
+/* column card */
+.mgn-column {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  padding: 8px;
+  color: #e8e8ee;
+}
+.mgn-column.mgn-col-target {
+  border-color: #4ab3ff;
+  background: rgba(74, 179, 255, 0.12);
+}
+.mgn-col-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 8px;
+}
+.mgn-col-collapse {
+  cursor: pointer;
+  display: flex;
+  opacity: 0.7;
+}
+.mgn-col-collapse svg {
+  width: 14px;
+  height: 14px;
+}
+.mgn-col-title {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #e8e8ee;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+.mgn-col-count {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.mgn-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+.mgn-col-body .mgn-card {
+  position: relative;
+  width: 100% !important;
+  left: auto !important;
+  top: auto !important;
+  min-height: unset !important;
+}
+.mgn-col-empty {
+  min-height: 34px;
+  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+/* connector + resize handles */
+.mgn-connector {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4ab3ff;
+  border: 2px solid #fff;
+  opacity: 0;
+  cursor: crosshair;
+  z-index: 5;
+}
+.mgn-card:hover .mgn-connector {
+  opacity: 1;
+}
+.mgn-resize {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  opacity: 0;
+  border-right: 3px solid #4ab3ff;
+  border-bottom: 3px solid #4ab3ff;
+  border-radius: 0 0 4px 0;
+  z-index: 5;
+}
+.mgn-card:hover .mgn-resize {
+  opacity: 0.8;
+}
+.mgn-lock-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.mgn-lock-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ------------ edges ------------ */
+.mgn-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+.mgn-edge {
+  stroke: #9b9aa8;
+  stroke-width: 2;
+  color: #9b9aa8;
+  pointer-events: none;
+}
+.mgn-edge-selected {
+  stroke: #4ab3ff;
+  color: #4ab3ff;
+}
+.mgn-edge-temp {
+  stroke: #4ab3ff;
+  color: #4ab3ff;
+  stroke-dasharray: 5 4;
+}
+.mgn-edge-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.mgn-edge-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.mgn-edge-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: #31303b;
+  color: #d5d4de;
+  border: 1px solid #55545f;
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ------------ toolbar ------------ */
+.mgn-toolbar {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #24232c;
+  border: 1px solid #3d3c48;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.mgn-tool {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #b9b8c4;
+  cursor: pointer;
+}
+.mgn-tool:hover {
+  background: #3a3944;
+  color: #fff;
+}
+.mgn-tool-active {
+  background: #4ab3ff !important;
+  color: #fff !important;
+}
+.mgn-tool svg {
+  width: 17px;
+  height: 17px;
+}
+.mgn-tool-sep {
+  height: 1px;
+  background: #3d3c48;
+  margin: 4px 2px;
+}
+
+/* ------------ bottom bar (zoom + snap) ------------ */
+.mgn-zoombar {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #24232c;
+  border: 1px solid #3d3c48;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.mgn-zoom-label {
+  color: #b9b8c4;
+  font-size: 12px;
+  min-width: 44px;
+  text-align: center;
+}
+.mgn-zoom-100 {
+  color: #b9b8c4;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 8px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mgn-zoom-100:hover {
+  background: #3a3944;
+  color: #fff;
+}
+.mgn-vsep {
+  width: 1px;
+  height: 20px;
+  background: #3d3c48;
+  margin: 0 4px;
+}
+
+/* ------------ search ------------ */
+.mgn-search {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #24232c;
+  border: 1px solid #3d3c48;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.mgn-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #eee;
+  font-size: 13px;
+  width: 180px;
+}
+.mgn-search-count {
+  color: #8a8996;
+  font-size: 12px;
+}
+
+/* ------------ breadcrumbs ------------ */
+.mgn-crumbs {
+  position: absolute;
+  top: 10px;
+  left: 60px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #24232c;
+  border: 1px solid #3d3c48;
+  border-radius: 8px;
+  padding: 5px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  max-width: 60%;
+  overflow: hidden;
+}
+.mgn-crumb {
+  color: #9b9aa8;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mgn-crumb:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.mgn-crumb-current {
+  color: #f0f0f4;
+  font-weight: 600;
+  cursor: default;
+}
+.mgn-crumb-current:hover {
+  text-decoration: none;
+}
+.mgn-crumb-sep {
+  color: #55545f;
+}
+
+/* ------------ inline file preview ------------ */
+.mgn-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 15, 20, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mgn-preview-panel {
+  width: min(760px, 88%);
+  max-height: 86%;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border-radius: 10px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.mgn-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.mgn-preview-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  overflow: hidden;
+}
+.mgn-preview-crumbs .mgn-crumb {
+  color: var(--text-muted);
+  cursor: default;
+}
+.mgn-preview-crumbs .mgn-crumb:hover {
+  text-decoration: none;
+  color: var(--text-muted);
+}
+.mgn-preview-crumbs .mgn-crumb-current {
+  color: var(--text-normal);
+}
+.mgn-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.mgn-preview-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+/* rubber band */
+.mgn-rubber {
+  position: absolute;
+  border: 1px solid #4ab3ff;
+  background: rgba(74, 179, 255, 0.12);
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* shortcuts modal */
+.mgn-shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mgn-shortcuts td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 13px;
+}
+.mgn-shortcut-key {
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  color: var(--text-accent);
+}
