@@ -1,4 +1,4 @@
-# Claude Instructions — Gaucho Mobile
+# Claude Instructions
 
 ## Mandatory Pre-Task Checklist
 
