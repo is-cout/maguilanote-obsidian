@@ -111,6 +111,12 @@
 .mgn-note-body {
   pointer-events: none;
   min-height: 22px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.mgn-note-body pre,
+.mgn-note-body code {
+  white-space: pre-wrap;
 }
 .mgn-note-body,
 .mgn-note-body p,
@@ -169,6 +175,10 @@
   pointer-events: auto;
 }
 
+.mgn-note-edit::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+}
 .mgn-note-edit {
   width: 100% !important;
   min-height: 60px;

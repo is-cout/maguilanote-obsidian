@@ -1027,7 +1027,10 @@ export class BoardView extends TextFileView {
     if (!body) return;
     body.empty();
     body.style.pointerEvents = "auto";
-    const ta = body.createEl("textarea", { cls: "mgn-note-edit" });
+    const ta = body.createEl("textarea", {
+      cls: "mgn-note-edit",
+      attr: { placeholder: "Start typing..." },
+    });
     ta.value = it.text ?? "";
     const fit = () => {
       ta.style.height = "auto";
