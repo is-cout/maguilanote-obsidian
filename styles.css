@@ -881,7 +881,7 @@
 /* contextual toolbar: floating popup just right of the main toolbar */
 .mgn-context-toolbar {
   position: absolute;
-  left: 56px;
+  left: 60px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 45;
@@ -892,8 +892,8 @@
   background: var(--mgn-panel-bg);
   border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
-  padding: 4px;
-  box-shadow: var(--mgn-preview-shadow);
+  padding: 6px;
+  box-shadow: var(--mgn-panel-shadow);
 }
 /* inline variant lives inside the sketch popup header */
 .mgn-context-inline {
@@ -945,30 +945,83 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
 }
-.mgn-ctx-color {
-  width: 28px;
-  height: 28px;
+/* current-color dot on the color button */
+.mgn-ctx-colordot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--mgn-panel-border);
+}
+/* current-size dot on the size button */
+.mgn-ctx-sizedot {
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* popover for color/size choices */
+.mgn-ctx-popover {
+  position: absolute;
+  z-index: 50;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+.mgn-ctx-colorgrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mgn-ctx-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--mgn-panel-border);
+  cursor: pointer;
+}
+.mgn-ctx-swatch:hover {
+  outline: 2px solid var(--mgn-accent);
+}
+.mgn-ctx-customcolor {
+  width: 100%;
+  height: 26px;
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
 }
-.mgn-ctx-size {
-  width: 80px;
+.mgn-ctx-sizelist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mgn-ctx-sizerow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 40px;
+  border-radius: 6px;
+  color: var(--mgn-panel-text);
   cursor: pointer;
 }
-.mgn-context-toolbar .mgn-ctx-size {
-  width: 56px;
+.mgn-ctx-sizerow:hover {
+  background: var(--mgn-panel-hover-bg);
 }
 
-/* dim backdrop over the board while drawing (blocks node interaction) */
+/* fade the whole board (all cards incl. drawings) uniformly while drawing */
+.mgn-draw-active .mgn-world {
+  opacity: 0.4;
+}
+/* subtle tint over the board while drawing (blocks node interaction) */
 .mgn-draw-scrim {
   position: absolute;
   inset: 0;
   z-index: 30;
-  background: var(--mgn-preview-overlay);
+  background: color-mix(in srgb, var(--mgn-preview-overlay) 40%, transparent);
 }
 /* the SVG surface that captures strokes (above the scrim) */
 .mgn-draw-surface {

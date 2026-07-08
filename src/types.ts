@@ -16,6 +16,7 @@ export interface Stroke {
 export const DRAW_GROUP_DISTANCE = 60; // px gap that groups strokes into one drawing item
 export const DEFAULT_STROKE_SIZE = 4;
 export const DEFAULT_STROKE_COLOR = "#33343d";
+export const STROKE_SIZES = [2, 4, 8, 14, 22]; // preset pen widths
 
 export interface Item {
   id: string;

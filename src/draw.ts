@@ -221,6 +221,16 @@ export class DrawSession {
     this.onChange?.();
   }
 
+  /** recolor the currently selected strokes; no-op if nothing is selected */
+  recolorSelection(color: string): boolean {
+    if (!this.selection.size) return false;
+    this.snapshot();
+    for (const i of this.selection) this.strokes[i].color = color;
+    this.render();
+    this.onChange?.();
+    return true;
+  }
+
   // ---------------------------------------------------------------- pointers
   private onDown(e: PointerEvent) {
     if (e.button !== 0) return;

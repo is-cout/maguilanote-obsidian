@@ -20,6 +20,7 @@ import {
   DRAW_GROUP_DISTANCE,
   IMAGE_EXTS,
   Item,
+  STROKE_SIZES,
   VIDEO_EXTS,
   colorOf,
   newId,
@@ -270,25 +271,8 @@ export class BoardView extends TextFileView {
         { id: "eraser", icon: "eraser", label: "Eraser", onClick: () => setTool("eraser") },
       ],
       [
-        {
-          label: "Color",
-          render: (h) => {
-            const inp = h.createEl("input", { type: "color", cls: "mgn-ctx-color", value: session.color });
-            inp.setAttr("aria-label", "Stroke color");
-            inp.addEventListener("input", () => (session.color = inp.value));
-          },
-        },
-        {
-          label: "Stroke size",
-          render: (h) => {
-            const inp = h.createEl("input", {
-              type: "range",
-              cls: "mgn-ctx-size",
-              attr: { min: "1", max: "32", value: String(session.size), "aria-label": "Stroke size" },
-            });
-            inp.addEventListener("input", () => (session.size = Number(inp.value)));
-          },
-        },
+        { render: (h) => this.renderColorControl(h, session) },
+        { render: (h) => this.renderSizeControl(h, session) },
       ],
       [
         { icon: "undo-2", label: "Undo", onClick: () => session.undo() },
@@ -302,6 +286,86 @@ export class BoardView extends TextFileView {
     bar = new ContextToolbar(host, this.tbEl, groups, inline);
     setTool("pen");
     return bar;
+  }
+
+  /** popover anchored to a toolbar button; closes on outside click */
+  private makePopover(anchor: HTMLElement): HTMLElement {
+    this.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+    const pop = this.contentEl.createDiv({ cls: "mgn-ctx-popover" });
+    const cr = this.contentEl.getBoundingClientRect();
+    const ar = anchor.getBoundingClientRect();
+    pop.style.left = `${ar.right - cr.left + 8}px`;
+    pop.style.top = `${ar.top - cr.top}px`;
+    pop.addEventListener("pointerdown", (e) => e.stopPropagation());
+    const close = (e: PointerEvent) => {
+      if (anchor.contains(e.target as Node)) return;
+      pop.remove();
+      document.removeEventListener("pointerdown", close, true);
+    };
+    window.setTimeout(() => document.addEventListener("pointerdown", close, true), 0);
+    return pop;
+  }
+
+  /** color button: card-color presets + a custom picker; recolors selection */
+  private renderColorControl(h: HTMLElement, session: DrawSession) {
+    const btn = h.createDiv({ cls: "mgn-ctx-tool mgn-ctx-swatchbtn", attr: { "aria-label": "Color" } });
+    const dot = btn.createDiv({ cls: "mgn-ctx-colordot" });
+    dot.style.background = session.color;
+    const pick = (c: string, close = true) => {
+      session.color = c;
+      session.recolorSelection(c);
+      dot.style.background = c;
+      if (close) this.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+    };
+    btn.addEventListener("click", () => {
+      if (this.contentEl.querySelector(".mgn-ctx-popover")) {
+        this.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+        return;
+      }
+      const pop = this.makePopover(btn);
+      const grid = pop.createDiv({ cls: "mgn-ctx-colorgrid" });
+      for (const c of CARD_COLORS) {
+        const sw = grid.createDiv({ cls: "mgn-ctx-swatch", attr: { "aria-label": c.name } });
+        sw.style.background = c.bg;
+        sw.addEventListener("click", () => pick(c.bg));
+      }
+      const custom = pop.createEl("input", {
+        type: "color",
+        cls: "mgn-ctx-customcolor",
+        value: /^#[0-9a-f]{6}$/i.test(session.color) ? session.color : "#000000",
+        attr: { "aria-label": "Custom color" },
+      });
+      custom.addEventListener("input", () => pick(custom.value, false));
+    });
+  }
+
+  /** size button: preset stroke widths (affects new strokes only) */
+  private renderSizeControl(h: HTMLElement, session: DrawSession) {
+    const btn = h.createDiv({ cls: "mgn-ctx-tool mgn-ctx-sizebtn", attr: { "aria-label": "Stroke size" } });
+    const dot = btn.createDiv({ cls: "mgn-ctx-sizedot" });
+    const sizeDot = (el: HTMLElement, s: number) => {
+      const d = Math.max(3, Math.min(18, s));
+      el.style.width = `${d}px`;
+      el.style.height = `${d}px`;
+    };
+    sizeDot(dot, session.size);
+    btn.addEventListener("click", () => {
+      if (this.contentEl.querySelector(".mgn-ctx-popover")) {
+        this.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+        return;
+      }
+      const pop = this.makePopover(btn);
+      const list = pop.createDiv({ cls: "mgn-ctx-sizelist" });
+      for (const s of STROKE_SIZES) {
+        const row = list.createDiv({ cls: "mgn-ctx-sizerow" });
+        sizeDot(row.createDiv({ cls: "mgn-ctx-sizedot" }), s);
+        row.addEventListener("click", () => {
+          session.size = s;
+          sizeDot(dot, s);
+          this.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+        });
+      }
+    });
   }
 
   /** create the world-space SVG surface + viewBox aligned to the current view */
@@ -318,6 +382,7 @@ export class BoardView extends TextFileView {
     this.closePreview();
     this.selection.clear();
     this.refreshSelectionClasses();
+    this.viewportEl.addClass("mgn-draw-active"); // fades the board (all cards) uniformly
 
     const scrim = this.viewportEl.createDiv({ cls: "mgn-draw-scrim" });
     const surface = this.makeSurface();
@@ -343,6 +408,7 @@ export class BoardView extends TextFileView {
       false
     );
     this.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null };
+    if (editItem) this.render(); // hide the item being edited (shown live on the surface)
   }
 
   exitDrawMode(save: boolean) {
@@ -351,9 +417,13 @@ export class BoardView extends TextFileView {
     dm.toolbar.close();
     dm.surface.remove();
     dm.scrim.remove();
+    this.viewportEl.removeClass("mgn-draw-active");
     this.drawMode = null;
 
-    if (!save) return;
+    if (!save) {
+      if (dm.editId) this.render(); // restore the item we hid for editing
+      return;
+    }
     // remove the item being edited; it is replaced by the regrouped result
     if (dm.editId) this.board.items = this.board.items.filter((i) => i.id !== dm.editId);
     const groups = groupStrokes(dm.session.strokes, DRAW_GROUP_DISTANCE);
@@ -389,8 +459,9 @@ export class BoardView extends TextFileView {
     const crumb = head.createDiv({ cls: "mgn-preview-crumbs" });
     crumb.createSpan({ cls: "mgn-crumb-current", text: "Sketch" });
     const body = panel.createDiv({ cls: "mgn-preview-body mgn-sketch-body" });
+    // NB: createSvg rejects a cls string with spaces — pass classes as an array
     const surface = body.createSvg("svg", {
-      cls: "mgn-draw-surface mgn-sketch-surface",
+      cls: ["mgn-draw-surface", "mgn-sketch-surface"],
       attr: { viewBox: `0 0 ${W} ${H}` },
     }) as unknown as SVGSVGElement;
     surface.style.width = `${W}px`;
@@ -406,6 +477,9 @@ export class BoardView extends TextFileView {
     session.setStrokes(it.strokes ?? []);
 
     const close = () => ov.remove();
+    ov.addEventListener("pointerdown", (e) => {
+      if (e.target === ov) { toolbar.close(); close(); }
+    });
     const toolbar = this.makeDrawToolbar(
       head,
       session,
@@ -738,7 +812,7 @@ export class BoardView extends TextFileView {
     this.worldEl.querySelectorAll(".mgn-card").forEach((el) => el.remove());
     this.emptyHint?.toggle(this.board.items.length === 0);
 
-    const roots = this.board.items.filter((i) => !i.parent);
+    const roots = this.board.items.filter((i) => !i.parent && i.id !== this.drawMode?.editId);
     for (const it of roots) {
       this.worldEl.appendChild(renderCardFn(this, it));
     }
