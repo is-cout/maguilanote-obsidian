@@ -1012,9 +1012,11 @@
   background: var(--mgn-panel-hover-bg);
 }
 
-/* fade the whole board (all cards incl. drawings) uniformly while drawing */
+/* fade the whole board (all cards incl. drawings) uniformly while drawing,
+   and make every card inert so nothing underneath can be clicked */
 .mgn-draw-active .mgn-world {
   opacity: 0.4;
+  pointer-events: none;
 }
 /* subtle tint over the board while drawing (blocks node interaction) */
 .mgn-draw-scrim {

@@ -506,8 +506,9 @@ export class BoardView extends TextFileView {
     document.addEventListener("keydown", keyHandler, true);
     ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(false); });
 
-    // reuse the same floating toolbar as board draw mode (over the dimmed board)
-    toolbar = this.makeDrawToolbar(this.viewportEl, session, () => finish(true), () => finish(false), false);
+    // reuse the same floating toolbar as board draw mode; mount inside the
+    // overlay so it renders above it (a toolbar in viewportEl sits behind ov)
+    toolbar = this.makeDrawToolbar(ov, session, () => finish(true), () => finish(false), false);
   }
 
   /** re-render a single card in place (safe during other interactions) */

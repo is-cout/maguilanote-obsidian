@@ -4,13 +4,18 @@ import { Stroke, DEFAULT_STROKE_COLOR, DEFAULT_STROKE_SIZE } from "./types";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+// perfect-freehand's `size` is the width at mid pressure (max ≈ size*(1+thinning)).
+// We treat the chosen stroke size as the MAX (full-pressure) width, so we feed
+// size/(1+THINNING); light pressure then thins down and the min scales with it.
+const THINNING = 0.75;
+
 // --------------------------------------------------------------- stroke -> svg
 /** Build an SVG path `d` for a stroke, optionally offset by (dx, dy). */
 export function strokeToPath(stroke: Stroke, dx = 0, dy = 0): string {
-  const input = stroke.points.map((p) => [p[0] + dx, p[1] + dy, p[2] ?? 0.5]);
+  const input = stroke.points.map((p) => [p[0] + dx, p[1] + dy, p[2] ?? 1]);
   const outline = getStroke(input, {
-    size: stroke.size,
-    thinning: 0.85, // stronger pressure -> width response
+    size: stroke.size / (1 + THINNING),
+    thinning: THINNING,
     smoothing: 0.5,
     streamline: 0.5,
     simulatePressure: false,
@@ -237,7 +242,8 @@ export class DrawSession {
     e.preventDefault();
     this.svg.setPointerCapture(e.pointerId);
     const { x, y } = this.toCoords(e);
-    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 0.5;
+    // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
+    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
 
     if (this.tool === "pen") {
       this.snapshot();
@@ -271,7 +277,8 @@ export class DrawSession {
     const { x, y } = this.toCoords(e);
 
     if (this.live) {
-      const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 0.5;
+      // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
+    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
       this.live.push([x, y, pressure]);
       this.renderLive();
       return;
