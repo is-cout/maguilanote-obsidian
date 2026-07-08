@@ -748,7 +748,7 @@
 .mgn-crumbs {
   position: absolute;
   top: 10px;
-  left: 60px;
+  left: 12px;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -756,9 +756,11 @@
   background: var(--mgn-panel-bg);
   border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
-  padding: 5px 12px;
+  padding: 4px 12px;
+  height: 32px;
+  box-sizing: border-box;
   box-shadow: var(--mgn-panel-shadow);
-  font-size: 13px;
+  font-size: 14px;
   max-width: 60%;
   overflow: hidden;
 }
