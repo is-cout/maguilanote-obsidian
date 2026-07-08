@@ -31,6 +31,7 @@ export interface Edge {
   label?: string;
   arrow?: boolean;
   dashed?: boolean;
+  color?: string;
 }
 
 export interface BoardData { version: number; items: Item[]; edges: Edge[]; }

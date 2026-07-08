@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-08
+
+- Added line (arrow/connector) color. Right-click a line -> "Line color" submenu, reuses the same 10-color palette as cards. Stored as `Edge.color` (board file format addition, backward-compatible since it's optional). Files: `src/types.ts`, `src/render.ts`, `src/board-view.ts`.
+
 ## 2026-07-07
 
 - Prepared the repo for its first push to GitHub.

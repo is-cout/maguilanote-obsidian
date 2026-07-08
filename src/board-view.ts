@@ -359,6 +359,22 @@ export class BoardView extends TextFileView {
     marker.createSvg("path", {
       attr: { d: "M 0 0 L 10 5 L 0 10 z", fill: "currentColor" },
     });
+    // one fixed-fill marker per palette color: `currentColor` markers don't
+    // reliably pick up a per-edge inline color in Obsidian's Electron build
+    for (const c of CARD_COLORS) {
+      const cm = defs.createSvg("marker", {
+        attr: {
+          id: `mgn-arrowhead-${c.key}`,
+          viewBox: "0 0 10 10",
+          refX: "9",
+          refY: "5",
+          markerWidth: "7",
+          markerHeight: "7",
+          orient: "auto-start-reverse",
+        },
+      });
+      cm.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z", fill: c.bg } });
+    }
     this.labelsEl = this.worldEl.createDiv({ cls: "mgn-edge-labels" });
     this.emptyHint = this.viewportEl.createDiv({
       cls: "mgn-empty",
@@ -597,10 +613,24 @@ export class BoardView extends TextFileView {
 
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {
-      this.selectedEdge = edgeEl.dataset.id;
+      const id = edgeEl.dataset.id;
+      const now = Date.now();
+      const isDouble = this.lastClickId === id && now - this.lastClickAt < 450;
+      this.lastClickAt = now;
+      this.lastClickId = id;
+      this.selectedEdge = id;
       this.selection.clear();
       this.refreshSelectionClasses();
       this.drawEdges();
+      if (isDouble) {
+        this.lastClickId = null; // avoid triple-click re-trigger
+        const edge = this.board.edges.find((x) => x.id === id);
+        if (edge)
+          new TextPromptModal(this.app, "Arrow label", edge.label ?? "", (v) => {
+            edge.label = v || undefined;
+            this.commit();
+          }).open();
+      }
       return;
     }
 
@@ -1064,6 +1094,26 @@ export class BoardView extends TextFileView {
       const edge = this.board.edges.find((x) => x.id === edgeEl.dataset.id);
       if (!edge) return;
       const menu = new Menu();
+      menu.addItem((i) => {
+        i.setTitle("Line color").setIcon("palette");
+        const sub = (i as any).setSubmenu?.() as Menu | undefined;
+        if (sub) {
+          for (const c of CARD_COLORS) {
+            sub.addItem((si) =>
+              si.setTitle(c.name).setChecked(colorOf(edge.color).key === c.key).onClick(() => {
+                edge.color = c.key;
+                this.commit();
+              })
+            );
+          }
+        } else {
+          i.onClick(() => {
+            const idx = CARD_COLORS.findIndex((c) => c.key === colorOf(edge.color).key);
+            edge.color = CARD_COLORS[(idx + 1) % CARD_COLORS.length].key;
+            this.commit();
+          });
+        }
+      });
       menu.addItem((i) => i.setTitle("Edit label").setIcon("pencil").onClick(() => {
         new TextPromptModal(this.app, "Arrow label", edge.label ?? "", (v) => {
           edge.label = v || undefined;

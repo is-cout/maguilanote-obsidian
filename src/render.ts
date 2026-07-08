@@ -319,8 +319,16 @@ export function drawEdgesFn(view: BoardView) {
       cls: view.selectedEdge === e.id ? ["mgn-edge", "mgn-edge-selected"] : "mgn-edge",
       attr: { d, fill: "none" },
     });
-    if (e.arrow !== false) p.setAttr("marker-end", "url(#mgn-arrowhead)");
+    const useColor = e.color && view.selectedEdge !== e.id;
+    if (e.arrow !== false) {
+      p.setAttr("marker-end", useColor ? `url(#mgn-arrowhead-${e.color})` : "url(#mgn-arrowhead)");
+    }
     if (e.dashed) p.setAttr("stroke-dasharray", "6 5");
+    if (useColor) {
+      const hex = colorOf(e.color).bg;
+      p.style.stroke = hex;
+      p.style.color = hex;
+    }
     p.dataset.id = e.id;
     if (e.label) {
       const mx = (x1 + x2) / 2 + (c1x + c2x - x1 - x2) * 0.375;
