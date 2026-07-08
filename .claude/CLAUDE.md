@@ -65,6 +65,10 @@ All dependency versions in `package.json` are pinned **exactly** (no `^`/`~` ran
 
 README and `docs/` are living documents. Every significant change (feature, board file format, dependency, settings/defaults, build process) gets its documentation updated and a [docs/CHANGELOG.md](../docs/CHANGELOG.md) entry in the same change — see [Living Documentation](instructions/living-docs.instructions.md) for the full rule.
 
+## Versioning Policy
+
+The plugin version follows Semantic Versioning 2.0.0. **Only changes to the shipping plugin (`src/**`, `styles.css`, user-facing `manifest.json` fields) bump the version** — docs, README, tooling, and dev-dependency changes do not. See [Versioning](instructions/versioning.instructions.md) for the MAJOR/MINOR/PATCH rules, the Obsidian `x.y.z` constraint, and the three files to keep in sync.
+
 ---
 
 ## Memory and Context Files
