@@ -1065,6 +1065,9 @@
   align-items: center;
 }
 .mgn-sketch-surface {
+  /* override the board-overlay positioning: sit in normal flow, centered by the panel */
+  position: static;
+  inset: auto;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;

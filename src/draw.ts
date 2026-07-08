@@ -10,7 +10,7 @@ export function strokeToPath(stroke: Stroke, dx = 0, dy = 0): string {
   const input = stroke.points.map((p) => [p[0] + dx, p[1] + dy, p[2] ?? 0.5]);
   const outline = getStroke(input, {
     size: stroke.size,
-    thinning: 0.6,
+    thinning: 0.85, // stronger pressure -> width response
     smoothing: 0.5,
     streamline: 0.5,
     simulatePressure: false,
