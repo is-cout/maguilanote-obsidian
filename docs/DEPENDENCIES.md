@@ -8,21 +8,21 @@ All dependency versions in `package.json` are **pinned exactly** (no `^`, no `~`
 
 **How to apply:** when a new dependency is needed, or an existing one needs a bump (security fix, feature, bug fix), propose the exact version and the reason, and wait for approval before editing `package.json`.
 
-## Current pins (as of 2026-07-07)
+## Current pins (as of 2026-07-08)
 
 | Package | Pinned version | Notes |
 |---|---|---|
-| `typescript` | `5.4.0` | No known CVEs against the `typescript` package itself. |
-| `esbuild` | `0.20.0` | See CVE note below. |
+| `typescript` | `5.4.2` | No known CVEs against the `typescript` package itself. |
+| `esbuild` | `0.28.1` | See CVE note below. |
 | `obsidian` (types) | `1.4.0` | Type definitions only, matches `minAppVersion` in `manifest.json`. |
 | `@types/node` | `20.11.0` | Type definitions only, no known CVEs. |
 | `builtin-modules` | `3.3.0` | No known CVEs. |
 
 ## Known advisory: esbuild dev server (CVE-2024-23334)
 
-`esbuild` versions before 0.25.0, including the pinned `0.20.0`, have a moderate-severity advisory ([GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)): esbuild's local **dev server** (`esbuild serve`) doesn't validate the `Origin` header, so any website open in your browser could send requests to it and read responses.
+`esbuild` versions before 0.25.0 have a moderate-severity advisory ([GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)): esbuild's local **dev server** (`esbuild serve`) doesn't validate the `Origin` header, so any website open in your browser could send requests to it and read responses.
 
-This project's `esbuild.config.mjs` never calls `esbuild.serve()` — both `npm run dev` and `npm run build` only call `context.rebuild()`, so the vulnerable code path is not exercised here. The pin was kept as-is rather than bumped automatically, per the policy above. If you want to bump to `>=0.25.0` anyway (there's no downside for this project's usage), ask first and it'll get a one-line changelog entry.
+The pinned version (`0.28.1`) is already >=0.25.0, so this advisory does not apply. This project's `esbuild.config.mjs` also never calls `esbuild.serve()` — both `npm run dev` and `npm run build` only call `context.rebuild()` — so the vulnerable code path was never exercised here regardless.
 
 ## Lockfile
 
