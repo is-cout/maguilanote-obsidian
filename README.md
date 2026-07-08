@@ -15,6 +15,10 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Text note, image, link (auto title, YouTube embed), file (any type, audio/video player)
 - Vault file drag & drop, to-do list, column, color swatch, comment, document note
 
+**Drawing**
+- Draw: freehand on the board (pen/select/eraser, color, stroke size, pen-pressure), strokes grouped into editable drawings on save
+- Sketch: a card you draw inside via a popup canvas; shows a preview on the board
+
 **Connections**
 - Arrows, solid/dashed, arrowhead toggle, reversible, labels
 

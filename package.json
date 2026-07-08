@@ -1,6 +1,6 @@
 {
   "name": "maguilanote",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Visual workspace boards for Obsidian",
   "main": "main.js",
   "scripts": {
@@ -13,5 +13,8 @@
     "esbuild": "0.28.1",
     "obsidian": "1.4.0",
     "typescript": "5.4.2"
+  },
+  "dependencies": {
+    "perfect-freehand": "1.2.3"
   }
 }
