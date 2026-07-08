@@ -19,7 +19,9 @@ This project pins **exact** dependency versions (no `^`/`~` ranges) — see [DEP
 npm run build
 ```
 
-Runs `tsc -noEmit -skipLibCheck` (type-check only, no emit) followed by `esbuild.config.mjs production`, which bundles `src/main.ts` into `main.js` at the project root.
+Runs `tsc -noEmit -skipLibCheck` (type-check only, no emit), then `esbuild.config.mjs production` (bundles `src/main.ts` into `main.js` at the project root), then `scripts/copy-to-vault.mjs`.
+
+The copy step is optional and local-only: if a `.env.local` file exists at the project root with an `OBSIDIAN_PLUGIN_DIR=<path>` line, `main.js`, `manifest.json` and `styles.css` are copied there automatically after a successful build. `.env.local` is gitignored, so each contributor points it at their own vault; without it, the copy step is a no-op.
 
 For a watch-style rebuild during development:
 
@@ -39,7 +41,7 @@ Both paths produce `main.js` at the project root. This is a fallback path, not t
 
 ## Load the plugin in Obsidian
 
-Copy `main.js`, `manifest.json` and `styles.css` into `YOUR_VAULT/.obsidian/plugins/maguilanote/`, then enable **Maguilanote** under Settings → Community plugins. Reload the plugin (or restart Obsidian) after each rebuild.
+Copy `main.js`, `manifest.json` and `styles.css` into `YOUR_VAULT/.obsidian/plugins/maguilanote/`, then enable **Maguilanote** under Settings → Community plugins. Reload the plugin (or restart Obsidian) after each rebuild. (Set up `.env.local` as described above to have `npm run build` do this copy automatically.)
 
 ## Verifying a change
 
