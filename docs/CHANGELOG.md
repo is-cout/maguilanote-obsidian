@@ -6,6 +6,7 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-07-08
 
+- Refactored `styles.css` to centralize repeated colors as CSS custom properties (`--mgn-*`) in a `:root` block, instead of the same hex/rgba values being copy-pasted across the toolbar, zoombar, search bar, crumbs, edges, and card states. Also fixed a visual inconsistency where the "Dark" card color preset looked different between note/comment cards and to-do cards: note placeholders and code/blockquote styling used hardcoded black-based `rgba()` values (readable only on light cards), while to-do inputs already used `color: inherit` + `opacity`. Switched the note-side rules to the same `inherit`/`color-mix(currentColor, ...)` approach so all card types stay legible across every color preset. No behavior change beyond the corrected contrast. Files: `styles.css`.
 - Added line (arrow/connector) color. Right-click a line -> "Line color" submenu, reuses the same 10-color palette as cards. Stored as `Edge.color` (board file format addition, backward-compatible since it's optional). Files: `src/types.ts`, `src/render.ts`, `src/board-view.ts`.
 
 ## 2026-07-07

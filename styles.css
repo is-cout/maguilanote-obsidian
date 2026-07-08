@@ -1,5 +1,52 @@
 /* ============ Maguilanote — visual workspace look ============ */
 
+:root {
+  /* canvas */
+  --mgn-canvas-bg: #31303b;
+  --mgn-canvas-dot: #44434f;
+  --mgn-text-muted: #8a8996;
+  --mgn-text-dim: #9b9aa8;
+  --mgn-text-bright: #f0f0f4;
+  --mgn-column-text: #e8e8ee;
+
+  /* accent + status */
+  --mgn-accent: #4ab3ff;
+  --mgn-danger: #e05252;
+  --mgn-danger-text: #c93c3c;
+  --mgn-success: #35c26e;
+  --mgn-comment-accent: #f0b429;
+
+  /* floating panels (toolbar, zoombar, search, crumbs) */
+  --mgn-panel-bg: #24232c;
+  --mgn-panel-border: #3d3c48;
+  --mgn-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --mgn-panel-text: #b9b8c4;
+  --mgn-panel-hover-bg: #3a3944;
+  --mgn-panel-text-strong: #eee;
+  --mgn-panel-sep: #55545f;
+
+  /* card face (default "White" preset drives fallback text/placeholder tone) */
+  --mgn-card-fg-default: #33343d;
+  --mgn-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --mgn-card-shadow-selected: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --mgn-hit: #ffd84a;
+  --mgn-link: #2f6fbd;
+  --mgn-board-bg: #fbfbfd;
+
+  /* column card overlay (always dark, sits on the dark canvas regardless of card theme) */
+  --mgn-column-bg: rgba(255, 255, 255, 0.09);
+  --mgn-column-border: rgba(255, 255, 255, 0.22);
+  --mgn-column-chip-bg: rgba(255, 255, 255, 0.15);
+  --mgn-column-empty-border: rgba(255, 255, 255, 0.15);
+
+  /* preview modal */
+  --mgn-preview-overlay: rgba(15, 15, 20, 0.55);
+  --mgn-preview-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+
+  /* pure white, used for the default card face and hover/active text on dark panels */
+  --mgn-white: #fff;
+}
+
 .mgn-root {
   padding: 0 !important;
   overflow: hidden;
@@ -14,8 +61,8 @@
   overflow: hidden;
   outline: none;
   cursor: default;
-  background-color: #31303b;
-  background-image: radial-gradient(#44434f 1.2px, transparent 1.2px);
+  background-color: var(--mgn-canvas-bg);
+  background-image: radial-gradient(var(--mgn-canvas-dot) 1.2px, transparent 1.2px);
   background-size: 24px 24px;
   touch-action: none;
 }
@@ -34,7 +81,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #8a8996;
+  color: var(--mgn-text-muted);
   font-size: 15px;
   pointer-events: none;
   text-align: center;
@@ -44,10 +91,10 @@
 /* ------------ cards ------------ */
 .mgn-card {
   position: absolute;
-  background: #fff;
-  color: #33343d;
+  background: var(--mgn-white);
+  color: var(--mgn-card-fg-default);
   border-radius: 3px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--mgn-card-shadow);
   padding: 10px 12px;
   box-sizing: border-box;
   font-size: 14px;
@@ -60,9 +107,9 @@
   cursor: grabbing;
 }
 .mgn-card.mgn-selected {
-  outline: 2px solid #4ab3ff;
+  outline: 2px solid var(--mgn-accent);
   outline-offset: 1px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--mgn-card-shadow-selected);
 }
 .mgn-card.mgn-locked {
   cursor: default;
@@ -71,7 +118,7 @@
   opacity: 0.25;
 }
 .mgn-card.mgn-hit {
-  outline: 2px solid #ffd84a;
+  outline: 2px solid var(--mgn-hit);
 }
 
 /* UNSELECTED cards are inert: first click selects/moves, only a selected card
@@ -82,14 +129,14 @@
 
 /* broken references */
 .mgn-card.mgn-missing {
-  outline: 2px dashed #e05252;
+  outline: 2px dashed var(--mgn-danger);
   outline-offset: 1px;
 }
 .mgn-missing-label {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #c93c3c;
+  color: var(--mgn-danger-text);
   font-size: 12px;
   font-weight: 600;
   margin-top: 4px;
@@ -101,7 +148,8 @@
 }
 
 .mgn-placeholder {
-  color: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  opacity: 0.55;
   font-style: italic;
   font-size: 13px;
 }
@@ -137,11 +185,11 @@
   background: transparent !important;
 }
 .mgn-note-body a {
-  color: #2f6fbd !important;
+  color: var(--mgn-link) !important;
 }
 .mgn-note-body pre,
 .mgn-note-body code {
-  background: rgba(0, 0, 0, 0.08) !important;
+  background: color-mix(in srgb, currentColor 10%, transparent) !important;
   color: inherit !important;
 }
 .mgn-note-body p:first-child {
@@ -161,7 +209,7 @@
   padding-left: 1.3em;
 }
 .mgn-note-body blockquote {
-  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  border-left: 3px solid color-mix(in srgb, currentColor 25%, transparent);
   margin: 0.3em 0;
   padding-left: 0.7em;
   opacity: 0.85;
@@ -176,7 +224,8 @@
 }
 
 .mgn-note-edit::placeholder {
-  color: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  opacity: 0.55;
   font-style: italic;
 }
 .mgn-note-edit {
@@ -201,7 +250,7 @@
 
 /* comment card */
 .mgn-comment {
-  border-left: 4px solid #f0b429;
+  border-left: 4px solid var(--mgn-comment-accent);
 }
 .mgn-comment-head {
   display: flex;
@@ -268,7 +317,7 @@
 .mgn-board {
   text-align: center;
   padding: 16px 12px 14px;
-  background: #fbfbfd;
+  background: var(--mgn-board-bg);
 }
 .mgn-board-inner {
   pointer-events: none;
@@ -368,13 +417,13 @@
 .mgn-todo-progress {
   height: 4px;
   border-radius: 2px;
-  background: rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, currentColor 10%, transparent);
   margin-bottom: 8px;
   overflow: hidden;
 }
 .mgn-todo-progress-fill {
   height: 100%;
-  background: #35c26e;
+  background: var(--mgn-success);
   transition: width 0.15s ease;
 }
 .mgn-todo-row {
@@ -424,16 +473,16 @@
 
 /* column card */
 .mgn-column {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--mgn-column-bg);
   box-shadow: none;
-  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border: 1px dashed var(--mgn-column-border);
   border-radius: 6px;
   padding: 8px;
-  color: #e8e8ee;
+  color: var(--mgn-column-text);
 }
 .mgn-column.mgn-col-target {
-  border-color: #4ab3ff;
-  background: rgba(74, 179, 255, 0.12);
+  border-color: var(--mgn-accent);
+  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
 }
 .mgn-col-head {
   display: flex;
@@ -454,7 +503,7 @@
   flex: 1;
   border: none;
   background: transparent;
-  color: #e8e8ee;
+  color: var(--mgn-column-text);
   font-weight: 700;
   font-size: 13px;
   text-transform: uppercase;
@@ -463,7 +512,7 @@
 }
 .mgn-col-count {
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--mgn-column-chip-bg);
   border-radius: 10px;
   padding: 1px 7px;
 }
@@ -483,7 +532,7 @@
 .mgn-col-empty {
   min-height: 34px;
   border-radius: 4px;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border: 1px dashed var(--mgn-column-empty-border);
 }
 
 /* connector + resize handles */
@@ -494,8 +543,8 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #4ab3ff;
-  border: 2px solid #fff;
+  background: var(--mgn-accent);
+  border: 2px solid var(--mgn-white);
   opacity: 0;
   cursor: crosshair;
   z-index: 5;
@@ -511,8 +560,8 @@
   height: 14px;
   cursor: nwse-resize;
   opacity: 0;
-  border-right: 3px solid #4ab3ff;
-  border-bottom: 3px solid #4ab3ff;
+  border-right: 3px solid var(--mgn-accent);
+  border-bottom: 3px solid var(--mgn-accent);
   border-radius: 0 0 4px 0;
   z-index: 5;
 }
@@ -542,18 +591,18 @@
   pointer-events: none;
 }
 .mgn-edge {
-  stroke: #9b9aa8;
+  stroke: var(--mgn-text-dim);
   stroke-width: 2;
-  color: #9b9aa8;
+  color: var(--mgn-text-dim);
   pointer-events: none;
 }
 .mgn-edge-selected {
-  stroke: #4ab3ff;
-  color: #4ab3ff;
+  stroke: var(--mgn-accent);
+  color: var(--mgn-accent);
 }
 .mgn-edge-temp {
-  stroke: #4ab3ff;
-  color: #4ab3ff;
+  stroke: var(--mgn-accent);
+  color: var(--mgn-accent);
   stroke-dasharray: 5 4;
 }
 .mgn-edge-hit {
@@ -570,9 +619,9 @@
 .mgn-edge-label {
   position: absolute;
   transform: translate(-50%, -50%);
-  background: #31303b;
-  color: #d5d4de;
-  border: 1px solid #55545f;
+  background: var(--mgn-canvas-bg);
+  color: var(--mgn-column-text);
+  border: 1px solid var(--mgn-panel-sep);
   border-radius: 4px;
   font-size: 11px;
   padding: 2px 8px;
@@ -590,11 +639,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: #24232c;
-  border: 1px solid #3d3c48;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
   padding: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--mgn-panel-shadow);
 }
 .mgn-tool {
   width: 32px;
@@ -603,16 +652,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: #b9b8c4;
+  color: var(--mgn-panel-text);
   cursor: pointer;
 }
 .mgn-tool:hover {
-  background: #3a3944;
-  color: #fff;
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-white);
 }
 .mgn-tool-active {
-  background: #4ab3ff !important;
-  color: #fff !important;
+  background: var(--mgn-accent) !important;
+  color: var(--mgn-white) !important;
 }
 .mgn-tool svg {
   width: 17px;
@@ -620,7 +669,7 @@
 }
 .mgn-tool-sep {
   height: 1px;
-  background: #3d3c48;
+  background: var(--mgn-panel-border);
   margin: 4px 2px;
 }
 
@@ -633,20 +682,20 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: #24232c;
-  border: 1px solid #3d3c48;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
   padding: 4px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--mgn-panel-shadow);
 }
 .mgn-zoom-label {
-  color: #b9b8c4;
+  color: var(--mgn-panel-text);
   font-size: 12px;
   min-width: 44px;
   text-align: center;
 }
 .mgn-zoom-100 {
-  color: #b9b8c4;
+  color: var(--mgn-panel-text);
   font-size: 11px;
   font-weight: 700;
   padding: 0 8px;
@@ -657,13 +706,13 @@
   cursor: pointer;
 }
 .mgn-zoom-100:hover {
-  background: #3a3944;
-  color: #fff;
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-white);
 }
 .mgn-vsep {
   width: 1px;
   height: 20px;
-  background: #3d3c48;
+  background: var(--mgn-panel-border);
   margin: 0 4px;
 }
 
@@ -676,22 +725,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #24232c;
-  border: 1px solid #3d3c48;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
   padding: 6px 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--mgn-panel-shadow);
 }
 .mgn-search input {
   background: transparent;
   border: none;
   outline: none;
-  color: #eee;
+  color: var(--mgn-panel-text-strong);
   font-size: 13px;
   width: 180px;
 }
 .mgn-search-count {
-  color: #8a8996;
+  color: var(--mgn-text-muted);
   font-size: 12px;
 }
 
@@ -704,28 +753,28 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #24232c;
-  border: 1px solid #3d3c48;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
   padding: 5px 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--mgn-panel-shadow);
   font-size: 13px;
   max-width: 60%;
   overflow: hidden;
 }
 .mgn-crumb {
-  color: #9b9aa8;
+  color: var(--mgn-text-dim);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .mgn-crumb:hover {
-  color: #fff;
+  color: var(--mgn-white);
   text-decoration: underline;
 }
 .mgn-crumb-current {
-  color: #f0f0f4;
+  color: var(--mgn-text-bright);
   font-weight: 600;
   cursor: default;
 }
@@ -733,7 +782,7 @@
   text-decoration: none;
 }
 .mgn-crumb-sep {
-  color: #55545f;
+  color: var(--mgn-panel-sep);
 }
 
 /* ------------ inline file preview ------------ */
@@ -741,7 +790,7 @@
   position: absolute;
   inset: 0;
   z-index: 40;
-  background: rgba(15, 15, 20, 0.55);
+  background: var(--mgn-preview-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -754,7 +803,7 @@
   background: var(--background-primary);
   color: var(--text-normal);
   border-radius: 10px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--mgn-preview-shadow);
   overflow: hidden;
 }
 .mgn-preview-head {
@@ -797,8 +846,8 @@
 /* rubber band */
 .mgn-rubber {
   position: absolute;
-  border: 1px solid #4ab3ff;
-  background: rgba(74, 179, 255, 0.12);
+  border: 1px solid var(--mgn-accent);
+  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
   z-index: 15;
   pointer-events: none;
 }
