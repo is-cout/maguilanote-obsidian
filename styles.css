@@ -948,9 +948,9 @@
 }
 /* current-color dot on the color button */
 .mgn-ctx-colordot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
   border: 1px solid var(--mgn-panel-border);
 }
 /* current-size dot on the size button */
