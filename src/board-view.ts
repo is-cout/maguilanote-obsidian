@@ -83,6 +83,7 @@ export class BoardView extends TextFileView {
     scrim: HTMLElement;
     surface: SVGSVGElement;
     editId: string | null;
+    keyHandler: (e: KeyboardEvent) => void;
   } | null = null;
 
   searchHits: string[] = [];
@@ -296,9 +297,9 @@ export class BoardView extends TextFileView {
     const ar = anchor.getBoundingClientRect();
     pop.style.left = `${ar.right - cr.left + 8}px`;
     pop.style.top = `${ar.top - cr.top}px`;
-    pop.addEventListener("pointerdown", (e) => e.stopPropagation());
     const close = (e: PointerEvent) => {
-      if (anchor.contains(e.target as Node)) return;
+      const t = e.target as Node;
+      if (anchor.contains(t) || pop.contains(t)) return; // keep open for clicks inside
       pop.remove();
       document.removeEventListener("pointerdown", close, true);
     };
@@ -407,13 +408,23 @@ export class BoardView extends TextFileView {
       () => this.exitDrawMode(false),
       false
     );
-    this.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null };
+    // keys reach here via document (the SVG surface never holds focus)
+    const keyHandler = (e: KeyboardEvent) => {
+      const m = e.ctrlKey || e.metaKey;
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); this.exitDrawMode(false); }
+      else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
+      else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
+    };
+    document.addEventListener("keydown", keyHandler, true);
+
+    this.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null, keyHandler };
     if (editItem) this.render(); // hide the item being edited (shown live on the surface)
   }
 
   exitDrawMode(save: boolean) {
     const dm = this.drawMode;
     if (!dm) return;
+    document.removeEventListener("keydown", dm.keyHandler, true);
     dm.toolbar.close();
     dm.surface.remove();
     dm.scrim.remove();
@@ -456,8 +467,7 @@ export class BoardView extends TextFileView {
     const ov = this.contentEl.createDiv({ cls: "mgn-preview" });
     const panel = ov.createDiv({ cls: "mgn-preview-panel mgn-sketch-panel" });
     const head = panel.createDiv({ cls: "mgn-preview-head" });
-    const crumb = head.createDiv({ cls: "mgn-preview-crumbs" });
-    crumb.createSpan({ cls: "mgn-crumb-current", text: "Sketch" });
+    head.createDiv({ cls: "mgn-preview-crumbs" }).createSpan({ cls: "mgn-crumb-current", text: "Sketch" });
     const body = panel.createDiv({ cls: "mgn-preview-body mgn-sketch-body" });
     // NB: createSvg rejects a cls string with spaces — pass classes as an array
     const surface = body.createSvg("svg", {
@@ -476,26 +486,28 @@ export class BoardView extends TextFileView {
     });
     session.setStrokes(it.strokes ?? []);
 
-    const close = () => ov.remove();
-    ov.addEventListener("pointerdown", (e) => {
-      if (e.target === ov) { toolbar.close(); close(); }
-    });
-    const toolbar = this.makeDrawToolbar(
-      head,
-      session,
-      () => {
+    let toolbar: ContextToolbar;
+    const finish = (save: boolean) => {
+      if (save) {
         it.strokes = structuredClone(session.strokes);
         this.commit(false);
         this.rerenderItem(it);
-        toolbar.close();
-        close();
-      },
-      () => {
-        toolbar.close();
-        close();
-      },
-      true
-    );
+      }
+      document.removeEventListener("keydown", keyHandler, true);
+      toolbar.close();
+      ov.remove();
+    };
+    const keyHandler = (e: KeyboardEvent) => {
+      const m = e.ctrlKey || e.metaKey;
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+      else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
+      else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
+    };
+    document.addEventListener("keydown", keyHandler, true);
+    ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(false); });
+
+    // reuse the same floating toolbar as board draw mode (over the dimmed board)
+    toolbar = this.makeDrawToolbar(this.viewportEl, session, () => finish(true), () => finish(false), false);
   }
 
   /** re-render a single card in place (safe during other interactions) */
