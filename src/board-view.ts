@@ -12,10 +12,12 @@ import {
 import type MaguilanotePlugin from "./main";
 import { ShortcutsModal, TextPromptModal, VaultFilePicker } from "./modals";
 import { drawEdgesFn, renderCardFn } from "./render";
+import { ContextToolbar, CtxGroup, DrawSession, DrawTool, groupStrokes } from "./draw";
 import {
   AUDIO_EXTS,
   BoardData,
   CARD_COLORS,
+  DRAW_GROUP_DISTANCE,
   IMAGE_EXTS,
   Item,
   VIDEO_EXTS,
@@ -71,6 +73,16 @@ export class BoardView extends TextFileView {
   snapBtn!: HTMLElement;
   emptyHint!: HTMLElement;
   imgInput!: HTMLInputElement;
+  tbEl!: HTMLElement;
+
+  // active board-level draw mode (null when not drawing)
+  drawMode: {
+    session: DrawSession;
+    toolbar: ContextToolbar;
+    scrim: HTMLElement;
+    surface: SVGSVGElement;
+    editId: string | null;
+  } | null = null;
 
   searchHits: string[] = [];
   searchIdx = 0;
@@ -235,6 +247,183 @@ export class BoardView extends TextFileView {
     this.contentEl.querySelector(".mgn-preview")?.remove();
   }
 
+  // -------------------------------------------------------------- drawing
+  /** shared contextual toolbar for board draw mode and the sketch popup */
+  private makeDrawToolbar(
+    host: HTMLElement,
+    session: DrawSession,
+    onSave: () => void,
+    onDiscard: () => void,
+    inline: boolean
+  ): ContextToolbar {
+    let bar: ContextToolbar;
+    const setTool = (t: DrawTool) => {
+      session.tool = t;
+      bar.setActive("pen", t === "pen");
+      bar.setActive("select", t === "select");
+      bar.setActive("eraser", t === "eraser");
+    };
+    const groups: CtxGroup[] = [
+      [
+        { id: "pen", icon: "pen", label: "Pen", onClick: () => setTool("pen") },
+        { id: "select", icon: "lasso", label: "Select", onClick: () => setTool("select") },
+        { id: "eraser", icon: "eraser", label: "Eraser", onClick: () => setTool("eraser") },
+      ],
+      [
+        {
+          label: "Color",
+          render: (h) => {
+            const inp = h.createEl("input", { type: "color", cls: "mgn-ctx-color", value: session.color });
+            inp.setAttr("aria-label", "Stroke color");
+            inp.addEventListener("input", () => (session.color = inp.value));
+          },
+        },
+        {
+          label: "Stroke size",
+          render: (h) => {
+            const inp = h.createEl("input", {
+              type: "range",
+              cls: "mgn-ctx-size",
+              attr: { min: "1", max: "32", value: String(session.size), "aria-label": "Stroke size" },
+            });
+            inp.addEventListener("input", () => (session.size = Number(inp.value)));
+          },
+        },
+      ],
+      [
+        { icon: "undo-2", label: "Undo", onClick: () => session.undo() },
+        { icon: "redo-2", label: "Redo", onClick: () => session.redo() },
+      ],
+      [
+        { icon: "x", label: "Discard", onClick: onDiscard },
+        { icon: "check", label: "Save", onClick: onSave },
+      ],
+    ];
+    bar = new ContextToolbar(host, this.tbEl, groups, inline);
+    setTool("pen");
+    return bar;
+  }
+
+  /** create the world-space SVG surface + viewBox aligned to the current view */
+  private makeSurface(): SVGSVGElement {
+    const surface = this.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" }) as unknown as SVGSVGElement;
+    const vr = this.viewportEl.getBoundingClientRect();
+    const tl = this.screenToWorld(vr.left, vr.top);
+    surface.setAttribute("viewBox", `${tl.x} ${tl.y} ${vr.width / this.zoom} ${vr.height / this.zoom}`);
+    return surface;
+  }
+
+  enterDrawMode(editItem?: Item) {
+    if (this.drawMode) return;
+    this.closePreview();
+    this.selection.clear();
+    this.refreshSelectionClasses();
+
+    const scrim = this.viewportEl.createDiv({ cls: "mgn-draw-scrim" });
+    const surface = this.makeSurface();
+    const session = new DrawSession({
+      svg: surface,
+      toCoords: (e) => this.screenToWorld(e.clientX, e.clientY),
+    });
+    if (editItem?.strokes) {
+      // rebase local strokes back to world coords for editing
+      session.setStrokes(
+        editItem.strokes.map((s) => ({
+          color: s.color,
+          size: s.size,
+          points: s.points.map((p) => [p[0] + editItem.x, p[1] + editItem.y, p[2] ?? 0.5]),
+        }))
+      );
+    }
+    const toolbar = this.makeDrawToolbar(
+      this.viewportEl,
+      session,
+      () => this.exitDrawMode(true),
+      () => this.exitDrawMode(false),
+      false
+    );
+    this.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null };
+  }
+
+  exitDrawMode(save: boolean) {
+    const dm = this.drawMode;
+    if (!dm) return;
+    dm.toolbar.close();
+    dm.surface.remove();
+    dm.scrim.remove();
+    this.drawMode = null;
+
+    if (!save) return;
+    // remove the item being edited; it is replaced by the regrouped result
+    if (dm.editId) this.board.items = this.board.items.filter((i) => i.id !== dm.editId);
+    const groups = groupStrokes(dm.session.strokes, DRAW_GROUP_DISTANCE);
+    const newIds: string[] = [];
+    for (const g of groups) {
+      const it: Item = {
+        id: newId(),
+        type: "drawing",
+        x: g.box.x,
+        y: g.box.y,
+        w: g.box.w,
+        h: g.box.h,
+        strokes: g.strokes,
+      };
+      this.board.items.push(it);
+      newIds.push(it.id);
+    }
+    this.selection = new Set(newIds);
+    this.commit();
+  }
+
+  addSketch(x?: number, y?: number) {
+    this.addItem({ type: "sketch", strokes: [], w: 280, h: 200 }, x, y);
+  }
+
+  /** popup editor for a sketch card (draw only inside the fixed canvas) */
+  openSketchPopup(it: Item) {
+    this.closePreview();
+    const W = 640, H = 440;
+    const ov = this.contentEl.createDiv({ cls: "mgn-preview" });
+    const panel = ov.createDiv({ cls: "mgn-preview-panel mgn-sketch-panel" });
+    const head = panel.createDiv({ cls: "mgn-preview-head" });
+    const crumb = head.createDiv({ cls: "mgn-preview-crumbs" });
+    crumb.createSpan({ cls: "mgn-crumb-current", text: "Sketch" });
+    const body = panel.createDiv({ cls: "mgn-preview-body mgn-sketch-body" });
+    const surface = body.createSvg("svg", {
+      cls: "mgn-draw-surface mgn-sketch-surface",
+      attr: { viewBox: `0 0 ${W} ${H}` },
+    }) as unknown as SVGSVGElement;
+    surface.style.width = `${W}px`;
+    surface.style.height = `${H}px`;
+
+    const session = new DrawSession({
+      svg: surface,
+      toCoords: (e) => {
+        const r = surface.getBoundingClientRect();
+        return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+      },
+    });
+    session.setStrokes(it.strokes ?? []);
+
+    const close = () => ov.remove();
+    const toolbar = this.makeDrawToolbar(
+      head,
+      session,
+      () => {
+        it.strokes = structuredClone(session.strokes);
+        this.commit(false);
+        this.rerenderItem(it);
+        toolbar.close();
+        close();
+      },
+      () => {
+        toolbar.close();
+        close();
+      },
+      true
+    );
+  }
+
   /** re-render a single card in place (safe during other interactions) */
   rerenderItem(it: Item) {
     const old = this.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${it.id}"]`);
@@ -287,6 +476,7 @@ export class BoardView extends TextFileView {
 
     // toolbar
     const tb = root.createDiv({ cls: "mgn-toolbar" });
+    this.tbEl = tb;
     const tool = (
       icon: string,
       label: string,
@@ -318,6 +508,8 @@ export class BoardView extends TextFileView {
       this.connectFrom = null;
       connBtn.toggleClass("mgn-tool-active", !connBtn.hasClass("mgn-tool-active"));
     });
+    tool("pencil", "Draw on the board (D)", () => this.enterDrawMode());
+    tool("pen-tool", "Sketch card — click or drag", () => this.addSketch(), "sketch");
     tb.createDiv({ cls: "mgn-tool-sep" });
     tool("undo-2", "Undo (Ctrl+Z)", () => this.undo());
     tool("redo-2", "Redo (Ctrl+Shift+Z)", () => this.redo());
@@ -566,6 +758,7 @@ export class BoardView extends TextFileView {
 
   // ------------------------------------------------------------ interaction
   onPointerDown(e: PointerEvent) {
+    if (this.drawMode) return; // draw surface handles its own pointers
     const target = e.target as HTMLElement;
     // never steal focus from active inputs/editors (blur would kill them)
     const interactive = !!target.closest(
@@ -982,6 +1175,7 @@ export class BoardView extends TextFileView {
   }
 
   onWheel(e: WheelEvent) {
+    if (this.drawMode) { e.preventDefault(); return; } // lock view while drawing
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
       const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
@@ -994,6 +1188,7 @@ export class BoardView extends TextFileView {
   }
 
   onDblClick(e: MouseEvent) {
+    if (this.drawMode) return;
     const target = e.target as HTMLElement;
     if (target.closest("input, textarea, audio, video, iframe, .mgn-connector, .mgn-resize")) return;
 
@@ -1044,6 +1239,12 @@ export class BoardView extends TextFileView {
       case "link":
         if (it.url) window.open(it.url, "_blank");
         return;
+      case "drawing":
+        this.enterDrawMode(it);
+        return;
+      case "sketch":
+        this.openSketchPopup(it);
+        return;
       case "swatch":
       case "todo":
       case "column":
@@ -1087,6 +1288,7 @@ export class BoardView extends TextFileView {
   }
 
   onContextMenu(e: MouseEvent) {
+    if (this.drawMode) { e.preventDefault(); return; }
     const target = e.target as HTMLElement;
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {
@@ -1216,6 +1418,14 @@ export class BoardView extends TextFileView {
     }
     if (editing) return;
 
+    if (this.drawMode) {
+      const m = e.ctrlKey || e.metaKey;
+      if (e.key === "Escape") { e.preventDefault(); this.exitDrawMode(false); return; }
+      if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); this.drawMode.session.undo(); return; }
+      if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); this.drawMode.session.redo(); return; }
+      return; // swallow board shortcuts while drawing
+    }
+
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
     if ((mod && e.key.toLowerCase() === "z" && e.shiftKey) || (mod && e.key.toLowerCase() === "y")) { e.preventDefault(); this.redo(); return; }
@@ -1271,6 +1481,7 @@ export class BoardView extends TextFileView {
       case "b": this.promptBoard(); break;
       case "s": this.addSwatch(); break;
       case "m": this.addComment(); break;
+      case "d": this.enterDrawMode(); break;
       case "a": {
         const btn = this.contentEl.querySelectorAll(".mgn-toolbar .mgn-tool")[9] as HTMLElement | undefined;
         btn?.click();
@@ -1334,6 +1545,7 @@ export class BoardView extends TextFileView {
       case "column": this.addColumn(x, y); break;
       case "swatch": this.addSwatch(x, y); break;
       case "comment": this.addComment(x, y); break;
+      case "sketch": this.addSketch(x, y); break;
       case "link": this.promptLink({ x, y }); break;
       case "board": this.promptBoard({ x, y }); break;
       case "image":

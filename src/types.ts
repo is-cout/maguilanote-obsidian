@@ -1,8 +1,21 @@
 export type ItemType =
   | "note" | "image" | "link" | "file" | "column"
-  | "todo" | "swatch" | "comment" | "board";
+  | "todo" | "swatch" | "comment" | "board"
+  | "drawing" | "sketch";
 
 export interface TodoEntry { text: string; done: boolean; }
+
+/** One freehand stroke. Points are [x, y, pressure] in item-LOCAL coords. */
+export interface Stroke {
+  points: number[][];
+  color: string;
+  size: number;
+}
+
+// Drawing tunables — deliberately easy to change.
+export const DRAW_GROUP_DISTANCE = 60; // px gap that groups strokes into one drawing item
+export const DEFAULT_STROKE_SIZE = 4;
+export const DEFAULT_STROKE_COLOR = "#33343d";
 
 export interface Item {
   id: string;
@@ -22,6 +35,7 @@ export interface Item {
   todos?: TodoEntry[];
   swatch?: string;
   collapsed?: boolean;
+  strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
 }
 
 export interface Edge {

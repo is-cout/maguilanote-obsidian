@@ -10,6 +10,14 @@ All dependency versions in `package.json` are **pinned exactly** (no `^`, no `~`
 
 ## Current pins (as of 2026-07-08)
 
+**Runtime dependency** (bundled into `main.js`):
+
+| Package | Pinned version | Notes |
+|---|---|---|
+| `perfect-freehand` | `1.2.3` | Turns freehand pointer input (incl. pen pressure) into smooth stroke outlines for the Draw/Sketch feature. Zero-dependency, ~4KB; bundled by esbuild (not in `external`). |
+
+**Dev dependencies** (type-checking / bundling only):
+
 | Package | Pinned version | Notes |
 |---|---|---|
 | `typescript` | `5.4.2` | No known CVEs against the `typescript` package itself. |

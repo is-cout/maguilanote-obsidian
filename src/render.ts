@@ -2,6 +2,7 @@ import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
 import { AUDIO_EXTS, IMAGE_EXTS, Item, VIDEO_EXTS, colorOf } from "./types";
+import { strokeToPath, strokesBBox } from "./draw";
 
 function contrastColor(hex: string): string {
   const m = hex.replace("#", "");
@@ -30,7 +31,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     // manual vertical size acts as a minimum: content can still grow the card
     if (it.h) el.style.minHeight = `${it.h}px`;
   }
-  if (it.type !== "column" && it.type !== "swatch") {
+  if (it.type !== "column" && it.type !== "swatch" && it.type !== "drawing") {
     el.style.background = c.bg;
     el.style.color = c.fg;
   }
@@ -263,6 +264,45 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         const body = el.createDiv({ cls: "mgn-col-body" });
         for (const ch of children) body.appendChild(renderCardFn(view, ch, true));
         if (!children.length) body.createDiv({ cls: "mgn-col-empty" });
+      }
+      break;
+    }
+    case "drawing": {
+      const svg = el.createSvg("svg", {
+        cls: "mgn-drawing-svg",
+        attr: { viewBox: `0 0 ${it.w} ${it.h ?? it.w}`, preserveAspectRatio: "none" },
+      });
+      svg.style.width = "100%";
+      svg.style.height = `${it.h ?? it.w}px`;
+      for (const s of it.strokes ?? []) {
+        const p = svg.createSvg("path");
+        p.setAttribute("d", strokeToPath(s));
+        p.setAttribute("fill", s.color);
+      }
+      break;
+    }
+    case "sketch": {
+      const head = el.createDiv({ cls: "mgn-sketch-head" });
+      setIcon(head.createSpan(), "pen-tool");
+      head.createSpan({ text: "Sketch" });
+      const prev = el.createDiv({ cls: "mgn-sketch-preview" });
+      const strokes = it.strokes ?? [];
+      if (strokes.length) {
+        const bb = strokesBBox(strokes);
+        const svg = prev.createSvg("svg", {
+          cls: "mgn-drawing-svg",
+          attr: {
+            viewBox: `${bb.x} ${bb.y} ${bb.w || 1} ${bb.h || 1}`,
+            preserveAspectRatio: "xMidYMid meet",
+          },
+        });
+        for (const s of strokes) {
+          const p = svg.createSvg("path");
+          p.setAttribute("d", strokeToPath(s));
+          p.setAttribute("fill", s.color);
+        }
+      } else {
+        prev.createDiv({ cls: "mgn-placeholder", text: "Double-click to draw" });
       }
       break;
     }
