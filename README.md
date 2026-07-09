@@ -22,7 +22,9 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Connections**
 - Line tool: drag it onto the board, then drag either endpoint onto a card to anchor it (or leave it free)
 - Card-hover blue dot: drag to another card to draw an arrow (drop on empty canvas for a free end)
+- Two routing modes, switchable per line from its right-click menu: **Free** (straight, drag its middle dot to curve it) and **Smart** (auto-routed around cards)
 - Arrows, solid/dashed, arrowhead toggle, reversible, labels, color
+- Rubber-band select works on lines too (both ends must be inside the selection box); Delete removes selected lines
 
 **Text editing**
 - Full Markdown: headings, bold/italic/strikethrough, lists, quotes, code, links, `[[wikilinks]]`

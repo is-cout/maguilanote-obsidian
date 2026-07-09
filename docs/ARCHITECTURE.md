@@ -31,6 +31,8 @@ A board file is:
 
 An `Edge` connects two endpoints. Each end is **either** anchored to an item (`from`/`to` = item id) **or** free-floating (`fromPt`/`toPt` = `{x, y}` world point). A line dropped from the toolbar starts with both ends free; dragging an endpoint handle onto a card anchors that end. Optional `label`, `arrow`, `dashed`, `color` control appearance.
 
+`mode` selects the routing style: `"free"` (default for new lines) draws a straight segment clipped to each end's boundary, optionally bowed into a curve through `bend` (a `{x, y}` world point, dragged from the line's midpoint handle); `"smart"` uses the older auto-routed bezier that picks a side per card and bends around it. A missing `mode` is treated as `"smart"` so boards saved before this field existed keep their original look.
+
 `Item.type` is one of: `note`, `image`, `link`, `file`, `column`, `todo`, `swatch`, `comment`, `board`, `drawing`, `sketch` (see `ItemType` in `src/types.ts`). Every item has a position (`x`, `y`), width (`w`) and optional manual height (`h`); content that grows taller than `h` is never clipped. Items can be nested inside a `column` item via `parent` + `order`.
 
 `drawing` and `sketch` items carry a `strokes: Stroke[]` field. A `Stroke` is `{ points: number[][], color, size }` where each point is `[x, y, pressure]` in **item-local** coordinates (relative to the item's `x`/`y`), so moving the card needs no point rewrite. `drawing` items are produced by Draw mode (transparent, sized to their strokes); `sketch` items are drawn inside a fixed popup canvas and render a scaled preview on the card.

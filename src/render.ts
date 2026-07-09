@@ -322,6 +322,18 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
   return el;
 }
 
+/** point on `rect`'s boundary where the line from its center toward (tx, ty) exits it */
+function clipToRect(rect: { x: number; y: number; w: number; h: number }, tx: number, ty: number) {
+  const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  const dx = tx - cx, dy = ty - cy;
+  if (rect.w === 0 && rect.h === 0) return { x: cx, y: cy };
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  const tScaleX = dx !== 0 ? rect.w / 2 / Math.abs(dx) : Infinity;
+  const tScaleY = dy !== 0 ? rect.h / 2 / Math.abs(dy) : Infinity;
+  const t = Math.min(tScaleX, tScaleY);
+  return { x: cx + dx * t, y: cy + dy * t };
+}
+
 export function drawEdgesFn(view: BoardView) {
   if (!view.svgEl) return;
   view.svgEl.querySelectorAll(".mgn-edge, .mgn-edge-hit, .mgn-edge-handle").forEach((p) => p.remove());
@@ -341,22 +353,46 @@ export function drawEdgesFn(view: BoardView) {
     if (!a || !b) continue;
     const acx = a.x + a.w / 2, acy = a.y + a.h / 2;
     const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
-    const dx = bcx - acx, dy = bcy - acy;
+    const selected = view.selectedEdges.has(e.id);
+    const mode = e.mode ?? "smart"; // undefined = boards saved before this field existed
     let x1: number, y1: number, x2: number, y2: number;
-    let c1x: number, c1y: number, c2x: number, c2y: number;
-    const bend = Math.max(40, Math.min(160, Math.hypot(dx, dy) / 2.5));
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) { x1 = a.x + a.w; x2 = b.x; } else { x1 = a.x; x2 = b.x + b.w; }
-      y1 = acy; y2 = bcy;
-      c1x = x1 + (dx > 0 ? bend : -bend); c1y = y1;
-      c2x = x2 - (dx > 0 ? bend : -bend); c2y = y2;
+    let d: string;
+    let mx: number, my: number; // label anchor point
+
+    if (mode === "free") {
+      // straight line from center to center, clipped at each rect's boundary,
+      // optionally bowed through a user-dragged midpoint (`bend`)
+      ({ x: x1, y: y1 } = clipToRect(a, bcx, bcy));
+      ({ x: x2, y: y2 } = clipToRect(b, acx, acy));
+      if (e.bend) {
+        d = `M ${x1} ${y1} Q ${e.bend.x} ${e.bend.y}, ${x2} ${y2}`;
+        mx = 0.25 * x1 + 0.5 * e.bend.x + 0.25 * x2;
+        my = 0.25 * y1 + 0.5 * e.bend.y + 0.25 * y2;
+      } else {
+        d = `M ${x1} ${y1} L ${x2} ${y2}`;
+        mx = (x1 + x2) / 2;
+        my = (y1 + y2) / 2;
+      }
     } else {
-      if (dy > 0) { y1 = a.y + a.h; y2 = b.y; } else { y1 = a.y; y2 = b.y + b.h; }
-      x1 = acx; x2 = bcx;
-      c1x = x1; c1y = y1 + (dy > 0 ? bend : -bend);
-      c2x = x2; c2y = y2 - (dy > 0 ? bend : -bend);
+      const dx = bcx - acx, dy = bcy - acy;
+      let c1x: number, c1y: number, c2x: number, c2y: number;
+      const bend = Math.max(40, Math.min(160, Math.hypot(dx, dy) / 2.5));
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) { x1 = a.x + a.w; x2 = b.x; } else { x1 = a.x; x2 = b.x + b.w; }
+        y1 = acy; y2 = bcy;
+        c1x = x1 + (dx > 0 ? bend : -bend); c1y = y1;
+        c2x = x2 - (dx > 0 ? bend : -bend); c2y = y2;
+      } else {
+        if (dy > 0) { y1 = a.y + a.h; y2 = b.y; } else { y1 = a.y; y2 = b.y + b.h; }
+        x1 = acx; x2 = bcx;
+        c1x = x1; c1y = y1 + (dy > 0 ? bend : -bend);
+        c2x = x2; c2y = y2 - (dy > 0 ? bend : -bend);
+      }
+      d = `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
+      mx = (x1 + x2) / 2 + (c1x + c2x - x1 - x2) * 0.375;
+      my = (y1 + y2) / 2 + (c1y + c2y - y1 - y2) * 0.375;
     }
-    const d = `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
+
     const hit = view.svgEl.createSvg("path", {
       cls: "mgn-edge-hit",
       attr: { d, fill: "none" },
@@ -364,10 +400,10 @@ export function drawEdgesFn(view: BoardView) {
     hit.dataset.id = e.id;
     // NB: Obsidian's createSvg rejects cls strings containing spaces — use arrays
     const p = view.svgEl.createSvg("path", {
-      cls: view.selectedEdge === e.id ? ["mgn-edge", "mgn-edge-selected"] : "mgn-edge",
+      cls: selected ? ["mgn-edge", "mgn-edge-selected"] : "mgn-edge",
       attr: { d, fill: "none" },
     });
-    const useColor = e.color && view.selectedEdge !== e.id;
+    const useColor = e.color && !selected;
     if (e.arrow !== false) {
       p.setAttr("marker-end", useColor ? `url(#mgn-arrowhead-${e.color})` : "url(#mgn-arrowhead)");
     }
@@ -379,15 +415,13 @@ export function drawEdgesFn(view: BoardView) {
     }
     p.dataset.id = e.id;
     if (e.label) {
-      const mx = (x1 + x2) / 2 + (c1x + c2x - x1 - x2) * 0.375;
-      const my = (y1 + y2) / 2 + (c1y + c2y - y1 - y2) * 0.375;
       const lb = view.labelsEl.createDiv({ cls: "mgn-edge-label", text: e.label });
       lb.style.left = `${mx}px`;
       lb.style.top = `${my}px`;
       lb.dataset.id = e.id;
     }
-    // draggable endpoint handles for the selected edge
-    if (view.selectedEdge === e.id) {
+    if (selected) {
+      // draggable endpoint handles
       for (const [end, hx, hy] of [["from", x1, y1], ["to", x2, y2]] as const) {
         const h = view.svgEl.createSvg("circle", {
           cls: "mgn-edge-handle",
@@ -395,6 +429,16 @@ export function drawEdgesFn(view: BoardView) {
         });
         h.dataset.id = e.id;
         h.dataset.end = end;
+      }
+      // free-mode-only midpoint handle: drag it to curve the line
+      if (mode === "free") {
+        const bx = e.bend?.x ?? mx, by = e.bend?.y ?? my;
+        const h = view.svgEl.createSvg("circle", {
+          cls: ["mgn-edge-handle", "mgn-edge-bend-handle"],
+          attr: { cx: bx, cy: by, r: 5 },
+        });
+        h.dataset.id = e.id;
+        h.dataset.end = "bend";
       }
     }
   }

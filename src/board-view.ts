@@ -18,6 +18,7 @@ import {
   BoardData,
   CARD_COLORS,
   DRAW_GROUP_DISTANCE,
+  Edge,
   IMAGE_EXTS,
   Item,
   STROKE_SIZES,
@@ -44,7 +45,7 @@ type DragMode =
   | { kind: "rubber"; startX: number; startY: number; el: HTMLElement }
   | { kind: "resize"; id: string; startWX: number; startWY: number; w0: number; h0: number }
   | { kind: "connect"; from: string; tempPath: SVGPathElement }
-  | { kind: "line-end"; id: string; end: "from" | "to"; moved: boolean };
+  | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean };
 
 export class BoardView extends TextFileView {
   plugin: MaguilanotePlugin;
@@ -57,7 +58,7 @@ export class BoardView extends TextFileView {
   zoom = 1;
 
   selection = new Set<string>();
-  selectedEdge: string | null = null;
+  selectedEdges: Set<string> = new Set();
   spaceDown = false;
   drag: DragMode = { kind: "none" };
 
@@ -128,7 +129,7 @@ export class BoardView extends TextFileView {
       this.history = [JSON.stringify(this.board)];
       this.histIdx = 0;
       this.selection.clear();
-      this.selectedEdge = null;
+      this.selectedEdges.clear();
     }
     this.render();
     this.renderCrumbs();
@@ -577,7 +578,7 @@ export class BoardView extends TextFileView {
       if (opts.click) {
         b.addEventListener("click", opts.click);
       } else if (opts.drag) {
-        b.addEventListener("click", () => this.dragHint(b, label));
+        b.addEventListener("click", () => this.dragHint(b, "Drag onto the board"));
       }
       if (opts.drag) {
         b.draggable = true;
@@ -589,19 +590,19 @@ export class BoardView extends TextFileView {
       return b;
     };
     // group 1 — draggables (drag onto the board to create)
-    tool("sticky-note", "Note — drag onto the board", { drag: "note" });
-    tool("list-todo", "To-do list — drag onto the board", { drag: "todo" });
-    tool("spline", "Line — drag onto the board, then drag its ends", { drag: "line" });
-    tool("columns-3", "Column — drag onto the board", { drag: "column" });
-    tool("layout-dashboard", "Nested board — drag onto the board", { drag: "board" });
-    tool("palette", "Color swatch — drag onto the board", { drag: "swatch" });
-    tool("pen-tool", "Sketch card — drag onto the board", { drag: "sketch" });
-    tool("message-circle", "Comment — drag onto the board", { drag: "comment" });
+    tool("sticky-note", "Note", { drag: "note" });
+    tool("list-todo", "To-do list", { drag: "todo" });
+    tool("spline", "Line", { drag: "line" });
+    tool("columns-3", "Column", { drag: "column" });
+    tool("layout-dashboard", "Nested board", { drag: "board" });
+    tool("palette", "Color swatch", { drag: "swatch" });
+    tool("pen-tool", "Sketch card", { drag: "sketch" });
+    tool("message-circle", "Comment", { drag: "comment" });
     tb.createDiv({ cls: "mgn-tool-sep" });
     // group 2 — flexible tools
-    tool("image", "Image — drag onto the board", { drag: "image" });
-    tool("file", "Vault file — drag onto the board", { drag: "file" });
-    tool("link", "Link — drag onto the board", { drag: "link" });
+    tool("image", "Image", { drag: "image" });
+    tool("file", "Vault file", { drag: "file" });
+    tool("link", "Link", { drag: "link" });
     tool("pencil", "Draw on the board (D)", { click: () => this.enterDrawMode() });
     tb.createDiv({ cls: "mgn-tool-sep" });
     tool("undo-2", "Undo (Ctrl+Z)", { click: () => this.undo() });
@@ -916,7 +917,7 @@ export class BoardView extends TextFileView {
       this.drag = {
         kind: "line-end",
         id: handleEl.dataset.id,
-        end: handleEl.dataset.end as "from" | "to",
+        end: handleEl.dataset.end as "from" | "to" | "bend",
         moved: false,
       };
       this.viewportEl.setPointerCapture(e.pointerId);
@@ -931,7 +932,7 @@ export class BoardView extends TextFileView {
       const isDouble = this.lastClickId === id && now - this.lastClickAt < 450;
       this.lastClickAt = now;
       this.lastClickId = id;
-      this.selectedEdge = id;
+      this.selectedEdges = new Set([id]);
       this.selection.clear();
       this.refreshSelectionClasses();
       this.drawEdges();
@@ -964,7 +965,7 @@ export class BoardView extends TextFileView {
         return;
       }
 
-      this.selectedEdge = null;
+      this.selectedEdges.clear();
       if (e.shiftKey) {
         if (this.selection.has(id)) this.selection.delete(id);
         else this.selection.add(id);
@@ -1002,7 +1003,7 @@ export class BoardView extends TextFileView {
     // empty canvas: rubber band
     this.lastDownOnCanvas = true;
     this.selection.clear();
-    this.selectedEdge = null;
+    this.selectedEdges.clear();
     this.refreshSelectionClasses();
     this.drawEdges();
     const band = this.viewportEl.createDiv({ cls: "mgn-rubber" });
@@ -1135,7 +1136,22 @@ export class BoardView extends TextFileView {
           if (r.x < wp2.x && r.x + r.w > wp1.x && r.y < wp2.y && r.y + r.h > wp1.y)
             this.selection.add(it.id);
         }
+        // a line is selected only when both of its endpoints lie inside the band
+        this.selectedEdges.clear();
+        const inBand = (p: { x: number; y: number }) =>
+          p.x >= wp1.x && p.x <= wp2.x && p.y >= wp1.y && p.y <= wp2.y;
+        const endPoint = (id: string | undefined, pt: { x: number; y: number } | undefined) => {
+          if (pt) return pt;
+          const r = id ? rects.get(id) : undefined;
+          return r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : null;
+        };
+        for (const ed of this.board.edges) {
+          const p1 = endPoint(ed.from, ed.fromPt);
+          const p2 = endPoint(ed.to, ed.toPt);
+          if (p1 && p2 && inBand(p1) && inBand(p2)) this.selectedEdges.add(ed.id);
+        }
         this.refreshSelectionClasses();
+        this.drawEdges();
         break;
       }
       case "resize": {
@@ -1172,10 +1188,14 @@ export class BoardView extends TextFileView {
         if (!edge) break;
         d.moved = true;
         const w = this.screenToWorld(e.clientX, e.clientY);
-        // detach from any anchored card and follow the pointer as a free end
-        if (d.end === "from") { edge.from = undefined; edge.fromPt = { x: w.x, y: w.y }; }
-        else { edge.to = undefined; edge.toPt = { x: w.x, y: w.y }; }
-        this.highlightCardUnder(e);
+        if (d.end === "bend") {
+          edge.bend = { x: w.x, y: w.y };
+        } else {
+          // detach from any anchored card and follow the pointer as a free end
+          if (d.end === "from") { edge.from = undefined; edge.fromPt = { x: w.x, y: w.y }; }
+          else { edge.to = undefined; edge.toPt = { x: w.x, y: w.y }; }
+          this.highlightCardUnder(e);
+        }
         this.drawEdges();
         break;
       }
@@ -1244,14 +1264,14 @@ export class BoardView extends TextFileView {
         d.tempPath.remove();
         const to = this.cardIdUnder(e);
         if (to && to !== d.from) {
-          this.board.edges.push({ id: newId(), from: d.from, to, arrow: true });
+          this.board.edges.push({ id: newId(), from: d.from, to, arrow: true, mode: "free" });
           this.commit();
         } else if (to === d.from) {
           this.drawEdges();
         } else {
           // dropped on empty canvas: create a line with a free end
           const w = this.screenToWorld(e.clientX, e.clientY);
-          this.board.edges.push({ id: newId(), from: d.from, toPt: { x: w.x, y: w.y }, arrow: true });
+          this.board.edges.push({ id: newId(), from: d.from, toPt: { x: w.x, y: w.y }, arrow: true, mode: "free" });
           this.commit();
         }
         break;
@@ -1260,7 +1280,7 @@ export class BoardView extends TextFileView {
         this.clearCardHighlight();
         if (!d.moved) { this.drawEdges(); break; }
         const edge = this.board.edges.find((x) => x.id === d.id);
-        if (edge) {
+        if (edge && d.end !== "bend") {
           const over = this.cardIdUnder(e);
           if (over) {
             // anchor this end to the card under the pointer
@@ -1490,6 +1510,14 @@ export class BoardView extends TextFileView {
         [edge.fromPt, edge.toPt] = [edge.toPt, edge.fromPt];
         this.commit();
       }));
+      menu.addItem((i) => {
+        const isFree = (edge.mode ?? "smart") === "free";
+        i.setTitle(isFree ? "Switch to Smart routing" : "Switch to Free line").setIcon("route").onClick(() => {
+          edge.mode = isFree ? "smart" : "free";
+          if (edge.mode === "smart") edge.bend = undefined; // bend curve only applies to Free
+          this.commit();
+        });
+      });
       menu.addSeparator();
       menu.addItem((i) => i.setTitle("Delete arrow").setIcon("trash").onClick(() => {
         this.board.edges = this.board.edges.filter((x) => x.id !== edge.id);
@@ -1594,9 +1622,9 @@ export class BoardView extends TextFileView {
 
     if (e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault();
-      if (this.selectedEdge) {
-        this.board.edges = this.board.edges.filter((x) => x.id !== this.selectedEdge);
-        this.selectedEdge = null;
+      if (this.selectedEdges.size) {
+        this.board.edges = this.board.edges.filter((x) => !this.selectedEdges.has(x.id));
+        this.selectedEdges.clear();
         this.commit();
       } else {
         this.deleteSelection();
@@ -1606,7 +1634,7 @@ export class BoardView extends TextFileView {
     if (e.key === "Escape") {
       this.closePreview();
       this.selection.clear();
-      this.selectedEdge = null;
+      this.selectedEdges.clear();
       this.contentEl.querySelector(".mgn-toolbar .mgn-tool-active")?.removeClass("mgn-tool-active");
       this.refreshSelectionClasses();
       this.drawEdges();
@@ -1705,15 +1733,16 @@ export class BoardView extends TextFileView {
   /** drop a standalone line centered on (x, y); both ends free, selected */
   addLine(x: number, y: number) {
     const half = 80;
-    const edge = {
+    const edge: Edge = {
       id: newId(),
       fromPt: { x: x - half, y },
       toPt: { x: x + half, y },
-      arrow: false,
+      arrow: true,
+      mode: "free",
     };
     this.board.edges.push(edge);
     this.selection.clear();
-    this.selectedEdge = edge.id;
+    this.selectedEdges = new Set([edge.id]);
     this.refreshSelectionClasses();
     this.commit();
   }

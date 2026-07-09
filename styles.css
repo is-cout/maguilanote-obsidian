@@ -618,6 +618,11 @@
   pointer-events: all;
   cursor: grab;
 }
+.mgn-edge-bend-handle {
+  fill: var(--mgn-accent);
+  opacity: 0.6;
+  cursor: grab;
+}
 /* card highlighted as a line-endpoint drop target */
 .mgn-conn-target {
   outline: 2px solid var(--mgn-accent);
