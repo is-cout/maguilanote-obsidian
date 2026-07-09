@@ -17,6 +17,7 @@ import {
   AUDIO_EXTS,
   BoardData,
   CARD_COLORS,
+  CUSTOM_CARD_COLOR_KEYS,
   DRAW_GROUP_DISTANCE,
   Edge,
   IMAGE_EXTS,
@@ -30,6 +31,13 @@ import {
 } from "./types";
 
 export const VIEW_TYPE_BOARD = "maguilanote-board";
+
+// fixed pen-ink palette for the Draw/Sketch color picker — intentionally not
+// theme-dependent (see renderColorControl)
+const DRAW_SWATCHES = [
+  "#33343d", "#fff5c0", "#ffd9b0", "#ffc7c2", "#e2cbf7",
+  "#c4ddff", "#bdede0", "#d3f2c0", "#e4e4e8", "#ffffff",
+];
 
 /** true if segment (x0,y0)-(x1,y1) touches or crosses axis-aligned rect [xmin,xmax]x[ymin,ymax] (Liang-Barsky clip test) */
 function segmentIntersectsRect(
@@ -206,9 +214,15 @@ export class BoardView extends TextFileView {
   /** apply the user's text-scale / font / theme settings to this board's DOM */
   applyAppearance() {
     const s = this.plugin.settings;
-    this.contentEl.style.setProperty("--mgn-font-scale", String(s.fontScale));
     this.contentEl.style.setProperty("--mgn-font-family", s.fontFamily || "inherit");
     this.contentEl.toggleClass("mgn-theme-light", s.theme === "light");
+
+    const c = s.colors[s.theme];
+    this.contentEl.style.setProperty("--mgn-canvas-bg", c.canvasBg);
+    this.contentEl.style.setProperty("--mgn-card-default-bg", c.cardDefaultBg);
+    for (const key of CUSTOM_CARD_COLOR_KEYS) {
+      this.contentEl.style.setProperty(`--mgn-card-color-${key}`, c[key]);
+    }
   }
 
   /** re-pick the vault file a card points to (broken/renamed references) */
@@ -356,10 +370,12 @@ export class BoardView extends TextFileView {
       }
       const pop = this.makePopover(btn);
       const grid = pop.createDiv({ cls: "mgn-ctx-colorgrid" });
-      for (const c of CARD_COLORS) {
-        const sw = grid.createDiv({ cls: "mgn-ctx-swatch", attr: { "aria-label": c.name } });
-        sw.style.background = c.bg;
-        sw.addEventListener("click", () => pick(c.bg));
+      // fixed ink colors: pen strokes are drawn once and persisted as plain hex,
+      // unlike card backgrounds they must not shift with the board theme setting
+      for (const hex of DRAW_SWATCHES) {
+        const sw = grid.createDiv({ cls: "mgn-ctx-swatch" });
+        sw.style.background = hex;
+        sw.addEventListener("click", () => pick(hex));
       }
       const custom = pop.createEl("input", {
         type: "color",
@@ -688,7 +704,8 @@ export class BoardView extends TextFileView {
           orient: "auto-start-reverse",
         },
       });
-      cm.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z", fill: c.bg } });
+      const cmPath = cm.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } });
+      cmPath.style.fill = c.bg; // inline style (not the `fill` attr) so var()-based colors resolve
     }
     this.labelsEl = this.worldEl.createDiv({ cls: "mgn-edge-labels" });
     this.emptyHint = this.viewportEl.createDiv({

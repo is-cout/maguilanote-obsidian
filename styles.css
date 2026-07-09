@@ -30,6 +30,16 @@
   /* "Default" card color preset: dark card face in dark theme, white in light theme */
   --mgn-card-default-bg: #4a4b54;
   --mgn-card-default-fg: #f0f0f2;
+  /* customizable card color presets (Settings → Customization), kept in sync
+     with the active theme's colors by BoardView.applyAppearance() */
+  --mgn-card-color-yellow: #fff5c0;
+  --mgn-card-color-orange: #ffd9b0;
+  --mgn-card-color-red: #ffc7c2;
+  --mgn-card-color-purple: #e2cbf7;
+  --mgn-card-color-blue: #c4ddff;
+  --mgn-card-color-teal: #bdede0;
+  --mgn-card-color-green: #d3f2c0;
+  --mgn-card-color-gray: #e4e4e8;
   --mgn-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   --mgn-card-shadow-selected: 0 4px 14px rgba(0, 0, 0, 0.45);
   --mgn-hit: #ffd84a;
@@ -49,8 +59,7 @@
   /* pure white, used for the default card face and hover/active text on dark panels */
   --mgn-white: #fff;
 
-  /* customization: relative text scale + font override (set from Settings) */
-  --mgn-font-scale: 1;
+  /* customization: font override (set from Settings) */
   --mgn-font-family: inherit;
 }
 
@@ -133,7 +142,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   color: var(--mgn-text-muted);
-  font-size: calc(var(--mgn-font-scale, 1) * 15px);
+  font-size: 15px;
   pointer-events: none;
   text-align: center;
   max-width: 380px;
@@ -148,7 +157,7 @@
   box-shadow: var(--mgn-card-shadow);
   padding: 10px 12px;
   box-sizing: border-box;
-  font-size: calc(var(--mgn-font-scale, 1) * 14px);
+  font-size: 14px;
   line-height: 1.45;
   user-select: none;
   cursor: grab;
@@ -188,7 +197,7 @@
   align-items: center;
   gap: 6px;
   color: var(--mgn-danger-text);
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   font-weight: 600;
   margin-top: 4px;
   pointer-events: none;
@@ -202,7 +211,7 @@
   color: inherit;
   opacity: 0.55;
   font-style: italic;
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
 }
 
 /* markdown body inside notes — force readable dark text on the light card,
@@ -232,16 +241,14 @@
   color: inherit !important;
   background: transparent !important;
   font-size: 1em !important; /* Obsidian's markdown-rendered CSS sets its own absolute
-    size here; force it back to the card's (already text-scale-aware) inherited size */
+    size here; force it back to the card's font-size */
 }
 .mgn-note-body h1,
 .mgn-note-body h2,
 .mgn-note-body h3 {
   color: inherit !important;
   background: transparent !important;
-  /* relative to the inherited (scale-aware) card font-size, so headings keep
-     scaling proportionally with the text-size setting */
-  font-size: 1.5em !important;
+  font-size: 1.5em !important; /* relative to the card's font-size, for consistent heading hierarchy */
 }
 .mgn-note-body h2 { font-size: 1.3em !important; }
 .mgn-note-body h3 { font-size: 1.15em !important; }
@@ -320,7 +327,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -343,7 +350,7 @@
   pointer-events: none;
 }
 .mgn-caption {
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   padding: 5px 3px 1px;
   opacity: 0.75;
 }
@@ -368,7 +375,7 @@
   white-space: nowrap;
 }
 .mgn-link-url {
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   opacity: 0.55;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -404,10 +411,10 @@
 }
 .mgn-board-title {
   font-weight: 700;
-  font-size: calc(var(--mgn-font-scale, 1) * 15px);
+  font-size: 15px;
 }
 .mgn-board-summary {
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   opacity: 0.55;
 }
 
@@ -429,13 +436,13 @@
   align-items: flex-start;
 }
 .mgn-col-body .mgn-board-title {
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .mgn-col-body .mgn-board-summary {
-  font-size: calc(var(--mgn-font-scale, 1) * 10px);
+  font-size: 10px;
 }
 
 /* swatch card */
@@ -446,7 +453,7 @@
   align-items: flex-end;
 }
 .mgn-swatch-label {
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   font-weight: 600;
   padding: 6px 9px;
   cursor: text;
@@ -473,10 +480,16 @@
   border: none;
   background: transparent;
   font-weight: 700;
-  font-size: calc(var(--mgn-font-scale, 1) * 14px);
+  font-size: 14px;
   color: inherit;
   padding: 0 0 4px 0;
   outline: none;
+}
+.mgn-todo-title::placeholder,
+.mgn-todo-add::placeholder {
+  color: inherit;
+  opacity: 0.55;
+  font-style: italic;
 }
 .mgn-todo-progress {
   height: 4px;
@@ -497,15 +510,28 @@
   padding: 2px 0;
 }
 .mgn-todo-row input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
   margin: 0;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.55;
+  background: transparent;
   cursor: pointer;
+  flex-shrink: 0;
+}
+.mgn-todo-row input[type="checkbox"]:checked {
+  background: currentColor;
+  border-color: currentColor;
 }
 .mgn-todo-text {
   flex: 1;
   border: none;
   background: transparent;
   color: inherit;
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
   outline: none;
 }
 .mgn-todo-text.mgn-done {
@@ -529,8 +555,7 @@
   border: none;
   background: transparent;
   color: inherit;
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
-  opacity: 0.55;
+  font-size: 12px;
   outline: none;
   margin-top: 4px;
 }
@@ -569,13 +594,13 @@
   background: transparent;
   color: var(--mgn-column-text);
   font-weight: 700;
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   outline: none;
 }
 .mgn-col-count {
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   background: var(--mgn-column-chip-bg);
   border-radius: 10px;
   padding: 1px 7px;
@@ -704,7 +729,7 @@
   color: var(--mgn-column-text);
   border: 1px solid var(--mgn-panel-sep);
   border-radius: 4px;
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   padding: 2px 8px;
   white-space: nowrap;
   cursor: pointer;
@@ -771,7 +796,7 @@
   border: 1px solid var(--mgn-panel-border);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   box-shadow: var(--mgn-panel-shadow);
   pointer-events: none;
   z-index: 30;
@@ -794,13 +819,13 @@
 }
 .mgn-zoom-label {
   color: var(--mgn-panel-text);
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   min-width: 44px;
   text-align: center;
 }
 .mgn-zoom-100 {
   color: var(--mgn-panel-text);
-  font-size: calc(var(--mgn-font-scale, 1) * 11px);
+  font-size: 11px;
   font-weight: 700;
   padding: 0 8px;
   height: 32px;
@@ -840,12 +865,12 @@
   border: none;
   outline: none;
   color: var(--mgn-panel-text-strong);
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
   width: 180px;
 }
 .mgn-search-count {
   color: var(--mgn-text-muted);
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
 }
 
 /* ------------ breadcrumbs ------------ */
@@ -864,7 +889,7 @@
   height: 32px;
   box-sizing: border-box;
   box-shadow: var(--mgn-panel-shadow);
-  font-size: 14px; /* deliberately not scaled by --mgn-font-scale: chrome, not board content */
+  font-size: 14px;
   max-width: 60%;
   overflow: hidden;
 }
@@ -970,7 +995,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
   overflow: hidden;
 }
 .mgn-preview-crumbs .mgn-crumb {
@@ -1012,7 +1037,7 @@
 .mgn-shortcuts td {
   padding: 5px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
-  font-size: calc(var(--mgn-font-scale, 1) * 13px);
+  font-size: 13px;
 }
 .mgn-shortcut-key {
   font-family: var(--font-monospace);
@@ -1242,7 +1267,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: calc(var(--mgn-font-scale, 1) * 12px);
+  font-size: 12px;
   opacity: 0.7;
   margin-bottom: 4px;
 }

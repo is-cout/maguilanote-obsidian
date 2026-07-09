@@ -39,9 +39,9 @@ The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in
 
 Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb trail → **Settings** → **Shortcuts**. Bindings are stored in `MaguilanoteSettings.keybindings` (`src/main.ts`), keyed by `ShortcutActionId`. To add a new rebindable action: add the id to `ShortcutActionId`, its label to `SHORTCUT_LABELS`, and its default to `DEFAULT_KEYBINDINGS` (all in `src/types.ts`), then check `matchesBinding(e, kb.<id>)` in `onKeyDown` in `src/board-view.ts`. Mouse/gesture-only shortcuts (not key-based) are the static `MOUSE_SHORTCUTS` reference table in `src/modals.ts` (`SettingsModal`).
 
-### How do I change text size / font / theme defaults?
+### How do I change font / theme / color defaults?
 
-`DEFAULT_SETTINGS.fontScale` (relative multiplier), `.fontFamily`, and `.theme` (`"dark" | "light"`) in `src/main.ts` — all exposed as user settings (gear icon → Settings → Customization). The dark palette lives in `:root` and the light palette in `.mgn-root.mgn-theme-light` in `styles.css`; every `font-size` in that file is `calc(... * var(--mgn-font-scale))` so the multiplier scales all text proportionally.
+`DEFAULT_SETTINGS.fontFamily` and `.theme` (`"dark" | "light"`) in `src/main.ts` — both exposed as user settings (gear icon → Settings → Customization). The board/card colors themselves live in `DEFAULT_THEME_COLORS` (`src/types.ts`), one `ThemeColors` object per theme (`canvasBg`, `cardDefaultBg`, and the 8 named card colors); users can override any of them per-theme from the same Customization section, stored in `settings.colors.light` / `settings.colors.dark`. `BoardView.applyAppearance()` (`src/board-view.ts`) writes the active theme's values onto the corresponding `--mgn-canvas-bg` / `--mgn-card-default-bg` / `--mgn-card-color-*` CSS variables, and toggles the `.mgn-theme-light` class for the rest of the palette (defined in `:root` / `.mgn-root.mgn-theme-light` in `styles.css`).
 
 ### How do I change the default templates folder name?
 

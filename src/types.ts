@@ -84,18 +84,61 @@ export function newId(): string {
 
 export interface CardColor { key: string; name: string; bg: string; fg: string; }
 
-// "default" resolves via CSS vars (--mgn-card-default-bg/fg), which flip between
-// the old "white" and "dark" presets depending on the active board theme.
+/** the non-"default" card color keys — also used as the field names on `ThemeColors` */
+export const CUSTOM_CARD_COLOR_KEYS = [
+  "yellow", "orange", "red", "purple", "blue", "teal", "green", "gray",
+] as const;
+export type CustomCardColorKey = (typeof CUSTOM_CARD_COLOR_KEYS)[number];
+
+/** per-theme customizable colors (Settings → Customization). Backgrounds only —
+ * card text color stays fixed for legibility. */
+export interface ThemeColors {
+  canvasBg: string;
+  cardDefaultBg: string;
+  yellow: string;
+  orange: string;
+  red: string;
+  purple: string;
+  blue: string;
+  teal: string;
+  green: string;
+  gray: string;
+}
+
+// same defaults for both themes on purpose — only the "Default" card background
+// differs (white on light, dark on dark), matching the pre-customization palette.
+const SHARED_CARD_COLOR_DEFAULTS = {
+  yellow: "#fff5c0",
+  orange: "#ffd9b0",
+  red: "#ffc7c2",
+  purple: "#e2cbf7",
+  blue: "#c4ddff",
+  teal: "#bdede0",
+  green: "#d3f2c0",
+  gray: "#e4e4e8",
+};
+
+export const DEFAULT_THEME_COLORS: { light: ThemeColors; dark: ThemeColors } = {
+  dark: { canvasBg: "#31303b", cardDefaultBg: "#4a4b54", ...SHARED_CARD_COLOR_DEFAULTS },
+  light: { canvasBg: "#eceef2", cardDefaultBg: "#ffffff", ...SHARED_CARD_COLOR_DEFAULTS },
+};
+
+export const CARD_COLOR_NAMES: Record<CustomCardColorKey, string> = {
+  yellow: "Yellow", orange: "Orange", red: "Red", purple: "Purple",
+  blue: "Blue", teal: "Teal", green: "Green", gray: "Gray",
+};
+
+// bg is a CSS var, kept in sync with the active theme's ThemeColors by
+// BoardView.applyAppearance(); fg is fixed (all card backgrounds here are light
+// enough for dark text, "default" aside, which uses its own themed fg var).
 export const CARD_COLORS: CardColor[] = [
   { key: "default", name: "Default", bg: "var(--mgn-card-default-bg)", fg: "var(--mgn-card-default-fg)" },
-  { key: "yellow", name: "Yellow", bg: "#fff5c0", fg: "#33343d" },
-  { key: "orange", name: "Orange", bg: "#ffd9b0", fg: "#33343d" },
-  { key: "red", name: "Red", bg: "#ffc7c2", fg: "#33343d" },
-  { key: "purple", name: "Purple", bg: "#e2cbf7", fg: "#33343d" },
-  { key: "blue", name: "Blue", bg: "#c4ddff", fg: "#33343d" },
-  { key: "teal", name: "Teal", bg: "#bdede0", fg: "#33343d" },
-  { key: "green", name: "Green", bg: "#d3f2c0", fg: "#33343d" },
-  { key: "gray", name: "Gray", bg: "#e4e4e8", fg: "#33343d" },
+  ...CUSTOM_CARD_COLOR_KEYS.map((key) => ({
+    key,
+    name: CARD_COLOR_NAMES[key],
+    bg: `var(--mgn-card-color-${key})`,
+    fg: "#33343d",
+  })),
 ];
 
 // boards saved before "white"/"dark" were merged into "default" keep working

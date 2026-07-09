@@ -4,6 +4,16 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-09 (follow-up 2)
+
+- Second follow-up to the Settings panel, still v0.4.0 (no separate bump):
+  - **Removed the text-size setting entirely** (didn't look good) — reverted `--mgn-font-scale`, the slider, and all the `calc(... * Npx)` font-size wrapping in `styles.css` back to plain pixel values. Kept the `.mgn-note-body` heading-size fix from the previous follow-up (still correct on its own, independent of scaling) but reworded its comments since they no longer reference a scale setting.
+  - Added **per-theme color customization** to Settings → Customization: board background, default card background, and each of the 8 named card colors (Yellow/Orange/.../Gray), each with its own color picker. Colors are stored separately per theme (`MaguilanoteSettings.colors.light` / `.dark`, both `ThemeColors` — new in `src/types.ts`, defaulted from `DEFAULT_THEME_COLORS`); switching the Theme dropdown swaps which theme's color set is shown/edited, defaulting to the same hex values for both themes except "Default" card background (white on light, dark on dark, as before). Card color presets now resolve through `--mgn-card-color-<key>` CSS variables (previously fixed hex in `CARD_COLORS`), kept in sync with the active theme by `BoardView.applyAppearance()`.
+  - Fixed the Draw/Sketch pen-color picker, which had been reusing `CARD_COLORS` (now theme-variable-based) as its swatch list — pen ink is drawn once and persisted as plain hex in the board file, and must not silently repaint if the user later changes their card-color theme settings. It now uses its own fixed `DRAW_SWATCHES` hex list, unaffected by theme customization.
+  - Fixed the per-color arrowhead `<marker>` fill, which set the CSS-variable-based color via the SVG `fill` *attribute* (unreliable for `var()`) instead of inline `style.fill` (reliable) — arrows in a non-"Default" card color could fail to pick up the right tip color.
+  - Fixed the To-do card's checkbox and "+ add item" placeholder always looking dark regardless of the board theme: the checkbox was an unstyled native `<input type="checkbox">` (themed by Obsidian's real app theme, not our board theme) and `.mgn-todo-add`'s placeholder text had no explicit color rule (falling back to Obsidian's default placeholder color). The checkbox is now a custom `currentColor`-based circle (filled when checked) and both `.mgn-todo-add`/`.mgn-todo-title` placeholders now match the existing note-placeholder look (`color: inherit; opacity: 0.55; font-style: italic`), so both follow the card's own color like the rest of its text.
+  - Files: `src/board-view.ts`, `src/types.ts`, `src/main.ts`, `src/settings-ui.ts`, `styles.css`.
+
 ## 2026-07-09 (follow-up)
 
 - Follow-up fixes to the Settings panel added earlier the same day, still v0.4.0 (no separate bump):

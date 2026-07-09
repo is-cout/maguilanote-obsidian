@@ -1,6 +1,8 @@
 import { Setting } from "obsidian";
 import type MaguilanotePlugin from "./main";
 import {
+  CARD_COLOR_NAMES,
+  CUSTOM_CARD_COLOR_KEYS,
   DEFAULT_KEYBINDINGS,
   KeyBinding,
   SHORTCUT_LABELS,
@@ -100,20 +102,6 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
   containerEl.createEl("h3", { text: "Customization" });
 
   new Setting(containerEl)
-    .setName("Text size")
-    .setDesc("Relative scale applied to all board text (titles scale proportionally). Doesn't affect the breadcrumb bar.")
-    .addSlider((sl) =>
-      sl
-        .setLimits(0.8, 1.4, 0.05)
-        .setValue(s.fontScale)
-        .setDynamicTooltip()
-        .onChange(async (v) => {
-          s.fontScale = v;
-          await save();
-        })
-    );
-
-  new Setting(containerEl)
     .setName("Font")
     .addDropdown((d) => {
       for (const [value, label] of FONT_CHOICES) d.addOption(value, label);
@@ -133,8 +121,28 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
         .onChange(async (v) => {
           s.theme = v as "dark" | "light";
           await save();
+          renderSettingsUI(containerEl, plugin); // switch the color section below to the new theme
         })
     );
+
+  // colors are stored separately per theme; only the currently active theme's
+  // set is editable here — switching Theme above swaps which set is shown
+  containerEl.createEl("h4", { text: `${s.theme === "light" ? "Light" : "Dark"} theme colors` });
+  const colors = s.colors[s.theme];
+
+  const colorSetting = (name: string, field: keyof typeof colors) =>
+    new Setting(containerEl).setName(name).addColorPicker((cp) =>
+      cp.setValue(colors[field]).onChange(async (v) => {
+        colors[field] = v;
+        await save();
+      })
+    );
+
+  colorSetting("Board background", "canvasBg");
+  colorSetting("Default card background", "cardDefaultBg");
+  for (const key of CUSTOM_CARD_COLOR_KEYS) {
+    colorSetting(CARD_COLOR_NAMES[key], key);
+  }
 
   containerEl.createEl("h3", { text: "Shortcuts" });
 

@@ -14,9 +14,11 @@ import {
   BoardData,
   DEFAULT_BOARD,
   DEFAULT_KEYBINDINGS,
+  DEFAULT_THEME_COLORS,
   Item,
   KeyBinding,
   ShortcutActionId,
+  ThemeColors,
 } from "./types";
 
 export interface MaguilanoteSettings {
@@ -24,12 +26,12 @@ export interface MaguilanoteSettings {
   gridSize: number;
   defaultNoteWidth: number;
   templatesFolder: string;
-  /** relative text-size multiplier applied to the whole board UI */
-  fontScale: number;
   /** CSS font-family value, or "" to inherit Obsidian's font */
   fontFamily: string;
   theme: "dark" | "light";
   keybindings: Record<ShortcutActionId, KeyBinding | null>;
+  /** customizable background colors, kept separately per theme */
+  colors: { light: ThemeColors; dark: ThemeColors };
 }
 
 const DEFAULT_SETTINGS: MaguilanoteSettings = {
@@ -37,10 +39,10 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   gridSize: 24,
   defaultNoteWidth: 260,
   templatesFolder: "Maguilanote Templates",
-  fontScale: 1,
   fontFamily: "",
   theme: "dark",
   keybindings: { ...DEFAULT_KEYBINDINGS },
+  colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },
 };
 
 export default class MaguilanotePlugin extends Plugin {
@@ -229,6 +231,10 @@ export default class MaguilanotePlugin extends Plugin {
       DEFAULT_KEYBINDINGS,
       this.settings.keybindings
     );
+    this.settings.colors = {
+      light: Object.assign({}, DEFAULT_THEME_COLORS.light, this.settings.colors?.light),
+      dark: Object.assign({}, DEFAULT_THEME_COLORS.dark, this.settings.colors?.dark),
+    };
   }
 
   /** re-apply appearance (theme/font) to every open board and refresh keyboard shortcuts */
