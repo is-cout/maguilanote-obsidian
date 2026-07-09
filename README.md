@@ -20,7 +20,11 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Sketch: a card you draw inside via a popup canvas; shows a preview on the board
 
 **Connections**
-- Arrows, solid/dashed, arrowhead toggle, reversible, labels
+- Line tool: drag it onto the board, then drag either endpoint onto a card to anchor it (or leave it free)
+- Card-hover blue dot: drag to another card to draw an arrow (drop on empty canvas for a free end)
+- Two routing modes, switchable per line from its right-click menu: **Free** (straight, drag its middle dot to curve it) and **Smart** (auto-routed around cards)
+- Arrows, solid/dashed, arrowhead toggle, reversible, labels, color
+- Rubber-band select works on lines too (both ends must be inside the selection box); Delete removes selected lines
 
 **Text editing**
 - Full Markdown: headings, bold/italic/strikethrough, lists, quotes, code, links, `[[wikilinks]]`
@@ -45,7 +49,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 ## Usage
 
 - The ribbon icon or the **"Maguilanote: New board"** command creates a `.board` file.
-- Double-click the canvas to create a note. The left toolbar adds every other card type — click it, or drag it onto the canvas.
+- Double-click the canvas to create a note. The left toolbar adds every other card type — **drag** a tool onto the canvas to create it where you drop it (a plain click on a drag-only tool just shakes it as a hint). Draw is the exception: click it (or press `D`) to enter draw mode.
 - Click a card to select it; drag to move. Inputs inside a card only activate once it is selected. Double-click to edit/open.
 - Drag files from the OS or from Obsidian's file explorer straight onto the board (`.board` files become nested boards).
 - Alt+drag duplicates. The bottom bar has zoom controls, 1:1, fit, and a snap-to-grid toggle (Ctrl while dragging inverts snap).

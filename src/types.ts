@@ -39,10 +39,31 @@ export interface Item {
   strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
 }
 
+/** A world-space point used for a free (unanchored) line endpoint. */
+export interface Point { x: number; y: number; }
+
+/**
+ * An edge/line. Each endpoint is EITHER anchored to an item (`from`/`to` id)
+ * OR free-floating at a world point (`fromPt`/`toPt`). A standalone line
+ * dropped from the toolbar starts with both endpoints free; dragging an
+ * endpoint handle onto a card anchors that end to the card.
+ *
+ * `mode` picks the routing style: "free" draws a straight line clipped to
+ * each end's boundary (optionally curved through `bend`); "smart" uses the
+ * older routed-bezier logic that picks a face per side and bends around it.
+ * Missing `mode` means "smart", for backward compatibility with boards saved
+ * before this field existed — new lines are created with `mode: "free"`.
+ * `bend` (free mode only) is a world point the line's midpoint is dragged
+ * to, turning the straight segment into a curve.
+ */
 export interface Edge {
   id: string;
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
+  fromPt?: Point;
+  toPt?: Point;
+  mode?: "free" | "smart";
+  bend?: Point;
   label?: string;
   arrow?: boolean;
   dashed?: boolean;

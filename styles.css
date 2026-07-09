@@ -611,6 +611,23 @@
   pointer-events: stroke;
   cursor: pointer;
 }
+.mgn-edge-handle {
+  fill: var(--mgn-white);
+  stroke: var(--mgn-accent);
+  stroke-width: 2;
+  pointer-events: all;
+  cursor: grab;
+}
+.mgn-edge-bend-handle {
+  fill: var(--mgn-accent);
+  opacity: 0.6;
+  cursor: grab;
+}
+/* card highlighted as a line-endpoint drop target */
+.mgn-conn-target {
+  outline: 2px solid var(--mgn-accent);
+  outline-offset: 2px;
+}
 .mgn-edge-labels {
   position: absolute;
   top: 0;
@@ -671,6 +688,29 @@
   height: 1px;
   background: var(--mgn-panel-border);
   margin: 4px 2px;
+}
+/* drag-only tool clicked instead of dragged: shake + hint */
+.mgn-tool-shake {
+  animation: mgn-shake 0.4s ease;
+}
+@keyframes mgn-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.mgn-drag-hint {
+  position: absolute;
+  left: calc(100% + 8px);
+  white-space: nowrap;
+  background: var(--mgn-panel-bg);
+  color: var(--mgn-panel-text);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  box-shadow: var(--mgn-panel-shadow);
+  pointer-events: none;
+  z-index: 30;
 }
 
 /* ------------ bottom bar (zoom + snap) ------------ */

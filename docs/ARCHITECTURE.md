@@ -25,9 +25,13 @@ A board file is:
 {
   "version": 1,
   "items": [ /* Item[] — notes, images, links, files, columns, todos, swatches, comments, nested boards */ ],
-  "edges": [ /* Edge[] — arrows/lines between item ids */ ]
+  "edges": [ /* Edge[] — arrows/lines; each end is an item id (from/to) or a free world point (fromPt/toPt) */ ]
 }
 ```
+
+An `Edge` connects two endpoints. Each end is **either** anchored to an item (`from`/`to` = item id) **or** free-floating (`fromPt`/`toPt` = `{x, y}` world point). A line dropped from the toolbar starts with both ends free; dragging an endpoint handle onto a card anchors that end. Optional `label`, `arrow`, `dashed`, `color` control appearance.
+
+`mode` selects the routing style: `"free"` (default for new lines) draws a straight segment clipped to each end's boundary, optionally bowed into a curve through `bend` (a `{x, y}` world point, dragged from the line's midpoint handle); `"smart"` uses the older auto-routed bezier that picks a side per card and bends around it. A missing `mode` is treated as `"smart"` so boards saved before this field existed keep their original look.
 
 `Item.type` is one of: `note`, `image`, `link`, `file`, `column`, `todo`, `swatch`, `comment`, `board`, `drawing`, `sketch` (see `ItemType` in `src/types.ts`). Every item has a position (`x`, `y`), width (`w`) and optional manual height (`h`); content that grows taller than `h` is never clipped. Items can be nested inside a `column` item via `parent` + `order`.
 
