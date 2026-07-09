@@ -43,7 +43,8 @@ type DragMode =
     }
   | { kind: "rubber"; startX: number; startY: number; el: HTMLElement }
   | { kind: "resize"; id: string; startWX: number; startWY: number; w0: number; h0: number }
-  | { kind: "connect"; from: string; tempPath: SVGPathElement };
+  | { kind: "connect"; from: string; tempPath: SVGPathElement }
+  | { kind: "line-end"; id: string; end: "from" | "to"; moved: boolean };
 
 export class BoardView extends TextFileView {
   plugin: MaguilanotePlugin;
@@ -57,7 +58,6 @@ export class BoardView extends TextFileView {
 
   selection = new Set<string>();
   selectedEdge: string | null = null;
-  connectFrom: string | null = null;
   spaceDown = false;
   drag: DragMode = { kind: "none" };
 
@@ -564,43 +564,49 @@ export class BoardView extends TextFileView {
     // toolbar
     const tb = root.createDiv({ cls: "mgn-toolbar" });
     this.tbEl = tb;
+    // A tool is either drag-only (has `drag`, no `click`) or click-only
+    // (`click`, optionally also draggable). Clicking a drag-only tool can't
+    // create anything, so it shakes and shows a hint instead.
     const tool = (
       icon: string,
       label: string,
-      cb: (ev: MouseEvent) => void,
-      dragKey?: string
+      opts: { drag?: string; click?: (ev: MouseEvent) => void }
     ) => {
       const b = tb.createDiv({ cls: "mgn-tool", attr: { "aria-label": label } });
       setIcon(b, icon);
-      b.addEventListener("click", cb);
-      if (dragKey) {
+      if (opts.click) {
+        b.addEventListener("click", opts.click);
+      } else if (opts.drag) {
+        b.addEventListener("click", () => this.dragHint(b, label));
+      }
+      if (opts.drag) {
         b.draggable = true;
         b.addEventListener("dragstart", (ev: DragEvent) => {
-          ev.dataTransfer?.setData("mgn-tool", dragKey);
+          ev.dataTransfer?.setData("mgn-tool", opts.drag!);
           if (ev.dataTransfer) ev.dataTransfer.effectAllowed = "copy";
         });
       }
       return b;
     };
-    tool("sticky-note", "Note (N) — click or drag", () => this.addNote(), "note");
-    tool("list-todo", "To-do list (T) — click or drag", () => this.addTodo(), "todo");
-    tool("columns-3", "Column (C) — click or drag", () => this.addColumn(), "column");
-    tool("image", "Image — click or drag", () => this.imgInput.click(), "image");
-    tool("link", "Link (L) — click or drag", () => this.promptLink(), "link");
-    tool("file", "Vault file — click or drag", () => new VaultFilePicker(this.app, (f) => this.addVaultFile(f)).open(), "file");
-    tool("layout-dashboard", "Nested board (B) — click or drag", () => this.promptBoard(), "board");
-    tool("palette", "Color swatch (S) — click or drag", () => this.addSwatch(), "swatch");
-    tool("message-circle", "Comment (M) — click or drag", () => this.addComment(), "comment");
-    const connBtn = tool("spline", "Connect mode: click two cards (A)", () => {
-      this.connectFrom = null;
-      connBtn.toggleClass("mgn-tool-active", !connBtn.hasClass("mgn-tool-active"));
-    });
-    tool("pencil", "Draw on the board (D)", () => this.enterDrawMode());
-    tool("pen-tool", "Sketch card — click or drag", () => this.addSketch(), "sketch");
+    // group 1 — draggables (drag onto the board to create)
+    tool("sticky-note", "Note — drag onto the board", { drag: "note" });
+    tool("list-todo", "To-do list — drag onto the board", { drag: "todo" });
+    tool("spline", "Line — drag onto the board, then drag its ends", { drag: "line" });
+    tool("columns-3", "Column — drag onto the board", { drag: "column" });
+    tool("layout-dashboard", "Nested board — drag onto the board", { drag: "board" });
+    tool("palette", "Color swatch — drag onto the board", { drag: "swatch" });
+    tool("pen-tool", "Sketch card — drag onto the board", { drag: "sketch" });
+    tool("message-circle", "Comment — drag onto the board", { drag: "comment" });
     tb.createDiv({ cls: "mgn-tool-sep" });
-    tool("undo-2", "Undo (Ctrl+Z)", () => this.undo());
-    tool("redo-2", "Redo (Ctrl+Shift+Z)", () => this.redo());
-    tool("keyboard", "Shortcuts (/)", () => new ShortcutsModal(this.app).open());
+    // group 2 — flexible tools
+    tool("image", "Image — drag onto the board", { drag: "image" });
+    tool("file", "Vault file — drag onto the board", { drag: "file" });
+    tool("link", "Link — drag onto the board", { drag: "link" });
+    tool("pencil", "Draw on the board (D)", { click: () => this.enterDrawMode() });
+    tb.createDiv({ cls: "mgn-tool-sep" });
+    tool("undo-2", "Undo (Ctrl+Z)", { click: () => this.undo() });
+    tool("redo-2", "Redo (Ctrl+Shift+Z)", { click: () => this.redo() });
+    tool("keyboard", "Shortcuts (/)", { click: () => new ShortcutsModal(this.app).open() });
 
     this.imgInput = tb.createEl("input", {
       type: "file",
@@ -730,6 +736,19 @@ export class BoardView extends TextFileView {
 
   async onClose() {
     this.contentEl.empty();
+  }
+
+  /** visual nudge for a drag-only tool clicked instead of dragged */
+  private dragHint(btn: HTMLElement, label: string) {
+    btn.removeClass("mgn-tool-shake");
+    void btn.offsetWidth; // restart the CSS animation
+    btn.addClass("mgn-tool-shake");
+    btn.addEventListener("animationend", () => btn.removeClass("mgn-tool-shake"), { once: true });
+
+    this.tbEl.querySelector(".mgn-drag-hint")?.remove();
+    const hint = this.tbEl.createDiv({ cls: "mgn-drag-hint", text: label });
+    hint.style.top = `${btn.offsetTop}px`;
+    window.setTimeout(() => hint.remove(), 1600);
   }
 
   // ------------------------------------------------------------- transforms
@@ -891,6 +910,20 @@ export class BoardView extends TextFileView {
       return;
     }
 
+    // dragging a selected line's endpoint handle
+    const handleEl = target.closest<SVGElement>(".mgn-edge-handle");
+    if (handleEl?.dataset.id && handleEl.dataset.end) {
+      this.drag = {
+        kind: "line-end",
+        id: handleEl.dataset.id,
+        end: handleEl.dataset.end as "from" | "to",
+        moved: false,
+      };
+      this.viewportEl.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {
       const id = edgeEl.dataset.id;
@@ -928,21 +961,6 @@ export class BoardView extends TextFileView {
         const f = this.resolveFile(it.path);
         if (f) this.app.workspace.getLeaf("tab").openFile(f);
         else this.relinkItem(it);
-        return;
-      }
-
-      // toolbar connect-mode: two clicks
-      const connActive = this.contentEl.querySelector(".mgn-tool-active:not(.mgn-snap)");
-      if (connActive && connActive.closest(".mgn-toolbar")) {
-        if (!this.connectFrom) {
-          this.connectFrom = id;
-          new Notice("Now click the target card");
-        } else if (this.connectFrom !== id) {
-          this.board.edges.push({ id: newId(), from: this.connectFrom, to: id, arrow: true });
-          this.connectFrom = null;
-          connActive.removeClass("mgn-tool-active");
-          this.commit();
-        }
         return;
       }
 
@@ -985,7 +1003,6 @@ export class BoardView extends TextFileView {
     this.lastDownOnCanvas = true;
     this.selection.clear();
     this.selectedEdge = null;
-    this.connectFrom = null;
     this.refreshSelectionClasses();
     this.drawEdges();
     const band = this.viewportEl.createDiv({ cls: "mgn-rubber" });
@@ -1014,9 +1031,14 @@ export class BoardView extends TextFileView {
       if (n.parent) n.parent = idMap.get(n.parent) ?? undefined;
     }
     for (const e of this.board.edges) {
-      const nf = idMap.get(e.from);
-      const nt = idMap.get(e.to);
-      if (nf && nt) this.board.edges.push({ ...structuredClone(e), id: newId(), from: nf, to: nt });
+      if (e.from === undefined && e.to === undefined) continue; // free line, not tied to items
+      if ((e.from && !idMap.has(e.from)) || (e.to && !idMap.has(e.to))) continue;
+      this.board.edges.push({
+        ...structuredClone(e),
+        id: newId(),
+        from: e.from ? idMap.get(e.from) : undefined,
+        to: e.to ? idMap.get(e.to) : undefined,
+      });
     }
     this.board.items.push(...clones);
     return rootIds.map((id) => idMap.get(id)!).filter(Boolean);
@@ -1145,6 +1167,18 @@ export class BoardView extends TextFileView {
         d.tempPath.setAttr("marker-end", "url(#mgn-arrowhead)");
         break;
       }
+      case "line-end": {
+        const edge = this.board.edges.find((x) => x.id === d.id);
+        if (!edge) break;
+        d.moved = true;
+        const w = this.screenToWorld(e.clientX, e.clientY);
+        // detach from any anchored card and follow the pointer as a free end
+        if (d.end === "from") { edge.from = undefined; edge.fromPt = { x: w.x, y: w.y }; }
+        else { edge.to = undefined; edge.toPt = { x: w.x, y: w.y }; }
+        this.highlightCardUnder(e);
+        this.drawEdges();
+        break;
+      }
     }
   }
 
@@ -1208,18 +1242,52 @@ export class BoardView extends TextFileView {
       }
       case "connect": {
         d.tempPath.remove();
-        const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-        const card = under?.closest<HTMLElement>(".mgn-card");
-        const to = card?.dataset.id;
+        const to = this.cardIdUnder(e);
         if (to && to !== d.from) {
           this.board.edges.push({ id: newId(), from: d.from, to, arrow: true });
           this.commit();
-        } else {
+        } else if (to === d.from) {
           this.drawEdges();
+        } else {
+          // dropped on empty canvas: create a line with a free end
+          const w = this.screenToWorld(e.clientX, e.clientY);
+          this.board.edges.push({ id: newId(), from: d.from, toPt: { x: w.x, y: w.y }, arrow: true });
+          this.commit();
         }
         break;
       }
+      case "line-end": {
+        this.clearCardHighlight();
+        if (!d.moved) { this.drawEdges(); break; }
+        const edge = this.board.edges.find((x) => x.id === d.id);
+        if (edge) {
+          const over = this.cardIdUnder(e);
+          if (over) {
+            // anchor this end to the card under the pointer
+            if (d.end === "from") { edge.from = over; edge.fromPt = undefined; }
+            else { edge.to = over; edge.toPt = undefined; }
+          }
+        }
+        this.commit();
+        break;
+      }
     }
+  }
+
+  /** id of the topmost card under the pointer, or null over empty canvas */
+  cardIdUnder(e: PointerEvent | MouseEvent): string | null {
+    const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    return under?.closest<HTMLElement>(".mgn-card")?.dataset.id ?? null;
+  }
+
+  highlightCardUnder(e: PointerEvent) {
+    this.clearCardHighlight();
+    const id = this.cardIdUnder(e);
+    if (id) this.worldEl.querySelector(`.mgn-card[data-id="${id}"]`)?.addClass("mgn-conn-target");
+  }
+
+  clearCardHighlight() {
+    this.worldEl.querySelectorAll(".mgn-conn-target").forEach((el) => el.removeClass("mgn-conn-target"));
   }
 
   columnUnder(e: PointerEvent, draggedIds: string[]): Item | null {
@@ -1419,6 +1487,7 @@ export class BoardView extends TextFileView {
       }));
       menu.addItem((i) => i.setTitle("Reverse direction").setIcon("arrow-left-right").onClick(() => {
         [edge.from, edge.to] = [edge.to, edge.from];
+        [edge.fromPt, edge.toPt] = [edge.toPt, edge.fromPt];
         this.commit();
       }));
       menu.addSeparator();
@@ -1538,7 +1607,6 @@ export class BoardView extends TextFileView {
       this.closePreview();
       this.selection.clear();
       this.selectedEdge = null;
-      this.connectFrom = null;
       this.contentEl.querySelector(".mgn-toolbar .mgn-tool-active")?.removeClass("mgn-tool-active");
       this.refreshSelectionClasses();
       this.drawEdges();
@@ -1558,22 +1626,9 @@ export class BoardView extends TextFileView {
       this.commit();
       return;
     }
-    // quick add
-    const c = this.viewCenter();
+    // quick actions (drag-only tools have no shortcut — they must be dragged)
     switch (e.key.toLowerCase()) {
-      case "n": this.addNote(c.x, c.y, true); break;
-      case "t": this.addTodo(); break;
-      case "c": this.addColumn(); break;
-      case "l": this.promptLink(); break;
-      case "b": this.promptBoard(); break;
-      case "s": this.addSwatch(); break;
-      case "m": this.addComment(); break;
       case "d": this.enterDrawMode(); break;
-      case "a": {
-        const btn = this.contentEl.querySelectorAll(".mgn-toolbar .mgn-tool")[9] as HTMLElement | undefined;
-        btn?.click();
-        break;
-      }
       case "/": e.preventDefault(); new ShortcutsModal(this.app).open(); break;
       case "0": if (mod) { this.setZoom(1); } break;
     }
@@ -1633,6 +1688,7 @@ export class BoardView extends TextFileView {
       case "swatch": this.addSwatch(x, y); break;
       case "comment": this.addComment(x, y); break;
       case "sketch": this.addSketch(x, y); break;
+      case "line": this.addLine(x, y); break;
       case "link": this.promptLink({ x, y }); break;
       case "board": this.promptBoard({ x, y }); break;
       case "image":
@@ -1644,6 +1700,22 @@ export class BoardView extends TextFileView {
         new VaultFilePicker(this.app, (f) => this.addVaultFile(f)).open();
         break;
     }
+  }
+
+  /** drop a standalone line centered on (x, y); both ends free, selected */
+  addLine(x: number, y: number) {
+    const half = 80;
+    const edge = {
+      id: newId(),
+      fromPt: { x: x - half, y },
+      toPt: { x: x + half, y },
+      arrow: false,
+    };
+    this.board.edges.push(edge);
+    this.selection.clear();
+    this.selectedEdge = edge.id;
+    this.refreshSelectionClasses();
+    this.commit();
   }
 
   promptLink(pos?: { x: number; y: number }) {
@@ -1701,12 +1773,12 @@ export class BoardView extends TextFileView {
     }
     const items = this.board.items.filter((i) => ids.has(i.id)).map((i) => structuredClone(i));
     const edges = this.board.edges
-      .filter((e) => ids.has(e.from) && ids.has(e.to))
+      .filter((e) => !!e.from && !!e.to && ids.has(e.from) && ids.has(e.to))
       .map((e) => structuredClone(e));
     this.plugin.clipboard = { items, edges };
     if (cut) {
       this.board.items = this.board.items.filter((i) => !ids.has(i.id));
-      this.board.edges = this.board.edges.filter((e) => !ids.has(e.from) && !ids.has(e.to));
+      this.board.edges = this.board.edges.filter((e) => !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to)));
       this.selection.clear();
       this.commit();
     }
@@ -1729,8 +1801,8 @@ export class BoardView extends TextFileView {
       if (!n.parent) { n.x += 30; n.y += 30; }
     }
     for (const e of clip.edges) {
-      const nf = idMap.get(e.from);
-      const nt = idMap.get(e.to);
+      const nf = e.from ? idMap.get(e.from) : undefined;
+      const nt = e.to ? idMap.get(e.to) : undefined;
       if (nf && nt) this.board.edges.push({ ...structuredClone(e), id: newId(), from: nf, to: nt });
     }
     this.board.items.push(...clones);
@@ -1753,7 +1825,7 @@ export class BoardView extends TextFileView {
       if (it.parent && ids.has(it.parent)) ids.add(it.id);
     }
     this.board.items = this.board.items.filter((i) => !ids.has(i.id));
-    this.board.edges = this.board.edges.filter((e) => !ids.has(e.from) && !ids.has(e.to));
+    this.board.edges = this.board.edges.filter((e) => !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to)));
     this.selection.clear();
     this.commit();
   }

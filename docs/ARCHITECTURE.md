@@ -25,9 +25,11 @@ A board file is:
 {
   "version": 1,
   "items": [ /* Item[] — notes, images, links, files, columns, todos, swatches, comments, nested boards */ ],
-  "edges": [ /* Edge[] — arrows/lines between item ids */ ]
+  "edges": [ /* Edge[] — arrows/lines; each end is an item id (from/to) or a free world point (fromPt/toPt) */ ]
 }
 ```
+
+An `Edge` connects two endpoints. Each end is **either** anchored to an item (`from`/`to` = item id) **or** free-floating (`fromPt`/`toPt` = `{x, y}` world point). A line dropped from the toolbar starts with both ends free; dragging an endpoint handle onto a card anchors that end. Optional `label`, `arrow`, `dashed`, `color` control appearance.
 
 `Item.type` is one of: `note`, `image`, `link`, `file`, `column`, `todo`, `swatch`, `comment`, `board`, `drawing`, `sketch` (see `ItemType` in `src/types.ts`). Every item has a position (`x`, `y`), width (`w`) and optional manual height (`h`); content that grows taller than `h` is never clipped. Items can be nested inside a `column` item via `parent` + `order`.
 

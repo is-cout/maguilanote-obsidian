@@ -324,12 +324,20 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
 
 export function drawEdgesFn(view: BoardView) {
   if (!view.svgEl) return;
-  view.svgEl.querySelectorAll(".mgn-edge, .mgn-edge-hit").forEach((p) => p.remove());
+  view.svgEl.querySelectorAll(".mgn-edge, .mgn-edge-hit, .mgn-edge-handle").forEach((p) => p.remove());
   view.labelsEl.empty();
   const rects = view.cardWorldRects();
+  // resolve an endpoint to a rect: an anchored end uses the card rect; a free
+  // end (fromPt/toPt) becomes a zero-size rect at that world point so the
+  // existing attach-point math works unchanged.
+  const endRect = (id: string | undefined, pt: { x: number; y: number } | undefined) => {
+    if (id) return rects.get(id) ?? null;
+    if (pt) return { x: pt.x, y: pt.y, w: 0, h: 0 };
+    return null;
+  };
   for (const e of view.board.edges) {
-    const a = rects.get(e.from);
-    const b = rects.get(e.to);
+    const a = endRect(e.from, e.fromPt);
+    const b = endRect(e.to, e.toPt);
     if (!a || !b) continue;
     const acx = a.x + a.w / 2, acy = a.y + a.h / 2;
     const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
@@ -377,6 +385,17 @@ export function drawEdgesFn(view: BoardView) {
       lb.style.left = `${mx}px`;
       lb.style.top = `${my}px`;
       lb.dataset.id = e.id;
+    }
+    // draggable endpoint handles for the selected edge
+    if (view.selectedEdge === e.id) {
+      for (const [end, hx, hy] of [["from", x1, y1], ["to", x2, y2]] as const) {
+        const h = view.svgEl.createSvg("circle", {
+          cls: "mgn-edge-handle",
+          attr: { cx: hx, cy: hy, r: 6 },
+        });
+        h.dataset.id = e.id;
+        h.dataset.end = end;
+      }
     }
   }
 }

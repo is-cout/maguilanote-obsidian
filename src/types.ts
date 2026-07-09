@@ -39,10 +39,21 @@ export interface Item {
   strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
 }
 
+/** A world-space point used for a free (unanchored) line endpoint. */
+export interface Point { x: number; y: number; }
+
+/**
+ * An edge/line. Each endpoint is EITHER anchored to an item (`from`/`to` id)
+ * OR free-floating at a world point (`fromPt`/`toPt`). A standalone line
+ * dropped from the toolbar starts with both endpoints free; dragging an
+ * endpoint handle onto a card anchors that end to the card.
+ */
 export interface Edge {
   id: string;
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
+  fromPt?: Point;
+  toPt?: Point;
   label?: string;
   arrow?: boolean;
   dashed?: boolean;
