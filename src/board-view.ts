@@ -30,6 +30,27 @@ import {
 
 export const VIEW_TYPE_BOARD = "maguilanote-board";
 
+/** true if segment (x0,y0)-(x1,y1) touches or crosses axis-aligned rect [xmin,xmax]x[ymin,ymax] (Liang-Barsky clip test) */
+function segmentIntersectsRect(
+  x0: number, y0: number, x1: number, y1: number,
+  xmin: number, ymin: number, xmax: number, ymax: number
+): boolean {
+  let t0 = 0, t1 = 1;
+  const dx = x1 - x0, dy = y1 - y0;
+  const p = [-dx, dx, -dy, dy];
+  const q = [x0 - xmin, xmax - x0, y0 - ymin, ymax - y0];
+  for (let i = 0; i < 4; i++) {
+    if (p[i] === 0) {
+      if (q[i] < 0) return false; // parallel to this edge and outside it
+    } else {
+      const r = q[i] / p[i];
+      if (p[i] < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+  }
+  return true;
+}
+
 type DragMode =
   | { kind: "none" }
   | { kind: "pan"; startX: number; startY: number; panX: number; panY: number }
@@ -927,6 +948,10 @@ export class BoardView extends TextFileView {
 
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {
+      // without this, the browser's default mousedown action blurs viewportEl
+      // right after this handler runs, so a later Delete keypress never reaches
+      // our keydown listener (every other branch here already does this)
+      e.preventDefault();
       const id = edgeEl.dataset.id;
       const now = Date.now();
       const isDouble = this.lastClickId === id && now - this.lastClickAt < 450;
@@ -1136,10 +1161,9 @@ export class BoardView extends TextFileView {
           if (r.x < wp2.x && r.x + r.w > wp1.x && r.y < wp2.y && r.y + r.h > wp1.y)
             this.selection.add(it.id);
         }
-        // a line is selected only when both of its endpoints lie inside the band
+        // a line is selected when any part of it touches the band (same
+        // "touches" semantic as cards above, not full enclosure)
         this.selectedEdges.clear();
-        const inBand = (p: { x: number; y: number }) =>
-          p.x >= wp1.x && p.x <= wp2.x && p.y >= wp1.y && p.y <= wp2.y;
         const endPoint = (id: string | undefined, pt: { x: number; y: number } | undefined) => {
           if (pt) return pt;
           const r = id ? rects.get(id) : undefined;
@@ -1148,7 +1172,8 @@ export class BoardView extends TextFileView {
         for (const ed of this.board.edges) {
           const p1 = endPoint(ed.from, ed.fromPt);
           const p2 = endPoint(ed.to, ed.toPt);
-          if (p1 && p2 && inBand(p1) && inBand(p2)) this.selectedEdges.add(ed.id);
+          if (p1 && p2 && segmentIntersectsRect(p1.x, p1.y, p2.x, p2.y, wp1.x, wp1.y, wp2.x, wp2.y))
+            this.selectedEdges.add(ed.id);
         }
         this.refreshSelectionClasses();
         this.drawEdges();
