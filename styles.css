@@ -487,7 +487,8 @@
 }
 .mgn-todo-title::placeholder,
 .mgn-todo-add::placeholder {
-  color: inherit;
+  color: inherit !important; /* form-control placeholders don't inherit color by
+    default (Obsidian sets its own), so this needs !important to actually win */
   opacity: 0.55;
   font-style: italic;
 }
@@ -516,6 +517,8 @@
   height: 13px;
   margin: 0;
   border-radius: 50%;
+  color: inherit !important; /* form controls don't inherit `color` by default,
+    so currentColor below would otherwise resolve to Obsidian's own default */
   border: 1.5px solid currentColor;
   opacity: 0.55;
   background: transparent;
