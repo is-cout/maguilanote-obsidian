@@ -18,6 +18,7 @@ import {
   BoardData,
   CARD_COLORS,
   CUSTOM_CARD_COLOR_KEYS,
+  DEFAULT_STROKE_COLOR,
   DRAW_GROUP_DISTANCE,
   Edge,
   IMAGE_EXTS,
@@ -211,7 +212,7 @@ export class BoardView extends TextFileView {
     });
   }
 
-  /** apply the user's text-scale / font / theme settings to this board's DOM */
+  /** apply the user's font / theme / color settings to this board's DOM */
   applyAppearance() {
     const s = this.plugin.settings;
     this.contentEl.style.setProperty("--mgn-font-family", s.fontFamily || "inherit");
@@ -223,6 +224,12 @@ export class BoardView extends TextFileView {
     for (const key of CUSTOM_CARD_COLOR_KEYS) {
       this.contentEl.style.setProperty(`--mgn-card-color-${key}`, c[key]);
     }
+  }
+
+  /** Draw/Sketch's default pen color: readable against the opposite end of the
+   * theme spectrum (white ink on the dark theme, dark ink on the light theme). */
+  private defaultStrokeColor(): string {
+    return this.plugin.settings.theme === "dark" ? "#ffffff" : DEFAULT_STROKE_COLOR;
   }
 
   /** re-pick the vault file a card points to (broken/renamed references) */
@@ -438,6 +445,7 @@ export class BoardView extends TextFileView {
       svg: surface,
       toCoords: (e) => this.screenToWorld(e.clientX, e.clientY),
     });
+    session.color = this.defaultStrokeColor();
     if (editItem?.strokes) {
       // rebase local strokes back to world coords for editing
       session.setStrokes(
@@ -531,6 +539,7 @@ export class BoardView extends TextFileView {
         return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
       },
     });
+    session.color = this.defaultStrokeColor();
     session.setStrokes(it.strokes ?? []);
 
     let toolbar: ContextToolbar;

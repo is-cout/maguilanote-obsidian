@@ -4,6 +4,11 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-09 (follow-up 3)
+
+- Fixed the To-do checkbox and "+ add item" placeholder still not following the board theme in dark mode: form controls don't inherit `color` from their ancestors by default (Obsidian's own reset wins), so `currentColor`/`color: inherit` alone weren't enough — added `!important` to both. Files: `styles.css`.
+- Draw and Sketch now start with a theme-relative default pen color instead of always defaulting to dark ink (`#33343d`, invisible-ish on a dark canvas): white on the dark theme, dark on the light theme. New `BoardView.defaultStrokeColor()`, applied when a draw session starts (`enterDrawMode`) or a sketch popup opens. Files: `src/board-view.ts`.
+
 ## 2026-07-09 (follow-up 2)
 
 - Second follow-up to the Settings panel, still v0.4.0 (no separate bump):
