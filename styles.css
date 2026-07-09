@@ -25,8 +25,11 @@
   --mgn-panel-text-strong: #eee;
   --mgn-panel-sep: #55545f;
 
-  /* card face (default "White" preset drives fallback text/placeholder tone) */
+  /* card face (fallback text/placeholder tone) */
   --mgn-card-fg-default: #33343d;
+  /* "Default" card color preset: dark card face in dark theme, white in light theme */
+  --mgn-card-default-bg: #4a4b54;
+  --mgn-card-default-fg: #f0f0f2;
   --mgn-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   --mgn-card-shadow-selected: 0 4px 14px rgba(0, 0, 0, 0.45);
   --mgn-hit: #ffd84a;
@@ -45,6 +48,53 @@
 
   /* pure white, used for the default card face and hover/active text on dark panels */
   --mgn-white: #fff;
+
+  /* customization: relative text scale + font override (set from Settings) */
+  --mgn-font-scale: 1;
+  --mgn-font-family: inherit;
+}
+
+/* light theme palette (applied via .mgn-theme-light on .mgn-root) */
+.mgn-root.mgn-theme-light {
+  --mgn-canvas-bg: #eceef2;
+  --mgn-canvas-dot: #d5d8e0;
+  --mgn-text-muted: #6b6b76;
+  --mgn-text-dim: #55555f;
+  --mgn-text-bright: #1c1c22;
+  --mgn-column-text: #26262e;
+
+  --mgn-accent: #2f7fd6;
+  --mgn-danger: #d84a4a;
+  --mgn-danger-text: #b73434;
+  --mgn-success: #2aa860;
+  --mgn-comment-accent: #d69a1a;
+
+  --mgn-panel-bg: #ffffff;
+  --mgn-panel-border: #d7d9e0;
+  --mgn-panel-shadow: 0 4px 16px rgba(30, 30, 40, 0.12);
+  --mgn-panel-text: #46454f;
+  --mgn-panel-hover-bg: #eef0f5;
+  --mgn-panel-text-strong: #1c1c22;
+  --mgn-panel-sep: #cfd1d9;
+
+  --mgn-card-fg-default: #33343d;
+  --mgn-card-default-bg: #ffffff;
+  --mgn-card-default-fg: #33343d;
+  --mgn-card-shadow: 0 2px 6px rgba(30, 30, 40, 0.14);
+  --mgn-card-shadow-selected: 0 4px 14px rgba(30, 30, 40, 0.2);
+  --mgn-hit: #e6b800;
+  --mgn-link: #2f6fbd;
+  --mgn-board-bg: #f7f7fa;
+
+  --mgn-column-bg: rgba(20, 20, 30, 0.05);
+  --mgn-column-border: rgba(20, 20, 30, 0.16);
+  --mgn-column-chip-bg: rgba(20, 20, 30, 0.08);
+  --mgn-column-empty-border: rgba(20, 20, 30, 0.14);
+
+  --mgn-preview-overlay: rgba(20, 20, 30, 0.35);
+  --mgn-preview-shadow: 0 12px 48px rgba(20, 20, 30, 0.25);
+
+  --mgn-white: #fff;
 }
 
 .mgn-root {
@@ -52,6 +102,7 @@
   overflow: hidden;
   position: relative;
   height: 100%;
+  font-family: var(--mgn-font-family);
 }
 
 /* dark dotted canvas */
@@ -82,7 +133,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   color: var(--mgn-text-muted);
-  font-size: 15px;
+  font-size: calc(var(--mgn-font-scale, 1) * 15px);
   pointer-events: none;
   text-align: center;
   max-width: 380px;
@@ -97,7 +148,7 @@
   box-shadow: var(--mgn-card-shadow);
   padding: 10px 12px;
   box-sizing: border-box;
-  font-size: 14px;
+  font-size: calc(var(--mgn-font-scale, 1) * 14px);
   line-height: 1.45;
   user-select: none;
   cursor: grab;
@@ -137,7 +188,7 @@
   align-items: center;
   gap: 6px;
   color: var(--mgn-danger-text);
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   font-weight: 600;
   margin-top: 4px;
   pointer-events: none;
@@ -151,7 +202,7 @@
   color: inherit;
   opacity: 0.55;
   font-style: italic;
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
 }
 
 /* markdown body inside notes — force readable dark text on the light card,
@@ -169,9 +220,6 @@
 .mgn-note-body,
 .mgn-note-body p,
 .mgn-note-body li,
-.mgn-note-body h1,
-.mgn-note-body h2,
-.mgn-note-body h3,
 .mgn-note-body h4,
 .mgn-note-body h5,
 .mgn-note-body h6,
@@ -183,7 +231,20 @@
 .mgn-note-body blockquote {
   color: inherit !important;
   background: transparent !important;
+  font-size: 1em !important; /* Obsidian's markdown-rendered CSS sets its own absolute
+    size here; force it back to the card's (already text-scale-aware) inherited size */
 }
+.mgn-note-body h1,
+.mgn-note-body h2,
+.mgn-note-body h3 {
+  color: inherit !important;
+  background: transparent !important;
+  /* relative to the inherited (scale-aware) card font-size, so headings keep
+     scaling proportionally with the text-size setting */
+  font-size: 1.5em !important;
+}
+.mgn-note-body h2 { font-size: 1.3em !important; }
+.mgn-note-body h3 { font-size: 1.15em !important; }
 .mgn-note-body a {
   color: var(--mgn-link) !important;
 }
@@ -217,7 +278,10 @@
 .mgn-note-body pre {
   padding: 6px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 0.85em !important;
+}
+.mgn-note-body code {
+  font-size: 0.9em !important;
 }
 .mgn-note-body a {
   pointer-events: auto;
@@ -256,7 +320,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -279,7 +343,7 @@
   pointer-events: none;
 }
 .mgn-caption {
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   padding: 5px 3px 1px;
   opacity: 0.75;
 }
@@ -304,7 +368,7 @@
   white-space: nowrap;
 }
 .mgn-link-url {
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   opacity: 0.55;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -340,10 +404,10 @@
 }
 .mgn-board-title {
   font-weight: 700;
-  font-size: 15px;
+  font-size: calc(var(--mgn-font-scale, 1) * 15px);
 }
 .mgn-board-summary {
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   opacity: 0.55;
 }
 
@@ -365,13 +429,13 @@
   align-items: flex-start;
 }
 .mgn-col-body .mgn-board-title {
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .mgn-col-body .mgn-board-summary {
-  font-size: 10px;
+  font-size: calc(var(--mgn-font-scale, 1) * 10px);
 }
 
 /* swatch card */
@@ -382,7 +446,7 @@
   align-items: flex-end;
 }
 .mgn-swatch-label {
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   font-weight: 600;
   padding: 6px 9px;
   cursor: text;
@@ -409,7 +473,7 @@
   border: none;
   background: transparent;
   font-weight: 700;
-  font-size: 14px;
+  font-size: calc(var(--mgn-font-scale, 1) * 14px);
   color: inherit;
   padding: 0 0 4px 0;
   outline: none;
@@ -441,7 +505,7 @@
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
   outline: none;
 }
 .mgn-todo-text.mgn-done {
@@ -465,7 +529,7 @@
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   opacity: 0.55;
   outline: none;
   margin-top: 4px;
@@ -505,13 +569,13 @@
   background: transparent;
   color: var(--mgn-column-text);
   font-weight: 700;
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   outline: none;
 }
 .mgn-col-count {
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   background: var(--mgn-column-chip-bg);
   border-radius: 10px;
   padding: 1px 7px;
@@ -640,7 +704,7 @@
   color: var(--mgn-column-text);
   border: 1px solid var(--mgn-panel-sep);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   padding: 2px 8px;
   white-space: nowrap;
   cursor: pointer;
@@ -707,7 +771,7 @@
   border: 1px solid var(--mgn-panel-border);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   box-shadow: var(--mgn-panel-shadow);
   pointer-events: none;
   z-index: 30;
@@ -730,13 +794,13 @@
 }
 .mgn-zoom-label {
   color: var(--mgn-panel-text);
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   min-width: 44px;
   text-align: center;
 }
 .mgn-zoom-100 {
   color: var(--mgn-panel-text);
-  font-size: 11px;
+  font-size: calc(var(--mgn-font-scale, 1) * 11px);
   font-weight: 700;
   padding: 0 8px;
   height: 32px;
@@ -776,19 +840,19 @@
   border: none;
   outline: none;
   color: var(--mgn-panel-text-strong);
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
   width: 180px;
 }
 .mgn-search-count {
   color: var(--mgn-text-muted);
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
 }
 
 /* ------------ breadcrumbs ------------ */
 .mgn-crumbs {
   position: absolute;
   top: 10px;
-  left: 12px;
+  left: 52px; /* 12px + settings gear (32px) + 8px gap */
   z-index: 20;
   display: flex;
   align-items: center;
@@ -800,7 +864,7 @@
   height: 32px;
   box-sizing: border-box;
   box-shadow: var(--mgn-panel-shadow);
-  font-size: 14px;
+  font-size: 14px; /* deliberately not scaled by --mgn-font-scale: chrome, not board content */
   max-width: 60%;
   overflow: hidden;
 }
@@ -825,6 +889,52 @@
 }
 .mgn-crumb-sep {
   color: var(--mgn-panel-sep);
+}
+.mgn-settings-btn {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  box-shadow: var(--mgn-panel-shadow);
+  color: var(--mgn-panel-text);
+  cursor: pointer;
+}
+.mgn-settings-btn:hover {
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-white);
+}
+.mgn-settings-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* settings modal + shared with the native plugin settings tab */
+.mgn-settings-modal h3 {
+  margin: 1.2em 0 0.4em;
+}
+.mgn-settings-modal h3:first-child {
+  margin-top: 0;
+}
+.mgn-shortcuts-foldout {
+  margin-top: 1em;
+}
+.mgn-shortcuts-foldout summary {
+  cursor: pointer;
+  font-weight: 600;
+  opacity: 0.7;
+  padding: 4px 0;
+}
+.mgn-shortcuts-foldout .mgn-shortcuts {
+  margin-top: 6px;
 }
 
 /* ------------ inline file preview ------------ */
@@ -860,7 +970,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
   overflow: hidden;
 }
 .mgn-preview-crumbs .mgn-crumb {
@@ -902,7 +1012,7 @@
 .mgn-shortcuts td {
   padding: 5px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
-  font-size: 13px;
+  font-size: calc(var(--mgn-font-scale, 1) * 13px);
 }
 .mgn-shortcut-key {
   font-family: var(--font-monospace);
@@ -1132,7 +1242,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: calc(var(--mgn-font-scale, 1) * 12px);
   opacity: 0.7;
   margin-bottom: 4px;
 }

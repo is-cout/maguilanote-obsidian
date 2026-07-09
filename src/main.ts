@@ -4,19 +4,32 @@ import {
   Notice,
   Plugin,
   PluginSettingTab,
-  Setting,
   TFile,
   TFolder,
   normalizePath,
 } from "obsidian";
 import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
-import { BoardData, DEFAULT_BOARD, Item } from "./types";
+import { renderSettingsUI } from "./settings-ui";
+import {
+  BoardData,
+  DEFAULT_BOARD,
+  DEFAULT_KEYBINDINGS,
+  Item,
+  KeyBinding,
+  ShortcutActionId,
+} from "./types";
 
 export interface MaguilanoteSettings {
   gridSnap: boolean;
   gridSize: number;
   defaultNoteWidth: number;
   templatesFolder: string;
+  /** relative text-size multiplier applied to the whole board UI */
+  fontScale: number;
+  /** CSS font-family value, or "" to inherit Obsidian's font */
+  fontFamily: string;
+  theme: "dark" | "light";
+  keybindings: Record<ShortcutActionId, KeyBinding | null>;
 }
 
 const DEFAULT_SETTINGS: MaguilanoteSettings = {
@@ -24,6 +37,10 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   gridSize: 24,
   defaultNoteWidth: 260,
   templatesFolder: "Maguilanote Templates",
+  fontScale: 1,
+  fontFamily: "",
+  theme: "dark",
+  keybindings: { ...DEFAULT_KEYBINDINGS },
 };
 
 export default class MaguilanotePlugin extends Plugin {
@@ -207,6 +224,18 @@ export default class MaguilanotePlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings.keybindings = Object.assign(
+      {},
+      DEFAULT_KEYBINDINGS,
+      this.settings.keybindings
+    );
+  }
+
+  /** re-apply appearance (theme/font) to every open board and refresh keyboard shortcuts */
+  refreshBoards() {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_BOARD)) {
+      if (leaf.view instanceof BoardView) leaf.view.applyAppearance();
+    }
   }
 
   async saveSettings() {
@@ -247,54 +276,6 @@ class MaguilanoteSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
   display() {
-    const { containerEl } = this;
-    containerEl.empty();
-
-    new Setting(containerEl)
-      .setName("Snap to grid")
-      .setDesc("Snap cards to an invisible grid while dragging. Hold Ctrl while dragging to temporarily invert this mode.")
-      .addToggle((t) =>
-        t.setValue(this.plugin.settings.gridSnap).onChange(async (v) => {
-          this.plugin.settings.gridSnap = v;
-          await this.plugin.saveSettings();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Grid size")
-      .addSlider((s) =>
-        s
-          .setLimits(8, 64, 4)
-          .setValue(this.plugin.settings.gridSize)
-          .setDynamicTooltip()
-          .onChange(async (v) => {
-            this.plugin.settings.gridSize = v;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Default note width")
-      .addSlider((s) =>
-        s
-          .setLimits(160, 480, 20)
-          .setValue(this.plugin.settings.defaultNoteWidth)
-          .setDynamicTooltip()
-          .onChange(async (v) => {
-            this.plugin.settings.defaultNoteWidth = v;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Templates folder")
-      .addText((t) =>
-        t
-          .setValue(this.plugin.settings.templatesFolder)
-          .onChange(async (v) => {
-            this.plugin.settings.templatesFolder = v || "Maguilanote Templates";
-            await this.plugin.saveSettings();
-          })
-      );
+    renderSettingsUI(this.containerEl, this.plugin);
   }
 }

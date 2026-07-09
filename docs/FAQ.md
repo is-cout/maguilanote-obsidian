@@ -4,7 +4,7 @@ Practical "where do I go to change X" answers. For the how-things-fit-together v
 
 ### How do I change the available card colors?
 
-Edit `CARD_COLORS` in `src/types.ts`. Each entry is `{ key, name, bg, fg }` — `key` is what gets stored in the board file, `bg`/`fg` are the background/text colors shown in the color picker. Add, remove, or restyle entries there; the color picker UI reads this array directly, nothing else needs to change.
+Edit `CARD_COLORS` in `src/types.ts`. Each entry is `{ key, name, bg, fg }` — `key` is what gets stored in the board file, `bg`/`fg` are the background/text colors shown in the color picker (`bg`/`fg` can be a plain hex or a `var(--...)` CSS variable, like the `"default"` entry does to stay theme-adaptive). Add, remove, or restyle entries there; the color picker UI reads this array directly, nothing else needs to change. If you remove a `key` that might already be stored in existing boards, add an alias for it in `LEGACY_COLOR_ALIASES` (same file) so old boards keep resolving to a valid color instead of silently falling back to index 0.
 
 ### How do I change the default width of a new note?
 
@@ -37,7 +37,11 @@ The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in
 
 ### How do I change keyboard shortcuts?
 
-The key handling lives in `src/board-view.ts` (search for the keydown listener). The cheat sheet shown when pressing `/` is `ShortcutsModal` in `src/modals.ts` — update both together so the displayed shortcuts stay accurate.
+Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb trail → **Settings** → **Shortcuts**. Bindings are stored in `MaguilanoteSettings.keybindings` (`src/main.ts`), keyed by `ShortcutActionId`. To add a new rebindable action: add the id to `ShortcutActionId`, its label to `SHORTCUT_LABELS`, and its default to `DEFAULT_KEYBINDINGS` (all in `src/types.ts`), then check `matchesBinding(e, kb.<id>)` in `onKeyDown` in `src/board-view.ts`. Mouse/gesture-only shortcuts (not key-based) are the static `MOUSE_SHORTCUTS` reference table in `src/modals.ts` (`SettingsModal`).
+
+### How do I change text size / font / theme defaults?
+
+`DEFAULT_SETTINGS.fontScale` (relative multiplier), `.fontFamily`, and `.theme` (`"dark" | "light"`) in `src/main.ts` — all exposed as user settings (gear icon → Settings → Customization). The dark palette lives in `:root` and the light palette in `.mgn-root.mgn-theme-light` in `styles.css`; every `font-size` in that file is `calc(... * var(--mgn-font-scale))` so the multiplier scales all text proportionally.
 
 ### How do I change the default templates folder name?
 

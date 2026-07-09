@@ -10,7 +10,7 @@ import {
   setIcon,
 } from "obsidian";
 import type MaguilanotePlugin from "./main";
-import { ShortcutsModal, TextPromptModal, VaultFilePicker } from "./modals";
+import { SettingsModal, TextPromptModal, VaultFilePicker } from "./modals";
 import { drawEdgesFn, renderCardFn } from "./render";
 import { ContextToolbar, CtxGroup, DrawSession, DrawTool, groupStrokes } from "./draw";
 import {
@@ -24,6 +24,7 @@ import {
   STROKE_SIZES,
   VIDEO_EXTS,
   colorOf,
+  matchesBinding,
   newId,
   parseBoard,
 } from "./types";
@@ -200,6 +201,14 @@ export class BoardView extends TextFileView {
         this.crumbsEl.createSpan({ cls: "mgn-crumb-sep", text: "›" });
       }
     });
+  }
+
+  /** apply the user's text-scale / font / theme settings to this board's DOM */
+  applyAppearance() {
+    const s = this.plugin.settings;
+    this.contentEl.style.setProperty("--mgn-font-scale", String(s.fontScale));
+    this.contentEl.style.setProperty("--mgn-font-family", s.fontFamily || "inherit");
+    this.contentEl.toggleClass("mgn-theme-light", s.theme === "light");
   }
 
   /** re-pick the vault file a card points to (broken/renamed references) */
@@ -628,7 +637,6 @@ export class BoardView extends TextFileView {
     tb.createDiv({ cls: "mgn-tool-sep" });
     tool("undo-2", "Undo (Ctrl+Z)", { click: () => this.undo() });
     tool("redo-2", "Redo (Ctrl+Shift+Z)", { click: () => this.redo() });
-    tool("keyboard", "Shortcuts (/)", { click: () => new ShortcutsModal(this.app).open() });
 
     this.imgInput = tb.createEl("input", {
       type: "file",
@@ -734,9 +742,19 @@ export class BoardView extends TextFileView {
     });
     this.searchEl.hide();
 
+    // settings gear, separate panel to the left of the breadcrumb trail
+    const settingsBtn = root.createDiv({
+      cls: "mgn-settings-btn",
+      attr: { "aria-label": "Maguilanote settings" },
+    });
+    setIcon(settingsBtn, "settings");
+    settingsBtn.addEventListener("click", () => new SettingsModal(this.app, this.plugin).open());
+
     // breadcrumb navigation (Board 1 › Board 2)
     this.crumbsEl = root.createDiv({ cls: "mgn-crumbs" });
     this.renderCrumbs();
+
+    this.applyAppearance();
 
     // events
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPointerDown(e));
@@ -1627,25 +1645,27 @@ export class BoardView extends TextFileView {
     }
     if (editing) return;
 
+    const kb = this.plugin.settings.keybindings;
+
     if (this.drawMode) {
-      const m = e.ctrlKey || e.metaKey;
       if (e.key === "Escape") { e.preventDefault(); this.exitDrawMode(false); return; }
-      if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); this.drawMode.session.undo(); return; }
-      if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); this.drawMode.session.redo(); return; }
+      if (matchesBinding(e, kb.undo)) { e.preventDefault(); this.drawMode.session.undo(); return; }
+      if (matchesBinding(e, kb.redo)) { e.preventDefault(); this.drawMode.session.redo(); return; }
       return; // swallow board shortcuts while drawing
     }
 
-    const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
-    if ((mod && e.key.toLowerCase() === "z" && e.shiftKey) || (mod && e.key.toLowerCase() === "y")) { e.preventDefault(); this.redo(); return; }
-    if (mod && e.key.toLowerCase() === "d") { e.preventDefault(); this.duplicateSelection(); return; }
-    if (mod && e.key.toLowerCase() === "c") { e.preventDefault(); this.copySelection(false); return; }
-    if (mod && e.key.toLowerCase() === "x") { e.preventDefault(); this.copySelection(true); return; }
-    if (mod && e.key.toLowerCase() === "v") { this.pasteInternal(); return; }
-    if (mod && e.key.toLowerCase() === "a") { e.preventDefault(); this.selection = new Set(this.board.items.filter((i) => !i.parent).map((i) => i.id)); this.refreshSelectionClasses(); return; }
-    if (mod && e.key.toLowerCase() === "f") { e.preventDefault(); this.openSearch(); return; }
+    if (matchesBinding(e, kb.undo)) { e.preventDefault(); this.undo(); return; }
+    if (matchesBinding(e, kb.redo)) { e.preventDefault(); this.redo(); return; }
+    if (matchesBinding(e, kb.duplicate)) { e.preventDefault(); this.duplicateSelection(); return; }
+    if (matchesBinding(e, kb.copy)) { e.preventDefault(); this.copySelection(false); return; }
+    if (matchesBinding(e, kb.cut)) { e.preventDefault(); this.copySelection(true); return; }
+    if (matchesBinding(e, kb.paste)) { this.pasteInternal(); return; }
+    if (matchesBinding(e, kb.selectAll)) { e.preventDefault(); this.selection = new Set(this.board.items.filter((i) => !i.parent).map((i) => i.id)); this.refreshSelectionClasses(); return; }
+    if (matchesBinding(e, kb.search)) { e.preventDefault(); this.openSearch(); return; }
+    if (matchesBinding(e, kb.drawMode)) { this.enterDrawMode(); return; }
+    if (matchesBinding(e, kb.zoomReset)) { e.preventDefault(); this.setZoom(1); return; }
 
-    if (e.key === "Delete" || e.key === "Backspace") {
+    if (matchesBinding(e, kb.deleteSelection) || e.key === "Backspace") {
       e.preventDefault();
       if (this.selectedEdges.size) {
         this.board.edges = this.board.edges.filter((x) => !this.selectedEdges.has(x.id));
@@ -1678,12 +1698,6 @@ export class BoardView extends TextFileView {
       }
       this.commit();
       return;
-    }
-    // quick actions (drag-only tools have no shortcut — they must be dragged)
-    switch (e.key.toLowerCase()) {
-      case "d": this.enterDrawMode(); break;
-      case "/": e.preventDefault(); new ShortcutsModal(this.app).open(); break;
-      case "0": if (mod) { this.setZoom(1); } break;
     }
   }
 

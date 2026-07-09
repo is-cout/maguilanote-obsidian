@@ -1,4 +1,6 @@
 import { App, FuzzySuggestModal, Modal, Setting, TFile } from "obsidian";
+import type MaguilanotePlugin from "./main";
+import { renderSettingsUI } from "./settings-ui";
 
 export class TextPromptModal extends Modal {
   constructor(
@@ -54,40 +56,17 @@ export class VaultFilePicker extends FuzzySuggestModal<TFile> {
   }
 }
 
-export class ShortcutsModal extends Modal {
-  onOpen() {
-    this.titleEl.setText("Maguilanote shortcuts");
-    const rows: [string, string][] = [
-      ["Double-click canvas", "New note"],
-      ["Click a card", "Select (then drag to move)"],
-      ["Double-click a card", "Edit note / open board / preview file"],
-      ["Ctrl+click file/board card", "Open the real file in a new tab"],
-      ["Drag a toolbar button", "Create the element where you drop it"],
-      ["Alt+drag a card", "Duplicate while dragging"],
-      ["Ctrl while dragging", "Invert snap-to-grid"],
-      ["D", "Draw on the board"],
-      ["Drag the blue dot", "Draw an arrow (drop on empty canvas for a free end)"],
-      ["Drag the Line tool", "Add a line, then drag its ends to connect cards"],
-      ["Drag a line's middle dot", "Curve it (Free lines only)"],
-      ["Double-click an arrow", "Edit its label"],
-      ["Right-click an arrow", "Line menu (color, arrowhead, dashed, Free/Smart routing...)"],
-      ["Ctrl+Z / Ctrl+Shift+Z", "Undo / Redo"],
-      ["Ctrl+C / X / V / D", "Copy / Cut / Paste / Duplicate"],
-      ["Ctrl+A", "Select all"],
-      ["Ctrl+F", "Search this board"],
-      ["Delete", "Delete selection"],
-      ["Arrow keys (+Shift)", "Nudge selection 1px (10px)"],
-      ["Ctrl+scroll", "Zoom"],
-      ["Scroll / middle mouse / Space+drag", "Pan"],
-      ["Right-click", "Card menu (color, lock, order, replace reference...)"],
-    ];
-    const table = this.contentEl.createEl("table", { cls: "mgn-shortcuts" });
-    for (const [k, v] of rows) {
-      const tr = table.createEl("tr");
-      tr.createEl("td", { text: k, cls: "mgn-shortcut-key" });
-      tr.createEl("td", { text: v });
-    }
+export class SettingsModal extends Modal {
+  constructor(app: App, private plugin: MaguilanotePlugin) {
+    super(app);
   }
+
+  onOpen() {
+    this.titleEl.setText("Maguilanote settings");
+    this.modalEl.addClass("mgn-settings-modal");
+    renderSettingsUI(this.contentEl, this.plugin);
+  }
+
   onClose() {
     this.contentEl.empty();
   }

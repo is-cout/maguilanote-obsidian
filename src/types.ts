@@ -84,8 +84,10 @@ export function newId(): string {
 
 export interface CardColor { key: string; name: string; bg: string; fg: string; }
 
+// "default" resolves via CSS vars (--mgn-card-default-bg/fg), which flip between
+// the old "white" and "dark" presets depending on the active board theme.
 export const CARD_COLORS: CardColor[] = [
-  { key: "white", name: "White", bg: "#ffffff", fg: "#33343d" },
+  { key: "default", name: "Default", bg: "var(--mgn-card-default-bg)", fg: "var(--mgn-card-default-fg)" },
   { key: "yellow", name: "Yellow", bg: "#fff5c0", fg: "#33343d" },
   { key: "orange", name: "Orange", bg: "#ffd9b0", fg: "#33343d" },
   { key: "red", name: "Red", bg: "#ffc7c2", fg: "#33343d" },
@@ -94,11 +96,74 @@ export const CARD_COLORS: CardColor[] = [
   { key: "teal", name: "Teal", bg: "#bdede0", fg: "#33343d" },
   { key: "green", name: "Green", bg: "#d3f2c0", fg: "#33343d" },
   { key: "gray", name: "Gray", bg: "#e4e4e8", fg: "#33343d" },
-  { key: "dark", name: "Dark", bg: "#4a4b54", fg: "#f0f0f2" },
 ];
 
+// boards saved before "white"/"dark" were merged into "default" keep working
+const LEGACY_COLOR_ALIASES: Record<string, string> = { white: "default", dark: "default" };
+
 export function colorOf(key: string | undefined): CardColor {
-  return CARD_COLORS.find((c) => c.key === key) ?? CARD_COLORS[0];
+  const k = key ? LEGACY_COLOR_ALIASES[key] ?? key : "default";
+  return CARD_COLORS.find((c) => c.key === k) ?? CARD_COLORS[0];
+}
+
+// ---------------------------------------------------------------- shortcuts
+
+/** A rebindable keyboard shortcut. `null` means "unbound". */
+export interface KeyBinding { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean; }
+
+export type ShortcutActionId =
+  | "undo" | "redo" | "duplicate" | "copy" | "cut" | "paste"
+  | "selectAll" | "search" | "deleteSelection" | "drawMode" | "zoomReset";
+
+export const SHORTCUT_LABELS: Record<ShortcutActionId, string> = {
+  undo: "Undo",
+  redo: "Redo",
+  duplicate: "Duplicate selection",
+  copy: "Copy",
+  cut: "Cut",
+  paste: "Paste",
+  selectAll: "Select all",
+  search: "Search this board",
+  deleteSelection: "Delete selection",
+  drawMode: "Enter draw mode",
+  zoomReset: "Reset zoom to 100%",
+};
+
+export const DEFAULT_KEYBINDINGS: Record<ShortcutActionId, KeyBinding | null> = {
+  undo: { key: "z", ctrl: true },
+  redo: { key: "z", ctrl: true, shift: true },
+  duplicate: { key: "d", ctrl: true },
+  copy: { key: "c", ctrl: true },
+  cut: { key: "x", ctrl: true },
+  paste: { key: "v", ctrl: true },
+  selectAll: { key: "a", ctrl: true },
+  search: { key: "f", ctrl: true },
+  deleteSelection: { key: "delete" },
+  drawMode: { key: "d" },
+  zoomReset: { key: "0", ctrl: true },
+};
+
+/** Human-readable label for a binding, e.g. "Ctrl+Shift+Z". Empty string if unbound. */
+export function keyBindingLabel(b: KeyBinding | null | undefined): string {
+  if (!b) return "";
+  const parts: string[] = [];
+  if (b.ctrl) parts.push("Ctrl");
+  if (b.alt) parts.push("Alt");
+  if (b.shift) parts.push("Shift");
+  const key = b.key === " " ? "Space" : b.key.length === 1 ? b.key.toUpperCase() : b.key;
+  parts.push(key);
+  return parts.join("+");
+}
+
+/** True if the keydown event matches the given binding. */
+export function matchesBinding(e: KeyboardEvent, b: KeyBinding | null | undefined): boolean {
+  if (!b) return false;
+  if (e.key.toLowerCase() !== b.key.toLowerCase()) return false;
+  const mod = e.ctrlKey || e.metaKey;
+  if (!!b.ctrl !== mod) return false;
+  if (!!b.shift !== e.shiftKey) return false;
+  if (!!b.alt !== e.altKey) return false;
+  return true;
 }
 
 export function parseBoard(raw: string): BoardData {

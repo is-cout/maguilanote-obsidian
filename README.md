@@ -33,7 +33,12 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Canvas**
 - Select/drag, multi-select, group move, resize
 - Alt+drag duplicate, snap-to-grid, undo/redo, cut/copy/paste
-- Shortcuts cheat sheet, zoom controls
+- Zoom controls
+
+**Settings**
+- Gear icon next to the breadcrumb trail opens the Settings panel
+- Customization: relative text-size scale, font, dark/light theme
+- Shortcuts: rebind any keyboard shortcut (click to record, reset to default), plus a mouse/gesture reference
 
 **Search & export**
 - In-board search, export to Markdown, import from OS/vault
@@ -53,7 +58,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Click a card to select it; drag to move. Inputs inside a card only activate once it is selected. Double-click to edit/open.
 - Drag files from the OS or from Obsidian's file explorer straight onto the board (`.board` files become nested boards).
 - Alt+drag duplicates. The bottom bar has zoom controls, 1:1, fit, and a snap-to-grid toggle (Ctrl while dragging inverts snap).
-- Press `/` inside a board to see all shortcuts.
+- Click the gear icon next to the breadcrumb trail to open Settings (text size, font, theme, shortcuts).
 
 ## Building from source
 
