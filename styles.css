@@ -1255,6 +1255,15 @@
   touch-action: none;
 }
 
+.mgn-record-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 36px;
+  margin-top: 4px;
+}
+
 /* record popup */
 .mgn-record-panel {
   width: auto;
@@ -1272,6 +1281,13 @@
   align-items: center;
   gap: 6px;
   width: 100%;
+}
+.mgn-record-viz {
+  width: 100%;
+  height: 56px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  color: var(--mgn-accent);
 }
 .mgn-record-timer {
   font-size: 1.4em;

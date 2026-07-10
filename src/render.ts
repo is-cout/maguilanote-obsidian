@@ -183,7 +183,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       head.createDiv({ cls: "mgn-link-title", text: "Record" });
       const f = view.resolveFile(it.path);
       if (!it.path) {
-        el.createDiv({ cls: "mgn-placeholder", text: "Double-click to record" });
+        el.createDiv({ cls: "mgn-placeholder mgn-record-placeholder", text: "Double-click to record" });
       } else if (!f) {
         markMissing(el);
       } else {
