@@ -106,6 +106,7 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
     .setName("Default microphone")
     .setDesc("Used to pre-select the mic when opening a Record card's recording popup.")
     .addDropdown((d) => {
+      d.selectEl.addClass("mgn-mic-dropdown");
       d.addOption("", "System default");
       d.setValue(s.defaultMicId);
       navigator.mediaDevices?.enumerateDevices().then((devices) => {

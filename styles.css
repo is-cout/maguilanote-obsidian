@@ -1255,6 +1255,12 @@
   touch-action: none;
 }
 
+.mgn-mic-dropdown {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .mgn-record-placeholder {
   display: flex;
   align-items: center;

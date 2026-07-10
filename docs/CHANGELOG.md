@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-10 (v0.7.1)
+
+- Fixed the "Default microphone" dropdown in Settings → Recording rendering oversized: a native `<select>` sizes itself to its widest option, and mic device labels can be long (e.g. "Microphone (Realtek High Definition Audio)"), unlike the short Font/Theme dropdown options elsewhere. Capped it with `.mgn-mic-dropdown` (`max-width: 220px` + ellipsis) so it matches the other dropdowns' size. Files: `src/settings-ui.ts`, `styles.css`.
+
 ## 2026-07-10 (v0.7.0)
 
 - Moved the OpenAI API key **out of the vault on desktop**: it was living in `data.json` inside `.obsidian/plugins/maguilanote/`, so any vault backup/sync would carry it along. New `src/secrets.ts` stores it as plain JSON at `~/.maguilanote/secrets.json` (OS user home, outside any vault; best-effort `chmod 600` on POSIX) and is used whenever `Platform.isDesktopApp` is true. This is "not backed up with your notes," not OS-keychain-grade encryption — still plaintext on disk. Mobile has no filesystem access outside the vault, so `MaguilanoteSettings.openaiApiKey` remains as a mobile-only fallback (still in `data.json`, still included in vault backups there — the Settings description now says so explicitly). New `MaguilanotePlugin.getOpenAiApiKey()` picks the right source; `BoardView.transcribeRecord` and the Settings UI both read/write through it instead of `settings.openaiApiKey` directly. Files: `src/secrets.ts` (new), `src/main.ts`, `src/settings-ui.ts`, `src/board-view.ts`.
