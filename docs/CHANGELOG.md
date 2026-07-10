@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-10 (v0.7.0)
+
+- Moved the OpenAI API key **out of the vault on desktop**: it was living in `data.json` inside `.obsidian/plugins/maguilanote/`, so any vault backup/sync would carry it along. New `src/secrets.ts` stores it as plain JSON at `~/.maguilanote/secrets.json` (OS user home, outside any vault; best-effort `chmod 600` on POSIX) and is used whenever `Platform.isDesktopApp` is true. This is "not backed up with your notes," not OS-keychain-grade encryption — still plaintext on disk. Mobile has no filesystem access outside the vault, so `MaguilanoteSettings.openaiApiKey` remains as a mobile-only fallback (still in `data.json`, still included in vault backups there — the Settings description now says so explicitly). New `MaguilanotePlugin.getOpenAiApiKey()` picks the right source; `BoardView.transcribeRecord` and the Settings UI both read/write through it instead of `settings.openaiApiKey` directly. Files: `src/secrets.ts` (new), `src/main.ts`, `src/settings-ui.ts`, `src/board-view.ts`.
+
 ## 2026-07-10 (v0.6.0)
 
 - Added **"Transcribe text"** to a Record card's right-click menu (shown once it has a recording). Sends the audio file to the OpenAI Whisper API (`whisper-1`, REST `fetch`, no new npm dependency) using a new **OpenAI API key** setting (Settings → Recording, stored locally in `data.json`, only ever used for this call). On success, creates a new note card next to the recording with the transcribed text and connects the two with an arrow (`BoardView.transcribeRecord`). This is a paid, external, opt-in feature — nothing is sent anywhere unless the user pastes an API key and explicitly invokes it; without a key it shows a Notice pointing at the setting instead of failing silently. Files: `src/board-view.ts`, `src/main.ts`, `src/settings-ui.ts`.

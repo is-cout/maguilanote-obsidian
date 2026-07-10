@@ -1,5 +1,6 @@
-import { Setting } from "obsidian";
+import { Platform, Setting } from "obsidian";
 import type MaguilanotePlugin from "./main";
+import { loadOpenAiApiKey, saveOpenAiApiKey } from "./secrets";
 import {
   CARD_COLOR_NAMES,
   CUSTOM_CARD_COLOR_KEYS,
@@ -121,12 +122,22 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
 
   new Setting(containerEl)
     .setName("OpenAI API key")
-    .setDesc("Used only by \"Transcribe text\" on Record cards (calls the Whisper API). Stored locally in this vault's plugin data, never sent anywhere else.")
+    .setDesc(
+      Platform.isDesktopApp
+        ? "Used only by \"Transcribe text\" on Record cards (calls the Whisper API). Stored outside this vault, in your OS user profile, so it's never swept up by a vault backup."
+        : "Used only by \"Transcribe text\" on Record cards (calls the Whisper API). Mobile has no storage outside the vault, so this is saved in the vault's plugin data — it WILL be included in a vault backup."
+    )
     .addText((t) => {
       t.inputEl.type = "password";
-      t.setPlaceholder("sk-...").setValue(s.openaiApiKey).onChange(async (v) => {
-        s.openaiApiKey = v.trim();
-        await save();
+      t.setPlaceholder("sk-...").setValue(Platform.isDesktopApp ? loadOpenAiApiKey() : s.openaiApiKey);
+      t.onChange(async (v) => {
+        const key = v.trim();
+        if (Platform.isDesktopApp) {
+          saveOpenAiApiKey(key);
+        } else {
+          s.openaiApiKey = key;
+          await save();
+        }
       });
     });
 

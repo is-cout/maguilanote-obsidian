@@ -2227,7 +2227,7 @@ export class BoardView extends TextFileView {
   /** transcribe a record card's audio via the OpenAI Whisper API, dropping the
    * result into a new note card connected back to the recording */
   async transcribeRecord(it: Item) {
-    const apiKey = this.plugin.settings.openaiApiKey;
+    const apiKey = this.plugin.getOpenAiApiKey();
     if (!apiKey) {
       new Notice("Set an OpenAI API key in Settings → Recording first");
       return;
