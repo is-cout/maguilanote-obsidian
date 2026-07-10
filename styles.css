@@ -1260,8 +1260,8 @@
    width (e.g. the Font dropdown, which stays narrow only because its longest
    label is short). Cap it back to a normal dropdown width. */
 .mgn-mic-dropdown {
-  width: 190px !important;
-  max-width: 190px !important;
+  width: 170px !important;
+  max-width: 170px !important;
   flex: 0 0 auto !important;
   overflow: hidden;
   text-overflow: ellipsis;
