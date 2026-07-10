@@ -78,5 +78,9 @@ Every version bump updates all three, to the same `x.y.z`:
 3. Add a `docs/CHANGELOG.md` entry (already required by the living-docs policy).
 4. Commit, then tag: `git tag -a v<x.y.z> -m "v<x.y.z>"` and push the tag.
 
+Pushing the tag triggers a GitHub Release automatically — see
+[Git Workflow & Commits](git.instructions.md) for commit conventions and the release
+automation details.
+
 Do not bump the version speculatively or "while at it" — bump it as part of the plugin
 change that earns it, the same way docs ship with their change.

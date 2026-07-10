@@ -1,0 +1,73 @@
+---
+applyTo: '**'
+---
+
+# Git Workflow & Commits
+
+## Branching (Git Flow)
+
+- `main` — always releasable, reflects the latest released version. Only receives merges
+  from a `release/*` (or `hotfix/*`) branch. Every merge into `main` is tagged.
+- `develop` — integration branch. All `feat/*` and `fix/*` branches merge here first.
+- `feat/<short-name>` — new functionality. Branch off `develop`, merge back into `develop`.
+- `fix/<short-name>` — bug fixes. Branch off `develop`, merge back into `develop`.
+- `chore/<short-name>` — tooling, docs, deps, non-plugin work. Branch off `develop`.
+- `release/<x.y.z>` — cut from `develop` when preparing a release. Version bump, changelog,
+  and last-minute fixes happen here. Merges into both `main` and `develop`, then gets tagged.
+  This is the trigger point for the `release` skill (see Release below).
+- `hotfix/<x.y.z>` — urgent fix cut directly from `main` for an already-released version.
+  Merges into both `main` and `develop`, then gets tagged, same as a release branch.
+
+Releases are **requested, not automatic** — a version bump or a merge to `develop` does not
+by itself create a release. A release only happens when explicitly asked for (see below).
+
+## Commit Messages (Conventional Commits)
+
+Format: `<type>: <short summary>`
+
+Types:
+
+- `feat:` — new feature or capability.
+- `fix:` — bug fix.
+- `docs:` — documentation only (README, docs/, instructions/).
+- `chore:` — tooling, build config, deps, repo maintenance.
+- `refactor:` — code change that neither fixes a bug nor adds a feature.
+- `style:` — formatting only, no code meaning change.
+- `test:` — adding or fixing tests.
+- `ci:` — CI/CD workflow changes.
+
+Rules:
+
+- Summary in imperative mood, lowercase after the colon, no trailing period.
+- Keep commits small and scoped to one logical change.
+- Body (optional) explains *why*, not *what* — the diff already shows what.
+- No Claude/AI co-author trailer in commit messages.
+
+Examples:
+
+```
+feat: add sticky note color picker
+fix: mic dropdown width mismatch with font dropdown
+docs: update changelog for v0.7.1
+chore: pin esbuild to 0.28.1
+```
+
+## Release Procedure
+
+Releases are **user-requested**, not automatic. When Lucas asks for a release, use the
+`release` skill (`.claude/skills/release/`) instead of doing these steps ad hoc — it
+encodes the full sequence below.
+
+Follows [Versioning](versioning.instructions.md) for what bumps the version and which files to sync.
+
+1. Cut `release/<x.y.z>` from `develop`.
+2. Bump `package.json`, `manifest.json`, `versions.json` to the same `x.y.z`.
+3. Update `docs/CHANGELOG.md`.
+4. Commit on the release branch (e.g. `chore: release v0.7.2`).
+5. Merge `release/<x.y.z>` into `main`.
+6. Tag on `main`: `git tag -a v<x.y.z> -m "v<x.y.z>"`.
+7. Merge `release/<x.y.z>` back into `develop` (keeps the bump and any release-branch fixes).
+8. Push `main`, `develop`, and the tag: `git push origin main develop v<x.y.z>`.
+9. Delete the `release/<x.y.z>` branch.
+
+Pushing the `v*` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder).

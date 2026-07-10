@@ -8,6 +8,9 @@ Before responding to any coding task, read the relevant instruction files:
 1. [Response Verbosity](instructions/caveman.instructions.md)
 2. [Living Documentation](instructions/living-docs.instructions.md)
 
+**Read when doing git/commit/release work:**
+3. [Git Workflow & Commits](instructions/git.instructions.md)
+
 Start your response by listing which files were read.
 
 ---
