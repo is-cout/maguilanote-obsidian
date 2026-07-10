@@ -106,7 +106,7 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
     .setName("Default microphone")
     .setDesc("Used to pre-select the mic when opening a Record card's recording popup.")
     .addDropdown((d) => {
-      d.selectEl.addClass("mgn-settings-control-width");
+      d.selectEl.addClass("mgn-mic-dropdown");
       d.addOption("", "System default");
       d.setValue(s.defaultMicId);
       navigator.mediaDevices?.enumerateDevices().then((devices) => {
@@ -130,7 +130,6 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
     )
     .addText((t) => {
       t.inputEl.type = "password";
-      t.inputEl.addClass("mgn-settings-control-width");
       t.setPlaceholder("sk-...").setValue(Platform.isDesktopApp ? loadOpenAiApiKey() : s.openaiApiKey);
       t.onChange(async (v) => {
         const key = v.trim();

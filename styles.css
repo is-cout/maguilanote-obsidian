@@ -1255,9 +1255,13 @@
   touch-action: none;
 }
 
-.mgn-settings-control-width {
-  width: 220px !important;
-  max-width: 220px !important;
+/* native <select> auto-sizes to its widest OPTION, not the selected one — long
+   mic device names would otherwise balloon this past every other dropdown's
+   width (e.g. the Font dropdown, which stays narrow only because its longest
+   label is short). Cap it back to a normal dropdown width. */
+.mgn-mic-dropdown {
+  width: 250px !important;
+  max-width: 250px !important;
   flex: 0 0 auto !important;
   overflow: hidden;
   text-overflow: ellipsis;
