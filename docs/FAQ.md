@@ -31,6 +31,18 @@ All three knobs are constants at the top of `src/types.ts`:
 
 The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in `src/draw.ts`, which wraps `perfect-freehand`'s `getStroke` options.
 
+### How do I change the default microphone for Record cards?
+
+`DEFAULT_SETTINGS.defaultMicId` in `src/main.ts` (default: `""`, meaning system default). Also a user-facing setting (gear icon → Settings → Recording), populated from `navigator.mediaDevices.enumerateDevices()`; it only pre-selects the mic in a Record card's popup, users can still switch mic there per-recording.
+
+### How does "Transcribe text" on a Record card work, and does it cost anything?
+
+It calls the OpenAI Whisper API (`whisper-1`) with the API key from Settings → Recording → "OpenAI API key". This is the only network call the plugin makes to an external service, and it's opt-in: nothing happens until the user pastes a key and right-clicks a recorded card. The Whisper API is paid (usage-based, no free tier) — see [DEPENDENCIES.md](DEPENDENCIES.md) if you're wondering whether this counts as a "dependency" (it doesn't: no npm package, just a `fetch` call).
+
+### Where is the OpenAI API key actually stored — is it in my vault?
+
+On desktop, no: `src/secrets.ts` writes it to `~/.maguilanote/secrets.json`, outside any vault, specifically so a vault backup/sync doesn't carry your key along. It's still plaintext on disk (no OS keychain integration), just not vault-bound. On mobile there's no filesystem access outside the vault, so it falls back to `MaguilanoteSettings.openaiApiKey` in the vault's `data.json` — the Settings screen says so. `MaguilanotePlugin.getOpenAiApiKey()` is the single place that decides which source to read.
+
 ### How do I change which file extensions are treated as images/audio/video?
 
 `IMAGE_EXTS`, `AUDIO_EXTS`, `VIDEO_EXTS` in `src/types.ts`. These decide how a dropped vault file is classified into a card (e.g. an image card vs. a generic file card).

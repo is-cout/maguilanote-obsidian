@@ -2,6 +2,7 @@ import {
   App,
   FuzzySuggestModal,
   Notice,
+  Platform,
   Plugin,
   PluginSettingTab,
   TFile,
@@ -10,6 +11,7 @@ import {
 } from "obsidian";
 import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
 import { renderSettingsUI } from "./settings-ui";
+import { loadOpenAiApiKey } from "./secrets";
 import {
   BoardData,
   DEFAULT_BOARD,
@@ -32,6 +34,13 @@ export interface MaguilanoteSettings {
   keybindings: Record<ShortcutActionId, KeyBinding | null>;
   /** customizable background colors, kept separately per theme */
   colors: { light: ThemeColors; dark: ThemeColors };
+  /** deviceId of the preferred microphone for Record cards, "" = system default */
+  defaultMicId: string;
+  /** OpenAI API key, used only for "Transcribe text" on Record cards.
+   * Mobile-only fallback: on desktop the key lives outside the vault
+   * (see src/secrets.ts) so it isn't swept into vault backups; this field
+   * exists because mobile has no filesystem access outside the vault. */
+  openaiApiKey: string;
 }
 
 const DEFAULT_SETTINGS: MaguilanoteSettings = {
@@ -43,12 +52,19 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   theme: "dark",
   keybindings: { ...DEFAULT_KEYBINDINGS },
   colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },
+  defaultMicId: "",
+  openaiApiKey: "",
 };
 
 export default class MaguilanotePlugin extends Plugin {
   settings: MaguilanoteSettings = DEFAULT_SETTINGS;
   /** internal clipboard shared across boards */
   clipboard: { items: Item[]; edges: BoardData["edges"] } | null = null;
+
+  /** desktop: key lives outside the vault (src/secrets.ts); mobile: settings fallback */
+  getOpenAiApiKey(): string {
+    return Platform.isDesktopApp ? loadOpenAiApiKey() : this.settings.openaiApiKey;
+  }
 
   async onload() {
     await this.loadSettings();

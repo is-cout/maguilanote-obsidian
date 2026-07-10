@@ -177,6 +177,22 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       }
       break;
     }
+    case "record": {
+      const head = el.createDiv({ cls: "mgn-file-head" });
+      setIcon(head.createSpan({ cls: "mgn-link-ico" }), "mic");
+      head.createDiv({ cls: "mgn-link-title", text: "Record" });
+      const f = view.resolveFile(it.path);
+      if (!it.path) {
+        el.createDiv({ cls: "mgn-placeholder mgn-record-placeholder", text: "Double-click to record" });
+      } else if (!f) {
+        markMissing(el);
+      } else {
+        el.createEl("audio", {
+          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;" },
+        });
+      }
+      break;
+    }
     case "board": {
       const inner = el.createDiv({ cls: "mgn-board-inner" });
       setIcon(inner.createDiv({ cls: "mgn-board-ico" }), "layout-dashboard");

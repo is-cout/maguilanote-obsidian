@@ -1255,6 +1255,61 @@
   touch-action: none;
 }
 
+/* native <select> auto-sizes to its widest OPTION, not the selected one — long
+   mic device names would otherwise balloon this past every other dropdown's
+   width (e.g. the Font dropdown, which stays narrow only because its longest
+   label is short). Cap it back to a normal dropdown width. */
+.mgn-mic-dropdown {
+  width: 170px !important;
+  max-width: 170px !important;
+  flex: 0 0 auto !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mgn-record-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 36px;
+  margin-top: 4px;
+}
+
+/* record popup */
+.mgn-record-panel {
+  width: auto;
+}
+.mgn-record-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+}
+.mgn-record-mic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.mgn-record-viz {
+  width: 100%;
+  height: 56px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  color: var(--mgn-accent);
+}
+.mgn-record-timer {
+  font-size: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
+.mgn-record-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
 /* drawing card + sketch preview */
 .mgn-drawing {
   padding: 0;

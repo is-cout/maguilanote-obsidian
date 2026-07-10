@@ -4,6 +4,26 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-10 (v0.7.1)
+
+- Fixed the "Default microphone" dropdown in Settings → Recording rendering oversized: a native `<select>` sizes itself to its widest *option* (not the selected one), and mic device labels can be long (e.g. "Microphone (Realtek High Definition Audio)"), unlike the Font dropdown's short labels. Reverted the earlier attempt that also resized the OpenAI API key field (that field's default Obsidian sizing was fine and shouldn't have been touched) — only `.mgn-mic-dropdown` gets the width cap now (`width/max-width: 250px !important; flex: 0 0 auto !important;`, targeting the Font dropdown's natural size). Files: `src/settings-ui.ts`, `styles.css`.
+
+## 2026-07-10 (v0.7.0)
+
+- Moved the OpenAI API key **out of the vault on desktop**: it was living in `data.json` inside `.obsidian/plugins/maguilanote/`, so any vault backup/sync would carry it along. New `src/secrets.ts` stores it as plain JSON at `~/.maguilanote/secrets.json` (OS user home, outside any vault; best-effort `chmod 600` on POSIX) and is used whenever `Platform.isDesktopApp` is true. This is "not backed up with your notes," not OS-keychain-grade encryption — still plaintext on disk. Mobile has no filesystem access outside the vault, so `MaguilanoteSettings.openaiApiKey` remains as a mobile-only fallback (still in `data.json`, still included in vault backups there — the Settings description now says so explicitly). New `MaguilanotePlugin.getOpenAiApiKey()` picks the right source; `BoardView.transcribeRecord` and the Settings UI both read/write through it instead of `settings.openaiApiKey` directly. Files: `src/secrets.ts` (new), `src/main.ts`, `src/settings-ui.ts`, `src/board-view.ts`.
+
+## 2026-07-10 (v0.6.0)
+
+- Added **"Transcribe text"** to a Record card's right-click menu (shown once it has a recording). Sends the audio file to the OpenAI Whisper API (`whisper-1`, REST `fetch`, no new npm dependency) using a new **OpenAI API key** setting (Settings → Recording, stored locally in `data.json`, only ever used for this call). On success, creates a new note card next to the recording with the transcribed text and connects the two with an arrow (`BoardView.transcribeRecord`). This is a paid, external, opt-in feature — nothing is sent anywhere unless the user pastes an API key and explicitly invokes it; without a key it shows a Notice pointing at the setting instead of failing silently. Files: `src/board-view.ts`, `src/main.ts`, `src/settings-ui.ts`.
+
+## 2026-07-10 (v0.5.0 follow-up)
+
+- Live recording popup now shows a real-time volume/waveform visualizer (`<canvas>` bar meter driven by a Web Audio `AnalyserNode` on the mic stream) instead of just a timer, so it's visible that sound is coming through. Fixed the empty-record card's "Double-click to record" placeholder not being centered (it inherited the generic left-aligned `.mgn-placeholder` layout). Files: `src/board-view.ts`, `src/render.ts`, `styles.css`.
+
+## 2026-07-10 (v0.5.0)
+
+- Added a **Record** card: a new draggable toolbar tool that creates an audio-recording card. Double-clicking it opens a popup with a microphone dropdown, Record/Stop buttons, and a live timer; on save the clip is recorded via `getUserMedia`/`MediaRecorder`, written to the board's `assets/` folder as a `.webm` vault file (reusing the same binary-save pattern as pasted/dropped OS files), and the card then plays it back inline with `<audio controls>`, same as an audio "file" card. New `Item.duration` field (seconds) alongside the existing `path` field (reused for the audio file reference). New Settings → Recording section with a "Default microphone" dropdown (`MaguilanoteSettings.defaultMicId`, populated from `navigator.mediaDevices.enumerateDevices()`), used to pre-select the mic in the recording popup; the popup also lets you switch mic per-recording. Files: `src/types.ts`, `src/board-view.ts`, `src/render.ts`, `src/main.ts`, `src/settings-ui.ts`, `styles.css`.
+
 ## 2026-07-09 (follow-up 3)
 
 - Fixed the To-do checkbox and "+ add item" placeholder still not following the board theme in dark mode: form controls don't inherit `color` from their ancestors by default (Obsidian's own reset wins), so `currentColor`/`color: inherit` alone weren't enough — added `!important` to both. Files: `styles.css`.
