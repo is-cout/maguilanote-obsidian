@@ -1641,6 +1641,11 @@ export class BoardView extends TextFileView {
         i.setTitle("Replace reference...").setIcon("link-2").onClick(() => this.relinkItem(it))
       );
     }
+    if (it.type === "record" && it.path) {
+      menu.addItem((i) =>
+        i.setTitle("Transcribe text").setIcon("captions").onClick(() => this.transcribeRecord(it))
+      );
+    }
     menu.addItem((i) => i.setTitle(it.locked ? "Unlock" : "Lock on board").setIcon(it.locked ? "unlock" : "lock").onClick(() => {
       it.locked = !it.locked;
       this.commit();
@@ -2217,6 +2222,47 @@ export class BoardView extends TextFileView {
       recordBtn.disabled = false;
       stopBtn.disabled = true;
     });
+  }
+
+  /** transcribe a record card's audio via the OpenAI Whisper API, dropping the
+   * result into a new note card connected back to the recording */
+  async transcribeRecord(it: Item) {
+    const apiKey = this.plugin.settings.openaiApiKey;
+    if (!apiKey) {
+      new Notice("Set an OpenAI API key in Settings → Recording first");
+      return;
+    }
+    const f = this.resolveFile(it.path);
+    if (!f) {
+      new Notice("Recording file not found");
+      return;
+    }
+    new Notice("Transcribing...");
+    let text: string;
+    try {
+      const buf = await this.app.vault.readBinary(f);
+      const form = new FormData();
+      form.append("file", new Blob([buf], { type: "audio/webm" }), f.name);
+      form.append("model", "whisper-1");
+      const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+      });
+      if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+      const data = await res.json();
+      text = (data.text ?? "").trim();
+    } catch (err) {
+      new Notice(`Transcription failed: ${err instanceof Error ? err.message : err}`);
+      return;
+    }
+    if (!text) {
+      new Notice("Transcription returned no text");
+      return;
+    }
+    const note = this.addItem({ type: "note", text, w: this.plugin.settings.defaultNoteWidth }, it.x + it.w + 60, it.y);
+    this.board.edges.push({ id: newId(), from: it.id, to: note.id, arrow: true, mode: "free" });
+    this.commit();
   }
 
   // ---------------------------------------------------------------- search

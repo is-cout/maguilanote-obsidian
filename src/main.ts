@@ -34,6 +34,8 @@ export interface MaguilanoteSettings {
   colors: { light: ThemeColors; dark: ThemeColors };
   /** deviceId of the preferred microphone for Record cards, "" = system default */
   defaultMicId: string;
+  /** OpenAI API key, used only for "Transcribe text" on Record cards. Stored locally in data.json. */
+  openaiApiKey: string;
 }
 
 const DEFAULT_SETTINGS: MaguilanoteSettings = {
@@ -46,6 +48,7 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   keybindings: { ...DEFAULT_KEYBINDINGS },
   colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },
   defaultMicId: "",
+  openaiApiKey: "",
 };
 
 export default class MaguilanotePlugin extends Plugin {

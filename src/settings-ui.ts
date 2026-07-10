@@ -119,6 +119,17 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
       });
     });
 
+  new Setting(containerEl)
+    .setName("OpenAI API key")
+    .setDesc("Used only by \"Transcribe text\" on Record cards (calls the Whisper API). Stored locally in this vault's plugin data, never sent anywhere else.")
+    .addText((t) => {
+      t.inputEl.type = "password";
+      t.setPlaceholder("sk-...").setValue(s.openaiApiKey).onChange(async (v) => {
+        s.openaiApiKey = v.trim();
+        await save();
+      });
+    });
+
   containerEl.createEl("h3", { text: "Customization" });
 
   new Setting(containerEl)

@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-10 (v0.6.0)
+
+- Added **"Transcribe text"** to a Record card's right-click menu (shown once it has a recording). Sends the audio file to the OpenAI Whisper API (`whisper-1`, REST `fetch`, no new npm dependency) using a new **OpenAI API key** setting (Settings → Recording, stored locally in `data.json`, only ever used for this call). On success, creates a new note card next to the recording with the transcribed text and connects the two with an arrow (`BoardView.transcribeRecord`). This is a paid, external, opt-in feature — nothing is sent anywhere unless the user pastes an API key and explicitly invokes it; without a key it shows a Notice pointing at the setting instead of failing silently. Files: `src/board-view.ts`, `src/main.ts`, `src/settings-ui.ts`.
+
 ## 2026-07-10 (v0.5.0 follow-up)
 
 - Live recording popup now shows a real-time volume/waveform visualizer (`<canvas>` bar meter driven by a Web Audio `AnalyserNode` on the mic stream) instead of just a timer, so it's visible that sound is coming through. Fixed the empty-record card's "Double-click to record" placeholder not being centered (it inherited the generic left-aligned `.mgn-placeholder` layout). Files: `src/board-view.ts`, `src/render.ts`, `styles.css`.

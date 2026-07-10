@@ -14,7 +14,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Card types**
 - Text note, image, link (auto title, YouTube embed), file (any type, audio/video player)
 - Vault file drag & drop, to-do list, column, color swatch, comment, document note
-- Record: drag onto the board, double-click to open the recording popup (pick a microphone, record, play back)
+- Record: drag onto the board, double-click to open the recording popup (pick a microphone, record, play back); right-click → "Transcribe text" sends it to the OpenAI Whisper API (requires an API key in Settings) and drops the result into a connected note card
 
 **Drawing**
 - Draw: freehand on the board (pen/select/eraser, color, stroke size, pen-pressure), strokes grouped into editable drawings on save
