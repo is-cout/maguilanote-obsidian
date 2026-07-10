@@ -6,7 +6,7 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-07-10 (v0.7.1)
 
-- Fixed the "Default microphone" dropdown in Settings → Recording rendering oversized: a native `<select>` sizes itself to its widest option, and mic device labels can be long (e.g. "Microphone (Realtek High Definition Audio)"), unlike the short Font/Theme dropdown options elsewhere. First pass (`max-width` alone) didn't stick because Obsidian's own setting-control CSS stretches the select via flex; fixed with `.mgn-mic-dropdown { width/max-width: 220px !important; flex: 0 0 auto !important; }` so it matches the other dropdowns' size. Files: `src/settings-ui.ts`, `styles.css`.
+- Fixed the "Default microphone" dropdown in Settings → Recording rendering oversized: a native `<select>` sizes itself to its widest option, and mic device labels can be long (e.g. "Microphone (Realtek High Definition Audio)"), unlike the short Font/Theme dropdown options elsewhere. Instead of guessing a pixel width to match Obsidian's own (undocumented) text-input sizing, both the mic dropdown and the OpenAI API key field now share one `.mgn-settings-control-width` class (`width/max-width: 220px !important; flex: 0 0 auto !important;`) so they're guaranteed identical and match each other exactly, not just approximately. Files: `src/settings-ui.ts`, `styles.css`.
 
 ## 2026-07-10 (v0.7.0)
 

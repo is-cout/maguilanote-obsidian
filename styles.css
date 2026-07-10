@@ -1255,7 +1255,7 @@
   touch-action: none;
 }
 
-.mgn-mic-dropdown {
+.mgn-settings-control-width {
   width: 220px !important;
   max-width: 220px !important;
   flex: 0 0 auto !important;
