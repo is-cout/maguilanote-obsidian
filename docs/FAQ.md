@@ -31,6 +31,10 @@ All three knobs are constants at the top of `src/types.ts`:
 
 The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in `src/draw.ts`, which wraps `perfect-freehand`'s `getStroke` options.
 
+### How do I change the default microphone for Record cards?
+
+`DEFAULT_SETTINGS.defaultMicId` in `src/main.ts` (default: `""`, meaning system default). Also a user-facing setting (gear icon → Settings → Recording), populated from `navigator.mediaDevices.enumerateDevices()`; it only pre-selects the mic in a Record card's popup, users can still switch mic there per-recording.
+
 ### How do I change which file extensions are treated as images/audio/video?
 
 `IMAGE_EXTS`, `AUDIO_EXTS`, `VIDEO_EXTS` in `src/types.ts`. These decide how a dropped vault file is classified into a card (e.g. an image card vs. a generic file card).

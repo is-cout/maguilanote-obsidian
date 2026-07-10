@@ -1,7 +1,7 @@
 export type ItemType =
   | "note" | "image" | "link" | "file" | "column"
   | "todo" | "swatch" | "comment" | "board"
-  | "drawing" | "sketch";
+  | "drawing" | "sketch" | "record";
 
 export interface TodoEntry { text: string; done: boolean; }
 
@@ -37,6 +37,7 @@ export interface Item {
   swatch?: string;
   collapsed?: boolean;
   strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
+  duration?: number; // record card: recording length in seconds
 }
 
 /** A world-space point used for a free (unanchored) line endpoint. */

@@ -1,6 +1,6 @@
 # Maguilanote
 
-A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, images, links, files, columns, to-do lists, color swatches, comments, nested boards and arrows on an infinite canvas, entirely inside your vault.
+A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, images, links, files, columns, to-do lists, color swatches, comments, audio recordings, nested boards and arrows on an infinite canvas, entirely inside your vault.
 
 **Local-first by design.** Each board is a single `.board` JSON file in your vault. There's no account, no server, and no real-time collaboration; sync your vault however you already do (Obsidian Sync, Git, Syncthing, a shared folder...). Cloud collaboration is out of scope for this project, not a missing feature.
 
@@ -14,6 +14,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Card types**
 - Text note, image, link (auto title, YouTube embed), file (any type, audio/video player)
 - Vault file drag & drop, to-do list, column, color swatch, comment, document note
+- Record: drag onto the board, double-click to open the recording popup (pick a microphone, record, play back)
 
 **Drawing**
 - Draw: freehand on the board (pen/select/eraser, color, stroke size, pen-pressure), strokes grouped into editable drawings on save

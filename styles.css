@@ -1255,6 +1255,33 @@
   touch-action: none;
 }
 
+/* record popup */
+.mgn-record-panel {
+  width: auto;
+}
+.mgn-record-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+}
+.mgn-record-mic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.mgn-record-timer {
+  font-size: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
+.mgn-record-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
 /* drawing card + sketch preview */
 .mgn-drawing {
   padding: 0;

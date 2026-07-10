@@ -32,6 +32,8 @@ export interface MaguilanoteSettings {
   keybindings: Record<ShortcutActionId, KeyBinding | null>;
   /** customizable background colors, kept separately per theme */
   colors: { light: ThemeColors; dark: ThemeColors };
+  /** deviceId of the preferred microphone for Record cards, "" = system default */
+  defaultMicId: string;
 }
 
 const DEFAULT_SETTINGS: MaguilanoteSettings = {
@@ -43,6 +45,7 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   theme: "dark",
   keybindings: { ...DEFAULT_KEYBINDINGS },
   colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },
+  defaultMicId: "",
 };
 
 export default class MaguilanotePlugin extends Plugin {

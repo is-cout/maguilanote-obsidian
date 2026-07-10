@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-10 (v0.5.0)
+
+- Added a **Record** card: a new draggable toolbar tool that creates an audio-recording card. Double-clicking it opens a popup with a microphone dropdown, Record/Stop buttons, and a live timer; on save the clip is recorded via `getUserMedia`/`MediaRecorder`, written to the board's `assets/` folder as a `.webm` vault file (reusing the same binary-save pattern as pasted/dropped OS files), and the card then plays it back inline with `<audio controls>`, same as an audio "file" card. New `Item.duration` field (seconds) alongside the existing `path` field (reused for the audio file reference). New Settings → Recording section with a "Default microphone" dropdown (`MaguilanoteSettings.defaultMicId`, populated from `navigator.mediaDevices.enumerateDevices()`), used to pre-select the mic in the recording popup; the popup also lets you switch mic per-recording. Files: `src/types.ts`, `src/board-view.ts`, `src/render.ts`, `src/main.ts`, `src/settings-ui.ts`, `styles.css`.
+
 ## 2026-07-09 (follow-up 3)
 
 - Fixed the To-do checkbox and "+ add item" placeholder still not following the board theme in dark mode: form controls don't inherit `color` from their ancestors by default (Obsidian's own reset wins), so `currentColor`/`color: inherit` alone weren't enough — added `!important` to both. Files: `styles.css`.

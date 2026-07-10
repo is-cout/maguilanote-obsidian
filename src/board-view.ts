@@ -652,6 +652,7 @@ export class BoardView extends TextFileView {
     tool("layout-dashboard", "Nested board", { drag: "board" });
     tool("palette", "Color swatch", { drag: "swatch" });
     tool("pen-tool", "Sketch card", { drag: "sketch" });
+    tool("mic", "Record", { drag: "record" });
     tool("message-circle", "Comment", { drag: "comment" });
     tb.createDiv({ cls: "mgn-tool-sep" });
     // group 2 — flexible tools
@@ -1489,6 +1490,9 @@ export class BoardView extends TextFileView {
       case "sketch":
         this.openSketchPopup(it);
         return;
+      case "record":
+        this.openRecordPopup(it);
+        return;
       case "swatch":
       case "todo":
       case "column":
@@ -1773,6 +1777,10 @@ export class BoardView extends TextFileView {
     this.addItem({ type: "comment", text: "", color: "yellow" }, x, y);
   }
 
+  addRecord(x?: number, y?: number) {
+    this.addItem({ type: "record", w: 220, h: 80 }, x, y);
+  }
+
   createFromTool(key: string, x: number, y: number) {
     switch (key) {
       case "note": this.addNote(x, y, true); break;
@@ -1781,6 +1789,7 @@ export class BoardView extends TextFileView {
       case "swatch": this.addSwatch(x, y); break;
       case "comment": this.addComment(x, y); break;
       case "sketch": this.addSketch(x, y); break;
+      case "record": this.addRecord(x, y); break;
       case "line": this.addLine(x, y); break;
       case "link": this.promptLink({ x, y }); break;
       case "board": this.promptBoard({ x, y }); break;
@@ -2036,6 +2045,135 @@ export class BoardView extends TextFileView {
     } else {
       this.addItem({ type: "file", path: tf.path, title: tf.name, w: 260 }, x, y);
     }
+  }
+
+  /** save a binary blob into the board's assets folder, returning the created file */
+  private async saveAssetBinary(filename: string, buf: ArrayBuffer): Promise<TFile> {
+    const folder = this.file?.parent?.path && this.file.parent.path !== "/"
+      ? this.file.parent.path + "/assets"
+      : "assets";
+    const base = normalizePath(folder);
+    if (!this.app.vault.getAbstractFileByPath(base)) {
+      await this.app.vault.createFolder(base).catch(() => {});
+    }
+    const safe = filename.replace(/[\\/:*?"<>|]/g, "-") || "recording.webm";
+    let path = normalizePath(`${base}/${safe}`);
+    let i = 1;
+    const dot = safe.lastIndexOf(".");
+    const stem = dot > 0 ? safe.slice(0, dot) : safe;
+    const ext = dot > 0 ? safe.slice(dot) : "";
+    while (this.app.vault.getAbstractFileByPath(path)) {
+      path = normalizePath(`${base}/${stem}-${i++}${ext}`);
+    }
+    return this.app.vault.createBinary(path, buf);
+  }
+
+  /** popup recorder for a record card: pick mic, record, save as vault audio file */
+  openRecordPopup(it: Item) {
+    this.closePreview();
+    const ov = this.contentEl.createDiv({ cls: "mgn-preview" });
+    const panel = ov.createDiv({ cls: "mgn-preview-panel mgn-record-panel" });
+    const head = panel.createDiv({ cls: "mgn-preview-head" });
+    head.createDiv({ cls: "mgn-preview-crumbs" }).createSpan({ cls: "mgn-crumb-current", text: "Record" });
+    const body = panel.createDiv({ cls: "mgn-preview-body mgn-record-body" });
+
+    const micRow = body.createDiv({ cls: "mgn-record-mic-row" });
+    micRow.createSpan({ text: "Microphone: " });
+    const micSelect = micRow.createEl("select", { cls: "dropdown" });
+
+    const status = body.createDiv({ cls: "mgn-record-status", text: "Ready" });
+    const timer = body.createDiv({ cls: "mgn-record-timer", text: "00:00" });
+    let existingAudio: HTMLAudioElement | null = null;
+    if (it.path) {
+      const f = this.resolveFile(it.path);
+      if (f) {
+        existingAudio = body.createEl("audio", { attr: { controls: "true" } });
+        existingAudio.src = this.app.vault.getResourcePath(f as TFile);
+      }
+    }
+
+    const btnRow = body.createDiv({ cls: "mgn-record-btn-row" });
+    const recordBtn = btnRow.createEl("button", { text: it.path ? "Record again" : "Record" });
+    const stopBtn = btnRow.createEl("button", { text: "Stop" });
+    stopBtn.disabled = true;
+
+    let stream: MediaStream | null = null;
+    let recorder: MediaRecorder | null = null;
+    let chunks: BlobPart[] = [];
+    let startedAt = 0;
+    let timerHandle: number | undefined;
+    let newBlob: Blob | null = null;
+
+    const stopTimer = () => { if (timerHandle) window.clearInterval(timerHandle); timerHandle = undefined; };
+    const stopStream = () => { stream?.getTracks().forEach((t) => t.stop()); stream = null; };
+
+    const populateMics = async () => {
+      micSelect.empty();
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const mics = devices.filter((d) => d.kind === "audioinput");
+      for (const d of mics) {
+        micSelect.createEl("option", { value: d.deviceId, text: d.label || "Microphone" });
+      }
+      const preferred = this.plugin.settings.defaultMicId;
+      if (preferred && mics.some((d) => d.deviceId === preferred)) micSelect.value = preferred;
+    };
+    populateMics().catch(() => { status.setText("Could not list microphones"); });
+
+    const finish = () => {
+      stopTimer();
+      stopStream();
+      recorder?.stop();
+      recorder = null;
+      document.removeEventListener("keydown", keyHandler, true);
+      ov.remove();
+    };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(); }
+    };
+    document.addEventListener("keydown", keyHandler, true);
+    ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(); });
+
+    recordBtn.addEventListener("click", async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: micSelect.value ? { deviceId: { exact: micSelect.value } } : true,
+        });
+      } catch {
+        status.setText("Microphone access denied");
+        return;
+      }
+      chunks = [];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = async () => {
+        newBlob = new Blob(chunks, { type: "audio/webm" });
+        const buf = await newBlob.arrayBuffer();
+        const tf = await this.saveAssetBinary("recording.webm", buf);
+        it.path = tf.path;
+        it.duration = Math.round((Date.now() - startedAt) / 1000);
+        this.commit(false);
+        this.rerenderItem(it);
+        status.setText("Saved");
+        finish();
+      };
+      recorder.start();
+      startedAt = Date.now();
+      status.setText("Recording…");
+      recordBtn.disabled = true;
+      stopBtn.disabled = false;
+      timerHandle = window.setInterval(() => {
+        const s = Math.floor((Date.now() - startedAt) / 1000);
+        timer.setText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`);
+      }, 250);
+    });
+
+    stopBtn.addEventListener("click", () => {
+      stopTimer();
+      stopStream();
+      recorder?.stop();
+      recordBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
   }
 
   // ---------------------------------------------------------------- search

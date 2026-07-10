@@ -99,6 +99,26 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
       })
     );
 
+  containerEl.createEl("h3", { text: "Recording" });
+
+  new Setting(containerEl)
+    .setName("Default microphone")
+    .setDesc("Used to pre-select the mic when opening a Record card's recording popup.")
+    .addDropdown((d) => {
+      d.addOption("", "System default");
+      d.setValue(s.defaultMicId);
+      navigator.mediaDevices?.enumerateDevices().then((devices) => {
+        for (const dev of devices.filter((x) => x.kind === "audioinput")) {
+          d.addOption(dev.deviceId, dev.label || "Microphone");
+        }
+        d.setValue(s.defaultMicId);
+      });
+      d.onChange(async (v) => {
+        s.defaultMicId = v;
+        await save();
+      });
+    });
+
   containerEl.createEl("h3", { text: "Customization" });
 
   new Setting(containerEl)
