@@ -1,0 +1,478 @@
+/* ------------ cards ------------ */
+.mgn-card {
+  position: absolute;
+  background: var(--mgn-white);
+  color: var(--mgn-card-fg-default);
+  border-radius: 3px;
+  box-shadow: var(--mgn-card-shadow);
+  padding: 10px 12px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.45;
+  user-select: none;
+  cursor: grab;
+  overflow: visible; /* content is never clipped; cards grow vertically */
+}
+.mgn-card:active {
+  cursor: grabbing;
+}
+.mgn-card.mgn-selected {
+  outline: 2px solid var(--mgn-accent);
+  outline-offset: 1px;
+  box-shadow: var(--mgn-card-shadow-selected);
+}
+.mgn-card.mgn-locked {
+  cursor: default;
+}
+.mgn-card.mgn-dim {
+  opacity: 0.25;
+}
+.mgn-card.mgn-hit {
+  outline: 2px solid var(--mgn-hit);
+}
+
+/* UNSELECTED cards are inert: first click selects/moves, only a selected card
+   exposes its inputs for editing */
+.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-todo-del, .mgn-col-collapse, .mgn-swatch-input) {
+  pointer-events: none !important;
+}
+
+/* broken references */
+.mgn-card.mgn-missing {
+  outline: 2px dashed var(--mgn-danger);
+  outline-offset: 1px;
+}
+.mgn-missing-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mgn-danger-text);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  pointer-events: none;
+}
+.mgn-missing-label svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mgn-placeholder {
+  color: inherit;
+  opacity: 0.55;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* markdown body inside notes — force readable dark text on the light card,
+   overriding any Obsidian theme rule */
+.mgn-note-body {
+  pointer-events: none;
+  min-height: 22px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.mgn-note-body pre,
+.mgn-note-body code {
+  white-space: pre-wrap;
+}
+.mgn-note-body,
+.mgn-note-body p,
+.mgn-note-body li,
+.mgn-note-body h4,
+.mgn-note-body h5,
+.mgn-note-body h6,
+.mgn-note-body strong,
+.mgn-note-body em,
+.mgn-note-body span,
+.mgn-note-body td,
+.mgn-note-body th,
+.mgn-note-body blockquote {
+  color: inherit !important;
+  background: transparent !important;
+  font-size: 1em !important; /* Obsidian's markdown-rendered CSS sets its own absolute
+    size here; force it back to the card's font-size */
+}
+.mgn-note-body h1,
+.mgn-note-body h2,
+.mgn-note-body h3 {
+  color: inherit !important;
+  background: transparent !important;
+  font-size: 1.5em !important; /* relative to the card's font-size, for consistent heading hierarchy */
+}
+.mgn-note-body h2 { font-size: 1.3em !important; }
+.mgn-note-body h3 { font-size: 1.15em !important; }
+.mgn-note-body a {
+  color: var(--mgn-link) !important;
+}
+.mgn-note-body pre,
+.mgn-note-body code {
+  background: color-mix(in srgb, currentColor 10%, transparent) !important;
+  color: inherit !important;
+}
+.mgn-note-body p:first-child {
+  margin-top: 0;
+}
+.mgn-note-body p:last-child {
+  margin-bottom: 0;
+}
+.mgn-note-body h1,
+.mgn-note-body h2,
+.mgn-note-body h3 {
+  margin: 0.3em 0 0.2em 0;
+}
+.mgn-note-body ul,
+.mgn-note-body ol {
+  margin: 0.2em 0;
+  padding-left: 1.3em;
+}
+.mgn-note-body blockquote {
+  border-left: 3px solid color-mix(in srgb, currentColor 25%, transparent);
+  margin: 0.3em 0;
+  padding-left: 0.7em;
+  opacity: 0.85;
+}
+.mgn-note-body pre {
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.85em !important;
+}
+.mgn-note-body code {
+  font-size: 0.9em !important;
+}
+.mgn-note-body a {
+  pointer-events: auto;
+}
+
+.mgn-note-edit::placeholder {
+  color: inherit;
+  opacity: 0.55;
+  font-style: italic;
+}
+.mgn-note-edit {
+  width: 100% !important;
+  min-height: 60px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  resize: none;
+  background: transparent !important;
+  color: inherit !important;
+  font: inherit !important;
+  padding: 0 !important;
+  pointer-events: auto;
+}
+.mgn-card input[type="text"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+/* comment card */
+.mgn-comment {
+  border-left: 4px solid var(--mgn-comment-accent);
+}
+.mgn-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+.mgn-comment-head svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* image card */
+.mgn-image {
+  padding: 5px;
+}
+.mgn-image img {
+  display: block;
+  width: 100%;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.mgn-caption {
+  font-size: 12px;
+  padding: 5px 3px 1px;
+  opacity: 0.75;
+}
+
+/* link card */
+.mgn-link-head,
+.mgn-file-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+}
+.mgn-link-ico svg {
+  width: 15px;
+  height: 15px;
+  opacity: 0.6;
+}
+.mgn-link-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mgn-link-url {
+  font-size: 11px;
+  opacity: 0.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+  pointer-events: none;
+}
+
+/* board card (nested board) */
+.mgn-board {
+  text-align: center;
+  padding: 16px 12px 14px;
+  background: var(--mgn-board-bg);
+}
+.mgn-board-inner {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mgn-board-ico svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.65;
+}
+.mgn-board-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.mgn-board-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.mgn-board-summary {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+/* compact board card when stacked inside a column */
+.mgn-col-body .mgn-board {
+  text-align: left;
+  padding: 9px 12px;
+}
+.mgn-col-body .mgn-board-inner {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.mgn-col-body .mgn-board-ico svg {
+  width: 20px;
+  height: 20px;
+}
+.mgn-col-body .mgn-board-text {
+  align-items: flex-start;
+}
+.mgn-col-body .mgn-board-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mgn-col-body .mgn-board-summary {
+  font-size: 10px;
+}
+
+/* swatch card */
+.mgn-swatch {
+  height: 110px;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+}
+.mgn-swatch-label {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 9px;
+  cursor: text;
+}
+.mgn-swatch-input {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+.mgn-swatch:hover .mgn-swatch-input {
+  opacity: 1;
+}
+
+/* todo card */
+.mgn-todo-title {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 14px;
+  color: inherit;
+  padding: 0 0 4px 0;
+  outline: none;
+}
+.mgn-todo-title::placeholder,
+.mgn-todo-add::placeholder {
+  color: inherit !important; /* form-control placeholders don't inherit color by
+    default (Obsidian sets its own), so this needs !important to actually win */
+  opacity: 0.55;
+  font-style: italic;
+}
+.mgn-todo-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.mgn-todo-progress-fill {
+  height: 100%;
+  background: var(--mgn-success);
+  transition: width 0.15s ease;
+}
+.mgn-todo-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+.mgn-todo-row input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  border-radius: 50%;
+  color: inherit !important; /* form controls don't inherit `color` by default,
+    so currentColor below would otherwise resolve to Obsidian's own default */
+  border: 1.5px solid currentColor;
+  opacity: 0.55;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mgn-todo-row input[type="checkbox"]:checked {
+  background: currentColor;
+  border-color: currentColor;
+}
+.mgn-todo-text {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.mgn-todo-text.mgn-done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.mgn-todo-del {
+  opacity: 0;
+  cursor: pointer;
+  display: flex;
+}
+.mgn-todo-del svg {
+  width: 12px;
+  height: 12px;
+}
+.mgn-todo-row:hover .mgn-todo-del {
+  opacity: 0.5;
+}
+.mgn-todo-add {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  outline: none;
+  margin-top: 4px;
+}
+
+/* column card */
+.mgn-column {
+  background: var(--mgn-column-bg);
+  box-shadow: none;
+  border: 1px dashed var(--mgn-column-border);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--mgn-column-text);
+}
+.mgn-column.mgn-col-target {
+  border-color: var(--mgn-accent);
+  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
+}
+.mgn-col-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 8px;
+}
+.mgn-col-collapse {
+  cursor: pointer;
+  display: flex;
+  opacity: 0.7;
+}
+.mgn-col-collapse svg {
+  width: 14px;
+  height: 14px;
+}
+.mgn-col-title {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--mgn-column-text);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+.mgn-col-count {
+  font-size: 11px;
+  background: var(--mgn-column-chip-bg);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.mgn-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+.mgn-col-body .mgn-card {
+  position: relative;
+  width: 100% !important;
+  left: auto !important;
+  top: auto !important;
+  min-height: unset !important;
+}
+.mgn-col-empty {
+  min-height: 34px;
+  border-radius: 4px;
+  border: 1px dashed var(--mgn-column-empty-border);
+}

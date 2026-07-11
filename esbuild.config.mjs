@@ -31,10 +31,19 @@ const context = await esbuild.context({
   outfile: "main.js",
 });
 
+const cssContext = await esbuild.context({
+  entryPoints: ["src/styles/index.css"],
+  bundle: true,
+  outfile: "styles.css",
+  logLevel: "info",
+});
+
 if (prod) {
   await context.rebuild();
+  await cssContext.rebuild();
   process.exit(0);
 } else {
   await context.rebuild();
+  await cssContext.rebuild();
   process.exit(0);
 }

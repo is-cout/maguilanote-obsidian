@@ -1,0 +1,107 @@
+/* ============ Maguilanote — visual workspace look ============ */
+
+:root {
+  /* canvas */
+  --mgn-canvas-bg: #31303b;
+  --mgn-canvas-dot: #44434f;
+  --mgn-text-muted: #8a8996;
+  --mgn-text-dim: #9b9aa8;
+  --mgn-text-bright: #f0f0f4;
+  --mgn-column-text: #e8e8ee;
+
+  /* accent + status */
+  --mgn-accent: #4ab3ff;
+  --mgn-danger: #e05252;
+  --mgn-danger-text: #c93c3c;
+  --mgn-success: #35c26e;
+  --mgn-comment-accent: #f0b429;
+
+  /* floating panels (toolbar, zoombar, search, crumbs) */
+  --mgn-panel-bg: #24232c;
+  --mgn-panel-border: #3d3c48;
+  --mgn-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --mgn-panel-text: #b9b8c4;
+  --mgn-panel-hover-bg: #3a3944;
+  --mgn-panel-text-strong: #eee;
+  --mgn-panel-sep: #55545f;
+
+  /* card face (fallback text/placeholder tone) */
+  --mgn-card-fg-default: #33343d;
+  /* "Default" card color preset: dark card face in dark theme, white in light theme */
+  --mgn-card-default-bg: #4a4b54;
+  --mgn-card-default-fg: #f0f0f2;
+  /* customizable card color presets (Settings → Customization), kept in sync
+     with the active theme's colors by BoardView.applyAppearance() */
+  --mgn-card-color-yellow: #fff5c0;
+  --mgn-card-color-orange: #ffd9b0;
+  --mgn-card-color-red: #ffc7c2;
+  --mgn-card-color-purple: #e2cbf7;
+  --mgn-card-color-blue: #c4ddff;
+  --mgn-card-color-teal: #bdede0;
+  --mgn-card-color-green: #d3f2c0;
+  --mgn-card-color-gray: #e4e4e8;
+  --mgn-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --mgn-card-shadow-selected: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --mgn-hit: #ffd84a;
+  --mgn-link: #2f6fbd;
+  --mgn-board-bg: #fbfbfd;
+
+  /* column card overlay (always dark, sits on the dark canvas regardless of card theme) */
+  --mgn-column-bg: rgba(255, 255, 255, 0.09);
+  --mgn-column-border: rgba(255, 255, 255, 0.22);
+  --mgn-column-chip-bg: rgba(255, 255, 255, 0.15);
+  --mgn-column-empty-border: rgba(255, 255, 255, 0.15);
+
+  /* preview modal */
+  --mgn-preview-overlay: rgba(15, 15, 20, 0.55);
+  --mgn-preview-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+
+  /* pure white, used for the default card face and hover/active text on dark panels */
+  --mgn-white: #fff;
+
+  /* customization: font override (set from Settings) */
+  --mgn-font-family: inherit;
+}
+
+/* light theme palette (applied via .mgn-theme-light on .mgn-root) */
+.mgn-root.mgn-theme-light {
+  --mgn-canvas-bg: #eceef2;
+  --mgn-canvas-dot: #d5d8e0;
+  --mgn-text-muted: #6b6b76;
+  --mgn-text-dim: #55555f;
+  --mgn-text-bright: #1c1c22;
+  --mgn-column-text: #26262e;
+
+  --mgn-accent: #2f7fd6;
+  --mgn-danger: #d84a4a;
+  --mgn-danger-text: #b73434;
+  --mgn-success: #2aa860;
+  --mgn-comment-accent: #d69a1a;
+
+  --mgn-panel-bg: #ffffff;
+  --mgn-panel-border: #d7d9e0;
+  --mgn-panel-shadow: 0 4px 16px rgba(30, 30, 40, 0.12);
+  --mgn-panel-text: #46454f;
+  --mgn-panel-hover-bg: #eef0f5;
+  --mgn-panel-text-strong: #1c1c22;
+  --mgn-panel-sep: #cfd1d9;
+
+  --mgn-card-fg-default: #33343d;
+  --mgn-card-default-bg: #ffffff;
+  --mgn-card-default-fg: #33343d;
+  --mgn-card-shadow: 0 2px 6px rgba(30, 30, 40, 0.14);
+  --mgn-card-shadow-selected: 0 4px 14px rgba(30, 30, 40, 0.2);
+  --mgn-hit: #e6b800;
+  --mgn-link: #2f6fbd;
+  --mgn-board-bg: #f7f7fa;
+
+  --mgn-column-bg: rgba(20, 20, 30, 0.05);
+  --mgn-column-border: rgba(20, 20, 30, 0.16);
+  --mgn-column-chip-bg: rgba(20, 20, 30, 0.08);
+  --mgn-column-empty-border: rgba(20, 20, 30, 0.14);
+
+  --mgn-preview-overlay: rgba(20, 20, 30, 0.35);
+  --mgn-preview-shadow: 0 12px 48px rgba(20, 20, 30, 0.25);
+
+  --mgn-white: #fff;
+}
