@@ -6,7 +6,7 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-07-11 (v0.8.0)
 
-- Fixed the empty sketch card's "Double-click to draw" placeholder not being centered horizontally (the generic `.mgn-placeholder` div shrinks to its text width, so its parent flexbox couldn't center it as a block). Files: `src/render.ts`, `src/styles/drawing.css`, `styles.css`.
+- Fixed the empty sketch card's "Double-click to draw" placeholder not being centered: horizontally, the generic `.mgn-placeholder` div shrinks to its text width so its flex parent couldn't center it as a block; vertically, `.mgn-sketch-preview` only centered within its own 120px min-height box, leaving dead space below when the card was resized taller (the card itself wasn't a flex column, so the preview never grew to fill it). Files: `src/render.ts`, `src/styles/drawing.css`, `styles.css`.
 - Added export/import for the templates folder: two new zoombar buttons next to Snap to grid bundle every `.board` file under Settings → Templates folder into a single `maguilanote-templates.json` download, and import reads that file back in, creating the folder if needed and de-duplicating names against existing templates (same suffixing scheme as "Save as template"). New `MaguilanotePlugin.exportTemplates()` / `importTemplates()`. Files: `src/main.ts`, `src/board-view.ts`.
 
 ## 2026-07-11 (internal refactor, no behavior change)

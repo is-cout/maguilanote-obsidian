@@ -1216,9 +1216,14 @@
   width: 14px;
   height: 14px;
 }
+.mgn-card.mgn-sketch {
+  display: flex;
+  flex-direction: column;
+}
 .mgn-sketch-preview {
   width: 100%;
   min-height: 120px;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
