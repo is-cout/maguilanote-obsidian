@@ -8,12 +8,12 @@ applyTo: '**'
 
 - `main` — always releasable, reflects the latest released version. Only receives merges
   from a `release/*` (or `hotfix/*`) branch. Every merge into `main` is tagged.
-- `develop` — integration branch. All `feat/*` and `fix/*` branches merge here first.
-- `feat/<short-name>` — new functionality. Branch off `develop`, merge back into `develop`.
+- `develop` — integration branch. All `feature/*` and `fix/*` branches merge here first.
+- `feature/<short-name>` — new functionality. Branch off `develop`, merge back into `develop`.
 - `fix/<short-name>` — bug fixes. Branch off `develop`, merge back into `develop`.
 - `chore/<short-name>` — tooling, docs, deps, non-plugin work. Branch off `develop`.
 - `release/<x.y.z>` — cut from `develop` to prepare a release. Last-minute fixes happen here
-  (the version bump and changelog entry already happened on the `feat`/`fix` branch that
+  (the version bump and changelog entry already happened on the `feature`/`fix` branch that
   earned them, per [Versioning](versioning.instructions.md)). Merges into both `main` and
   `develop`, then gets tagged. This is the trigger point for the `release` skill (see Release
   below).
@@ -22,6 +22,20 @@ applyTo: '**'
 
 Releases are **requested, not automatic** — a version bump or a merge to `develop` does not
 by itself create a release. A release only happens when explicitly asked for (see below).
+
+## Committing After a Task
+
+Once a requested code change is implemented, verified (typecheck/build), and its docs are
+updated, commit it without waiting for a separate "commit this" prompt: create (or reuse, if
+one is already open for this task) the `feature/*`/`fix/*`/`chore/*` branch off `develop` and
+commit there. This is a standing instruction — it overrides the general "never commit unless
+explicitly asked" default for this project.
+
+**Do not merge the branch into `develop`, delete it, or push anything, unless Lucas explicitly
+says the feature/fix is done** (e.g. "fecha essa branch", "merge isso", "pode fechar") — same
+rule as releases: a branch may stay open across several commits while he tests it, tries more
+changes, or comes back to it later. Committing is automatic; closing (merge + branch deletion)
+and pushing are not.
 
 ## Commit Messages (Conventional Commits)
 
