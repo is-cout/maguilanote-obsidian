@@ -261,8 +261,9 @@ export default class MaguilanotePlugin extends Plugin {
           await this.app.vault.trash(oldFile, false); // Obsidian's trash, not the OS trash
         }
         new Notice(`Imported template "${displayName}"`);
-      } catch {
-        new Notice("Failed to import template");
+      } catch (e) {
+        console.error("Maguilanote: template import failed", e);
+        new Notice(`Failed to import template: ${e instanceof Error ? e.message : e}`);
       }
     }).open();
   }
