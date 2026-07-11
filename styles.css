@@ -1216,15 +1216,24 @@
   width: 14px;
   height: 14px;
 }
+.mgn-card.mgn-sketch {
+  display: flex;
+  flex-direction: column;
+}
 .mgn-sketch-preview {
   width: 100%;
   min-height: 120px;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .mgn-sketch-preview .mgn-drawing-svg {
   max-height: 240px;
+}
+.mgn-sketch-placeholder {
+  width: 100%;
+  text-align: center;
 }
 
 /* src/styles/index.css */
