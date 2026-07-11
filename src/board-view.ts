@@ -422,6 +422,8 @@ export class BoardView extends TextFileView {
       this.snapBtn.toggleClass("mgn-tool-active", this.plugin.settings.gridSnap);
     });
     this.snapBtn.toggleClass("mgn-tool-active", this.plugin.settings.gridSnap);
+    zb.createDiv({ cls: "mgn-vsep" });
+    zbtn("settings", "Maguilanote settings", () => new SettingsModal(this.app, this.plugin).open());
 
     // search bar
     this.searchEl = root.createDiv({ cls: "mgn-search" });
@@ -446,14 +448,6 @@ export class BoardView extends TextFileView {
       }
     });
     this.searchEl.hide();
-
-    // settings gear, separate panel to the left of the breadcrumb trail
-    const settingsBtn = root.createDiv({
-      cls: "mgn-settings-btn",
-      attr: { "aria-label": "Maguilanote settings" },
-    });
-    setIcon(settingsBtn, "settings");
-    settingsBtn.addEventListener("click", () => new SettingsModal(this.app, this.plugin).open());
 
     // breadcrumb navigation (Board 1 › Board 2)
     this.crumbsEl = root.createDiv({ cls: "mgn-crumbs" });
