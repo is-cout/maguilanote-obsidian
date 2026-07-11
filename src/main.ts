@@ -12,6 +12,8 @@ import {
 import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
 import { renderSettingsUI } from "./settings-ui";
 import { loadOpenAiApiKey } from "./secrets";
+import { ImportTemplateConfirmModal } from "./modals";
+import { TemplateBundle, collectBundle, unbundleTemplate } from "./template-bundle";
 import {
   BoardData,
   DEFAULT_BOARD,
@@ -99,7 +101,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view || !view.file) return false;
-        if (!checking) this.saveAsTemplate(view.file);
+        if (!checking) this.exportBoardAsTemplate(view.file);
         return true;
       },
     });
@@ -161,71 +163,90 @@ export default class MaguilanotePlugin extends Plugin {
     return file;
   }
 
-  async saveAsTemplate(file: TFile) {
+  /** Bundles `file` and everything it references (nested boards, images, files, recordings) into a single `.board.template` in the templates folder. */
+  async exportBoardAsTemplate(file: TFile) {
+    const bundle = await collectBundle(this.app, file);
     const folder = normalizePath(this.settings.templatesFolder);
     if (!this.app.vault.getAbstractFileByPath(folder)) {
       await this.app.vault.createFolder(folder).catch(() => {});
     }
-    let target = normalizePath(`${folder}/${file.basename}.board`);
+    let target = normalizePath(`${folder}/${file.basename}.board.template`);
     let i = 1;
     while (this.app.vault.getAbstractFileByPath(target)) {
-      target = normalizePath(`${folder}/${file.basename} ${i++}.board`);
+      target = normalizePath(`${folder}/${file.basename} ${i++}.board.template`);
     }
-    await this.app.vault.copy(file, target);
+    await this.app.vault.create(target, JSON.stringify(bundle, null, 2));
     new Notice(`Template saved to ${target}`);
   }
 
-  async exportTemplates() {
-    const folder = normalizePath(this.settings.templatesFolder);
-    const files = this.app.vault
-      .getFiles()
-      .filter((f) => f.extension === "board" && f.path.startsWith(folder));
-    if (!files.length) {
-      new Notice("No templates to export");
-      return;
+  /** Opens a file picker restricted to `.board.template` files (native dialog on desktop, defaulting to the templates folder; browser file input otherwise). */
+  async openImportTemplateDialog() {
+    if (Platform.isDesktopApp) {
+      const picked = this.pickTemplateFileDesktop();
+      if (picked !== undefined) {
+        if (picked === null) return; // user cancelled the native dialog
+        const fs = require("fs");
+        const path = require("path");
+        const raw: string = fs.readFileSync(picked, "utf8");
+        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""));
+        return;
+      }
     }
-    const bundle = await Promise.all(
-      files.map(async (f) => ({ name: f.basename, content: await this.app.vault.read(f) }))
-    );
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "maguilanote-templates.json";
-    a.click();
-    URL.revokeObjectURL(url);
-    new Notice(`Exported ${files.length} template${files.length === 1 ? "" : "s"}`);
-  }
-
-  importTemplates() {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".json";
+    input.accept = ".template";
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      let bundle: { name: string; content: string }[];
-      try {
-        bundle = JSON.parse(await file.text());
-      } catch {
-        new Notice("Failed to import templates: invalid file");
-        return;
-      }
-      const folder = normalizePath(this.settings.templatesFolder);
-      if (!this.app.vault.getAbstractFileByPath(folder)) {
-        await this.app.vault.createFolder(folder).catch(() => {});
-      }
-      for (const { name, content } of bundle) {
-        let target = normalizePath(`${folder}/${name}.board`);
-        let i = 1;
-        while (this.app.vault.getAbstractFileByPath(target)) {
-          target = normalizePath(`${folder}/${name} ${i++}.board`);
-        }
-        await this.app.vault.create(target, content);
-      }
-      new Notice(`Imported ${bundle.length} template${bundle.length === 1 ? "" : "s"}`);
+      const raw = await file.text();
+      await this.importTemplateFile(raw, file.name.replace(/\.board\.template$/i, ""));
     };
     input.click();
+  }
+
+  /** Native Electron open-dialog, defaulting to the templates folder on disk. Returns `undefined` if Electron's dialog isn't available (caller should fall back), `null` if the user cancelled, or the chosen absolute path. */
+  private pickTemplateFileDesktop(): string | null | undefined {
+    try {
+      const electron = (window as any).require("electron");
+      const dialog = electron.remote?.dialog ?? electron.dialog;
+      if (!dialog?.showOpenDialogSync) return undefined;
+      const adapter = this.app.vault.adapter as any;
+      let defaultPath: string | undefined;
+      if (adapter?.basePath) {
+        const path = require("path");
+        const folder = this.settings.templatesFolder?.trim();
+        defaultPath = folder ? path.join(adapter.basePath, folder) : adapter.basePath;
+      }
+      const result = dialog.showOpenDialogSync({
+        title: "Import Maguilanote template",
+        defaultPath,
+        filters: [{ name: "Maguilanote template", extensions: ["template"] }],
+        properties: ["openFile"],
+      });
+      return result?.[0] ?? null;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Validates `raw` as a template bundle, warns the user before writing anything, then unpacks it into the templates folder. */
+  async importTemplateFile(raw: string, displayName: string) {
+    let bundle: TemplateBundle;
+    try {
+      bundle = JSON.parse(raw);
+      if (bundle.format !== "maguilanote-template") throw new Error("not a template");
+    } catch {
+      new Notice("Not a valid Maguilanote template file");
+      return;
+    }
+    new ImportTemplateConfirmModal(this.app, displayName, async () => {
+      try {
+        await unbundleTemplate(this.app, bundle, this.settings.templatesFolder);
+        new Notice(`Imported template "${displayName}"`);
+      } catch {
+        new Notice("Failed to import template");
+      }
+    }).open();
   }
 
   async exportMarkdown(view: BoardView) {
@@ -327,21 +348,22 @@ class TemplatePicker extends FuzzySuggestModal<TFile> {
     const folder = normalizePath(this.plugin.settings.templatesFolder);
     return this.app.vault
       .getFiles()
-      .filter((f) => f.extension === "board" && f.path.startsWith(folder));
+      .filter((f) => f.path.startsWith(folder) && f.path.toLowerCase().endsWith(".board.template"));
   }
   getItemText(f: TFile): string {
-    return f.basename;
+    return f.name.replace(/\.board\.template$/i, "");
   }
   async onChooseItem(f: TFile) {
     const raw = await this.app.vault.read(f);
-    const folder = this.app.workspace.getActiveFile()?.parent?.path ?? "";
-    const prefix = folder && folder !== "/" ? folder + "/" : "";
-    let path = normalizePath(`${prefix}${f.basename}.board`);
-    let i = 1;
-    while (this.app.vault.getAbstractFileByPath(path)) {
-      path = normalizePath(`${prefix}${f.basename} ${i++}.board`);
+    let bundle: TemplateBundle;
+    try {
+      bundle = JSON.parse(raw);
+    } catch {
+      new Notice("Invalid template file");
+      return;
     }
-    const nf = await this.app.vault.create(path, raw);
+    const folder = this.app.workspace.getActiveFile()?.parent?.path ?? "";
+    const nf = await unbundleTemplate(this.app, bundle, folder);
     await this.app.workspace.getLeaf(false).openFile(nf);
   }
 }

@@ -59,9 +59,9 @@ Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb tra
 
 `DEFAULT_SETTINGS.templatesFolder` in `src/main.ts` (default: `"Maguilanote Templates"`). Also a user-facing setting.
 
-### How do I export or import templates?
+### How do I export or import a template?
 
-Zoombar (bottom bar) → the download/upload icons next to Snap to grid. Export bundles every `.board` file under the templates folder into a single `maguilanote-templates.json` you can share or back up; import reads that file back in, creating the folder if missing and renaming on name clashes. Logic lives in `MaguilanotePlugin.exportTemplates()` / `.importTemplates()` in `src/main.ts`.
+Zoombar (bottom bar) → the download/upload icons next to Snap to grid (also available as commands: "Save current board as template" / "New board from template"). Export takes the currently open board, walks it recursively (nested board cards, images, files, recordings), and packs everything into one `<name>.board.template` file in the templates folder — a single portable, self-contained file, unlike a plain `.board` copy which breaks the moment the board references anything outside itself. Import reads a `.board.template` from anywhere (file picker restricted to that extension; defaults to the templates folder on desktop) and unpacks it — after a warning modal you can cancel, since a template file can bundle files of any type. Format and logic live in `src/template-bundle.ts` (`TemplateBundle`, `collectBundle`, `unbundleTemplate`); wiring in `MaguilanotePlugin.exportBoardAsTemplate()` / `.importTemplateFile()` / `.openImportTemplateDialog()` in `src/main.ts`.
 
 ### Where is the board file format defined, and is it stable?
 
