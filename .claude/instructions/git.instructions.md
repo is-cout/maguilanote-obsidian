@@ -12,9 +12,11 @@ applyTo: '**'
 - `feat/<short-name>` — new functionality. Branch off `develop`, merge back into `develop`.
 - `fix/<short-name>` — bug fixes. Branch off `develop`, merge back into `develop`.
 - `chore/<short-name>` — tooling, docs, deps, non-plugin work. Branch off `develop`.
-- `release/<x.y.z>` — cut from `develop` when preparing a release. Version bump, changelog,
-  and last-minute fixes happen here. Merges into both `main` and `develop`, then gets tagged.
-  This is the trigger point for the `release` skill (see Release below).
+- `release/<x.y.z>` — cut from `develop` to prepare a release. Last-minute fixes happen here
+  (the version bump and changelog entry already happened on the `feat`/`fix` branch that
+  earned them, per [Versioning](versioning.instructions.md)). Merges into both `main` and
+  `develop`, then gets tagged. This is the trigger point for the `release` skill (see Release
+  below).
 - `hotfix/<x.y.z>` — urgent fix cut directly from `main` for an already-released version.
   Merges into both `main` and `develop`, then gets tagged, same as a release branch.
 
@@ -60,13 +62,17 @@ encodes the full sequence below.
 
 Follows [Versioning](versioning.instructions.md) for what bumps the version and which files to sync.
 
-1. Cut `release/<x.y.z>` from `develop`.
-2. Bump `package.json`, `manifest.json`, `versions.json` to the same `x.y.z`.
-3. Update `docs/CHANGELOG.md`.
-4. Commit on the release branch (e.g. `chore: release v0.7.2`).
+The version in `package.json`/`manifest.json`/`versions.json` is already current on `develop`
+by this point — each `feat`/`fix` bumped it when it shipped (see
+[Versioning](versioning.instructions.md)). This procedure just cuts, tags, and publishes it.
+
+1. Cut `release/<x.y.z>` from `develop`, `x.y.z` matching the version already on `develop`.
+2. Apply any last-minute fixes on the release branch (bump further only if a fix itself earns it).
+3. Confirm `docs/CHANGELOG.md` reflects everything in the release.
+4. Commit on the release branch if step 2/3 changed anything (e.g. `chore: release v0.7.2`).
 5. Merge `release/<x.y.z>` into `main`.
 6. Tag on `main`: `git tag -a v<x.y.z> -m "v<x.y.z>"`.
-7. Merge `release/<x.y.z>` back into `develop` (keeps the bump and any release-branch fixes).
+7. Merge `release/<x.y.z>` back into `develop` (keeps any release-branch fixes).
 8. Push `main`, `develop`, and the tag: `git push origin main develop v<x.y.z>`.
 9. Delete the `release/<x.y.z>` branch.
 

@@ -1226,5 +1226,9 @@
 .mgn-sketch-preview .mgn-drawing-svg {
   max-height: 240px;
 }
+.mgn-sketch-placeholder {
+  width: 100%;
+  text-align: center;
+}
 
 /* src/styles/index.css */

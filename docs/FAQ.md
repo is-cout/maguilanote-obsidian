@@ -59,6 +59,10 @@ Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb tra
 
 `DEFAULT_SETTINGS.templatesFolder` in `src/main.ts` (default: `"Maguilanote Templates"`). Also a user-facing setting.
 
+### How do I export or import templates?
+
+Zoombar (bottom bar) → the download/upload icons next to Snap to grid. Export bundles every `.board` file under the templates folder into a single `maguilanote-templates.json` you can share or back up; import reads that file back in, creating the folder if missing and renaming on name clashes. Logic lives in `MaguilanotePlugin.exportTemplates()` / `.importTemplates()` in `src/main.ts`.
+
 ### Where is the board file format defined, and is it stable?
 
 `BoardData` / `Item` / `Edge` in `src/types.ts`. `BoardData.version` exists specifically so future format changes can be migrated instead of breaking old boards — bump it and add a migration in `parseBoard` if you change the shape of stored data. Any format change is a "significant change" and must be documented (see the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md) and logged in [CHANGELOG.md](CHANGELOG.md)).

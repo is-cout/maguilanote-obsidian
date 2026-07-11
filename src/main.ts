@@ -175,6 +175,59 @@ export default class MaguilanotePlugin extends Plugin {
     new Notice(`Template saved to ${target}`);
   }
 
+  async exportTemplates() {
+    const folder = normalizePath(this.settings.templatesFolder);
+    const files = this.app.vault
+      .getFiles()
+      .filter((f) => f.extension === "board" && f.path.startsWith(folder));
+    if (!files.length) {
+      new Notice("No templates to export");
+      return;
+    }
+    const bundle = await Promise.all(
+      files.map(async (f) => ({ name: f.basename, content: await this.app.vault.read(f) }))
+    );
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "maguilanote-templates.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    new Notice(`Exported ${files.length} template${files.length === 1 ? "" : "s"}`);
+  }
+
+  importTemplates() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      let bundle: { name: string; content: string }[];
+      try {
+        bundle = JSON.parse(await file.text());
+      } catch {
+        new Notice("Failed to import templates: invalid file");
+        return;
+      }
+      const folder = normalizePath(this.settings.templatesFolder);
+      if (!this.app.vault.getAbstractFileByPath(folder)) {
+        await this.app.vault.createFolder(folder).catch(() => {});
+      }
+      for (const { name, content } of bundle) {
+        let target = normalizePath(`${folder}/${name}.board`);
+        let i = 1;
+        while (this.app.vault.getAbstractFileByPath(target)) {
+          target = normalizePath(`${folder}/${name} ${i++}.board`);
+        }
+        await this.app.vault.create(target, content);
+      }
+      new Notice(`Imported ${bundle.length} template${bundle.length === 1 ? "" : "s"}`);
+    };
+    input.click();
+  }
+
   async exportMarkdown(view: BoardView) {
     const data = view.board;
     const lines: string[] = [`# ${view.file?.basename ?? "Board"}`, ""];

@@ -318,7 +318,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
           p.setAttribute("fill", s.color);
         }
       } else {
-        prev.createDiv({ cls: "mgn-placeholder", text: "Double-click to draw" });
+        prev.createDiv({ cls: "mgn-placeholder mgn-sketch-placeholder", text: "Double-click to draw" });
       }
       break;
     }
