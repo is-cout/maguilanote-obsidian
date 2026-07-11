@@ -28,7 +28,7 @@ function makeDrawToolbar(
   const groups: CtxGroup[] = [
     [
       { id: "pen", icon: "pen", label: "Pen", onClick: () => setTool("pen") },
-      { id: "select", icon: "lasso", label: "Select", onClick: () => setTool("select") },
+      { id: "select", icon: "mouse-pointer-2", label: "Select", onClick: () => setTool("select") },
       { id: "eraser", icon: "eraser", label: "Eraser", onClick: () => setTool("eraser") },
     ],
     [
