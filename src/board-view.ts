@@ -423,6 +423,9 @@ export class BoardView extends TextFileView {
     });
     this.snapBtn.toggleClass("mgn-tool-active", this.plugin.settings.gridSnap);
     zb.createDiv({ cls: "mgn-vsep" });
+    zbtn("download", "Export current board as template", () => this.plugin.exportBoardAsTemplate(this));
+    zbtn("upload", "Import template (replaces this board)", () => this.plugin.openImportTemplateDialog(this));
+    zb.createDiv({ cls: "mgn-vsep" });
     zbtn("settings", "Maguilanote settings", () => new SettingsModal(this.app, this.plugin).open());
 
     // search bar
