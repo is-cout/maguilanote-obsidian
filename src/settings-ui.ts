@@ -145,14 +145,33 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
   containerEl.createEl("h3", { text: "Customization" });
 
   new Setting(containerEl)
-    .setName("Font")
+    .setName("Body font")
+    .setDesc("Pick a preset, or type any Google Font family name (e.g. \"Inter\") in the text field.")
     .addDropdown((d) => {
       for (const [value, label] of FONT_CHOICES) d.addOption(value, label);
-      d.setValue(s.fontFamily).onChange(async (v) => {
+      d.selectEl.value = FONT_CHOICES.some(([v]) => v === s.fontFamily) ? s.fontFamily : "";
+      d.onChange(async (v) => {
         s.fontFamily = v;
         await save();
+        renderSettingsUI(containerEl, plugin);
       });
-    });
+    })
+    .addText((t) =>
+      t.setPlaceholder("or a Google Font name").setValue(s.fontFamily).onChange(async (v) => {
+        s.fontFamily = v.trim();
+        await save();
+      })
+    );
+
+  new Setting(containerEl)
+    .setName("Heading font")
+    .setDesc("Used for card titles and column titles. Blank = same as body font.")
+    .addText((t) =>
+      t.setPlaceholder("Google Font name").setValue(s.headingFontFamily).onChange(async (v) => {
+        s.headingFontFamily = v.trim();
+        await save();
+      })
+    );
 
   new Setting(containerEl)
     .setName("Theme")

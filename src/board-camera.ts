@@ -4,7 +4,7 @@ import type { BoardView } from "./board-view";
 export function applyTransform(view: BoardView) {
   view.worldEl.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
   view.zoomLabel?.setText(`${Math.round(view.zoom * 100)}%`);
-  const gs = 24 * view.zoom;
+  const gs = view.plugin.settings.gridSize * view.zoom;
   view.viewportEl.style.backgroundSize = `${gs}px ${gs}px`;
   view.viewportEl.style.backgroundPosition = `${view.panX}px ${view.panY}px`;
 }

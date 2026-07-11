@@ -38,7 +38,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 
 **Settings**
 - Gear icon next to the breadcrumb trail opens the Settings panel
-- Customization: font, dark/light theme, and per-theme colors (board background, default card background, each card color preset)
+- Customization: separate body/heading fonts (pick a preset or any Google Font by name), dark/light theme, and per-theme colors (board background, default card background, each card color preset)
 - Shortcuts: rebind any keyboard shortcut (click to record, reset to default), plus a collapsible mouse/gesture reference
 
 **Search & export**
@@ -59,7 +59,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Click a card to select it; drag to move. Inputs inside a card only activate once it is selected. Double-click to edit/open.
 - Drag files from the OS or from Obsidian's file explorer straight onto the board (`.board` files become nested boards).
 - Alt+drag duplicates. The bottom bar has zoom controls, 1:1, fit, and a snap-to-grid toggle (Ctrl while dragging inverts snap).
-- Click the gear icon next to the breadcrumb trail to open Settings (font, theme, colors, shortcuts).
+- Click the gear icon next to the breadcrumb trail to open Settings (fonts, theme, colors, shortcuts).
 
 ## Building from source
 

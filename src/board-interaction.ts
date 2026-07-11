@@ -14,18 +14,31 @@ export type DragMode =
       orig: Map<string, { x: number; y: number }>;
       moved: boolean;
       detach?: boolean;
+      // physics: last screen pos + time, to derive velocity for a drag tilt
+      lastX?: number;
+      lastT?: number;
+      settleTimer?: number;
     }
   | { kind: "rubber"; startX: number; startY: number; el: HTMLElement }
   | { kind: "resize"; id: string; startWX: number; startWY: number; w0: number; h0: number }
   | { kind: "connect"; from: string; tempPath: SVGPathElement }
   | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean };
 
+/** set the live drag-lean angle (deg) on each dragged card via a CSS var the
+ * `.mgn-dragging` transform reads, so the tilt eases through the CSS transition */
+function setDragTilt(view: BoardView, ids: string[], deg: number) {
+  for (const id of ids) {
+    const el = view.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${id}"]`);
+    el?.style.setProperty("--mgn-tilt", `${deg}deg`);
+  }
+}
+
 export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (view.drawMode) return; // draw surface handles its own pointers
   const target = e.target as HTMLElement;
   // never steal focus from active inputs/editors (blur would kill them)
   const interactive = !!target.closest(
-    "input, textarea, audio, video, iframe, a, button, .mgn-todo-del, .mgn-col-collapse, [contenteditable=true]"
+    "input, textarea, audio, video, iframe, a, button, .mgn-todo-grip, [contenteditable=true]"
   );
   if (!interactive) view.viewportEl.focus({ preventScroll: true });
 
@@ -241,6 +254,9 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
       let dy = w.y - d.startWY;
       if (!d.moved && Math.abs(dx) + Math.abs(dy) > 3) {
         d.moved = true;
+        for (const id of d.ids) {
+          view.worldEl.querySelector(`.mgn-card[data-id="${id}"]`)?.classList.add("mgn-dragging");
+        }
         if (d.detach) {
           const it = view.item(d.ids[0]);
           if (it) {
@@ -258,6 +274,19 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
         }
       }
       if (!d.moved) break;
+      // velocity-based tilt: the faster you fling a card sideways, the more it
+      // leans into the motion — springs back upright when you pause or drop.
+      const now = performance.now();
+      let tilt = 0;
+      if (d.lastX !== undefined && d.lastT !== undefined) {
+        const vx = (e.clientX - d.lastX) / Math.max(1, now - d.lastT); // px/ms
+        tilt = Math.max(-10, Math.min(10, vx * 6));
+      }
+      d.lastX = e.clientX;
+      d.lastT = now;
+      window.clearTimeout(d.settleTimer);
+      d.settleTimer = window.setTimeout(() => setDragTilt(view, d.ids, 0), 90);
+      setDragTilt(view, d.ids, tilt);
       const snap = snapStep(view, e);
       for (const id of d.ids) {
         const it = view.item(id);
@@ -371,6 +400,12 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
   switch (d.kind) {
     case "move": {
       view.clearColumnHighlight();
+      window.clearTimeout(d.settleTimer);
+      for (const id of d.ids) {
+        const el = view.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${id}"]`);
+        el?.classList.remove("mgn-dragging");
+        el?.style.removeProperty("--mgn-tilt");
+      }
       if (!d.moved) {
         // pointer capture retargets native dblclick to the viewport, so we
         // detect card double-clicks manually here

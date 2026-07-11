@@ -31,14 +31,35 @@ export interface Item {
   order?: number;
   text?: string;
   title?: string;
+  /** show the optional title row (icon + title text) above the card's content.
+   * Columns always show their title regardless of this field. */
+  showTitle?: boolean;
   url?: string;
   path?: string;
   todos?: TodoEntry[];
   swatch?: string;
-  collapsed?: boolean;
   strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
   duration?: number; // record card: recording length in seconds
 }
+
+/** card types that support the optional title row (icon + editable title text).
+ * link/file/board show a title-like head unconditionally (it's the card's primary
+ * content, identifying the reference), so they're not part of this opt-in system. */
+export const TITLE_ELIGIBLE_TYPES: ItemType[] = [
+  "note", "comment", "todo", "image", "swatch", "sketch", "record",
+];
+
+/** default title text (placeholder) per card type, used when a title is shown
+ * but the user hasn't typed one — the card's own name, still editable. */
+export const TITLE_LABELS: Partial<Record<ItemType, string>> = {
+  note: "Note",
+  comment: "Comment",
+  todo: "To-do",
+  image: "Image",
+  swatch: "Swatch",
+  sketch: "Sketch",
+  record: "Recording",
+};
 
 /** A world-space point used for a free (unanchored) line endpoint. */
 export interface Point { x: number; y: number; }

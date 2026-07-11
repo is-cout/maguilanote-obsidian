@@ -30,8 +30,12 @@ export interface MaguilanoteSettings {
   gridSize: number;
   defaultNoteWidth: number;
   templatesFolder: string;
-  /** CSS font-family value, or "" to inherit Obsidian's font */
+  /** body text font: a value from FONT_CHOICES, a Google Font family name
+   * (e.g. "Inter"), or "" to inherit Obsidian's font */
   fontFamily: string;
+  /** heading font (card titles, column titles): same value shapes as fontFamily,
+   * "" falls back to the body font */
+  headingFontFamily: string;
   theme: "dark" | "light";
   keybindings: Record<ShortcutActionId, KeyBinding | null>;
   /** customizable background colors, kept separately per theme */
@@ -51,6 +55,7 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   defaultNoteWidth: 260,
   templatesFolder: "Maguilanote Templates",
   fontFamily: "",
+  headingFontFamily: "",
   theme: "dark",
   keybindings: { ...DEFAULT_KEYBINDINGS },
   colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },

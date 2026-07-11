@@ -7,6 +7,7 @@ import {
 import type MaguilanotePlugin from "./main";
 import { SettingsModal, TextPromptModal } from "./modals";
 import { drawEdgesFn, renderCardFn } from "./render";
+import { ensureGoogleFont, fontFamilyValue } from "./fonts";
 import { ContextToolbar, DrawSession } from "./draw";
 import {
   BoardData,
@@ -230,7 +231,13 @@ export class BoardView extends TextFileView {
   /** apply the user's font / theme / color settings to this board's DOM */
   applyAppearance() {
     const s = this.plugin.settings;
-    this.contentEl.style.setProperty("--mgn-font-family", s.fontFamily || "inherit");
+    ensureGoogleFont(s.fontFamily);
+    ensureGoogleFont(s.headingFontFamily);
+    this.contentEl.style.setProperty("--mgn-font-family", fontFamilyValue(s.fontFamily));
+    this.contentEl.style.setProperty(
+      "--mgn-font-family-heading",
+      s.headingFontFamily ? fontFamilyValue(s.headingFontFamily) : "var(--mgn-font-family)"
+    );
     this.contentEl.toggleClass("mgn-theme-light", s.theme === "light");
 
     const c = s.colors[s.theme];
@@ -239,6 +246,7 @@ export class BoardView extends TextFileView {
     for (const key of CUSTOM_CARD_COLOR_KEYS) {
       this.contentEl.style.setProperty(`--mgn-card-color-${key}`, c[key]);
     }
+    this.applyTransform(); // re-sync the dotted grid to the current grid-size setting
   }
 
   /** Draw/Sketch's default pen color: readable against the opposite end of the
@@ -330,7 +338,6 @@ export class BoardView extends TextFileView {
     tool("palette", "Color swatch", { drag: "swatch" });
     tool("pen-tool", "Sketch card", { drag: "sketch" });
     tool("mic", "Record", { drag: "record" });
-    tool("message-circle", "Comment", { drag: "comment" });
     tb.createDiv({ cls: "mgn-tool-sep" });
     // group 2 — flexible tools
     tool("image", "Image", { drag: "image" });
@@ -640,7 +647,7 @@ export class BoardView extends TextFileView {
     body.style.pointerEvents = "auto";
     const ta = body.createEl("textarea", {
       cls: "mgn-note-edit",
-      attr: { placeholder: "Start typing..." },
+      attr: { placeholder: "Start typing...", rows: "1" },
     });
     ta.value = it.text ?? "";
     const fit = () => {

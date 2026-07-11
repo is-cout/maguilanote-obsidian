@@ -33,7 +33,9 @@ export function addNote(view: BoardView, x?: number, y?: number, edit = false) {
 }
 
 export function addTodo(view: BoardView, x?: number, y?: number) {
-  view.addItem({ type: "todo", title: "To-do", todos: [] }, x, y);
+  // no pre-filled title: titles are opt-in now, and an empty title keeps the
+  // placeholder styling consistent with every other card type
+  view.addItem({ type: "todo", todos: [] }, x, y);
 }
 
 export function addColumn(view: BoardView, x?: number, y?: number) {

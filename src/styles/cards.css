@@ -5,7 +5,7 @@
   color: var(--mgn-card-fg-default);
   border-radius: 3px;
   box-shadow: var(--mgn-card-shadow);
-  padding: 10px 12px;
+  padding: var(--mgn-card-pad);
   box-sizing: border-box;
   font-size: 14px;
   line-height: 1.45;
@@ -15,6 +15,15 @@
 }
 .mgn-card:active {
   cursor: grabbing;
+}
+.mgn-card.mgn-dragging {
+  transition: box-shadow 0.18s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  /* rotate() reads a live CSS var set from the drag velocity, so the card leans
+     into fast motion and springs back upright when it stops or is dropped */
+  transform: scale(1.04) rotate(var(--mgn-tilt, 0deg));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+  cursor: grabbing;
+  z-index: 50;
 }
 .mgn-card.mgn-selected {
   outline: 2px solid var(--mgn-accent);
@@ -33,8 +42,13 @@
 
 /* UNSELECTED cards are inert: first click selects/moves, only a selected card
    exposes its inputs for editing */
-.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-todo-del, .mgn-col-collapse, .mgn-swatch-input) {
+.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
   pointer-events: none !important;
+}
+/* exception: a to-do's checkbox and drag-grip stay live even when the card isn't
+   selected, so a checklist can be ticked / reordered without a select-first step */
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip) {
+  pointer-events: auto !important;
 }
 
 /* broken references */
@@ -62,6 +76,27 @@
   opacity: 0.55;
   font-style: italic;
   font-size: 13px;
+}
+
+/* centered empty-state: icon stacked above a hint, fills its card/preview box */
+.mgn-icon-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 72px;
+  flex: 1;
+  text-align: center;
+}
+.mgn-icon-placeholder-ico {
+  display: flex;
+}
+.mgn-icon-placeholder-ico svg {
+  width: 26px;
+  height: 26px;
+  opacity: 0.7;
 }
 
 /* markdown body inside notes — force readable dark text on the light card,
@@ -151,7 +186,7 @@
 }
 .mgn-note-edit {
   width: 100% !important;
-  min-height: 60px;
+  min-height: 22px; /* match the rendered note body, so opening the editor doesn't grow the card */
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -168,43 +203,49 @@
   box-shadow: none !important;
   color: inherit !important;
 }
+/* kill the browser/Obsidian focus glow on card fields — it reads as a blurry ring */
+.mgn-card input:focus,
+.mgn-card textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
 
 /* comment card */
 .mgn-comment {
   border-left: 4px solid var(--mgn-comment-accent);
 }
-.mgn-comment-head {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
-  margin-bottom: 6px;
+
+/* universal optional card title — centered, no icon, styled exactly like a
+ * column's title (shown above the card's content when "Show title" is on) */
+.mgn-card-title {
+  margin-bottom: var(--mgn-space-sm);
 }
-.mgn-comment-head svg {
-  width: 13px;
-  height: 13px;
+.mgn-card-title-text {
+  width: 100%;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--mgn-font-family-heading);
+  font-weight: 700;
+  font-size: 14px;
+  outline: none;
+  padding: 0;
+}
+.mgn-card-title-text::placeholder {
+  /* full opacity so a card showing its default-name placeholder looks identical
+     to one with a typed title (standardized regardless of saved data) */
+  color: inherit !important;
+  opacity: 1;
 }
 
-/* image card */
-.mgn-image {
-  padding: 5px;
-}
+/* image card — shares the standard symmetric card padding (--mgn-card-pad) */
 .mgn-image img {
   display: block;
   width: 100%;
   border-radius: 2px;
   pointer-events: none;
 }
-.mgn-caption {
-  font-size: 12px;
-  padding: 5px 3px 1px;
-  opacity: 0.75;
-}
-
 /* link card */
 .mgn-link-head,
 .mgn-file-head {
@@ -213,12 +254,18 @@
   gap: 7px;
   pointer-events: none;
 }
+.mgn-link-ico {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .mgn-link-ico svg {
   width: 15px;
   height: 15px;
   opacity: 0.6;
 }
 .mgn-link-title {
+  font-family: var(--mgn-font-family-heading);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -237,7 +284,7 @@
 /* board card (nested board) */
 .mgn-board {
   text-align: center;
-  padding: 16px 12px 14px;
+  padding: var(--mgn-space-lg) var(--mgn-space-md);
   background: var(--mgn-board-bg);
 }
 .mgn-board-inner {
@@ -245,7 +292,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--mgn-space-xs);
 }
 .mgn-board-ico svg {
   width: 32px;
@@ -260,6 +307,7 @@
   min-width: 0;
 }
 .mgn-board-title {
+  font-family: var(--mgn-font-family-heading);
   font-weight: 700;
   font-size: 15px;
 }
@@ -271,16 +319,21 @@
 /* compact board card when stacked inside a column */
 .mgn-col-body .mgn-board {
   text-align: left;
-  padding: 9px 12px;
+  padding: var(--mgn-card-pad);
 }
 .mgn-col-body .mgn-board-inner {
   flex-direction: row;
   align-items: center;
   gap: 10px;
 }
+.mgn-col-body .mgn-board-ico {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .mgn-col-body .mgn-board-ico svg {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
 }
 .mgn-col-body .mgn-board-text {
   align-items: flex-start;
@@ -325,101 +378,151 @@
 }
 
 /* todo card */
-.mgn-todo-title {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-weight: 700;
-  font-size: 14px;
-  color: inherit;
-  padding: 0 0 4px 0;
-  outline: none;
+.mgn-todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.mgn-todo-title::placeholder,
-.mgn-todo-add::placeholder {
+.mgn-todo-text::placeholder {
   color: inherit !important; /* form-control placeholders don't inherit color by
     default (Obsidian sets its own), so this needs !important to actually win */
-  opacity: 0.55;
+  opacity: 0.5;
   font-style: italic;
-}
-.mgn-todo-progress {
-  height: 4px;
-  border-radius: 2px;
-  background: color-mix(in srgb, currentColor 10%, transparent);
-  margin-bottom: 8px;
-  overflow: hidden;
-}
-.mgn-todo-progress-fill {
-  height: 100%;
-  background: var(--mgn-success);
-  transition: width 0.15s ease;
 }
 .mgn-todo-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 2px 0;
+  gap: 3px;
+  padding: 0 4px; /* small horizontal breathing room; no vertical padding bloating the card */
 }
-.mgn-todo-row input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 13px;
-  height: 13px;
-  margin: 0;
-  border-radius: 50%;
+/* high-specificity + !important so Obsidian's own input[type=checkbox] theme
+   rules (which otherwise win and hide our styling) can't override this */
+.mgn-card input.mgn-todo-check {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: relative;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 5px !important;
   color: inherit !important; /* form controls don't inherit `color` by default,
     so currentColor below would otherwise resolve to Obsidian's own default */
-  border: 1.5px solid currentColor;
-  opacity: 0.55;
-  background: transparent;
+  border: 2px solid currentColor !important; /* full text color, clearly visible */
+  opacity: 1 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.mgn-todo-row input[type="checkbox"]:checked {
-  background: currentColor;
-  border-color: currentColor;
+.mgn-card input.mgn-todo-check:active {
+  transform: scale(0.88);
+}
+.mgn-card input.mgn-todo-check:checked {
+  background: var(--mgn-success) !important;
+  border-color: var(--mgn-success) !important;
+}
+.mgn-todo-check::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--mgn-white);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
+  opacity: 0;
+  transform: scale(0.3);
+  transition: opacity 0.12s ease, transform 0.25s cubic-bezier(0.34, 1.7, 0.5, 1);
+}
+.mgn-todo-check:checked::after {
+  opacity: 1;
+  transform: scale(1);
 }
 .mgn-todo-text {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   color: inherit;
   font-size: 13px;
   outline: none;
+  padding: 0; /* remove the input's default padding so the text hugs the checkbox */
+  transition: opacity 0.2s ease;
 }
 .mgn-todo-text.mgn-done {
   text-decoration: line-through;
   opacity: 0.5;
 }
-.mgn-todo-del {
+/* drag-handle: hidden until the row is hovered; drag to reorder or move out */
+.mgn-todo-grip {
   opacity: 0;
-  cursor: pointer;
+  cursor: move;
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  touch-action: none;
+  transition: opacity 0.15s ease;
 }
-.mgn-todo-del svg {
-  width: 12px;
-  height: 12px;
+.mgn-todo-grip svg {
+  width: 14px;
+  height: 14px;
 }
-.mgn-todo-row:hover .mgn-todo-del {
-  opacity: 0.5;
+.mgn-todo-row:hover .mgn-todo-grip {
+  opacity: 0.45;
 }
-.mgn-todo-add {
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font-size: 12px;
-  outline: none;
-  margin-top: 4px;
+.mgn-todo-grip:hover {
+  opacity: 0.9 !important;
+}
+
+/* force the four-way move cursor everywhere while a to-do item is being dragged */
+body.mgn-todo-grabbing,
+body.mgn-todo-grabbing * {
+  cursor: move !important;
+}
+/* floating preview of the dragged item */
+.mgn-todo-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: 240px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--mgn-panel-bg);
+  color: var(--mgn-panel-text-strong);
+  border: 1px solid var(--mgn-panel-border);
+  box-shadow: var(--mgn-panel-shadow);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+/* "drop on empty canvas → new card" hint */
+.mgn-todo-ghost-new {
+  border-style: dashed;
+  border-color: var(--mgn-accent);
+}
+/* insertion indicator inside the target list */
+.mgn-todo-drop-line {
+  height: 2px;
+  margin: 1px 0;
+  border-radius: 2px;
+  background: var(--mgn-accent);
+  pointer-events: none;
+}
+/* the to-do card an item would drop into */
+.mgn-card.mgn-todo-drop-target {
+  outline: 2px solid var(--mgn-accent);
+  outline-offset: 1px;
 }
 
 /* column card */
 .mgn-column {
   background: var(--mgn-column-bg);
-  box-shadow: none;
-  border: 1px dashed var(--mgn-column-border);
+  box-shadow: var(--mgn-card-shadow);
+  border: 1px solid var(--mgn-column-border);
   border-radius: 6px;
-  padding: 8px;
+  padding: var(--mgn-space-sm);
   color: var(--mgn-column-text);
 }
 .mgn-column.mgn-col-target {
@@ -428,40 +531,31 @@
 }
 .mgn-col-head {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px 8px;
-}
-.mgn-col-collapse {
-  cursor: pointer;
-  display: flex;
-  opacity: 0.7;
-}
-.mgn-col-collapse svg {
-  width: 14px;
-  height: 14px;
+  gap: 2px;
+  padding: var(--mgn-space-xs) var(--mgn-space-sm) var(--mgn-space-sm);
 }
 .mgn-col-title {
-  flex: 1;
+  width: 100%;
+  text-align: center;
   border: none;
   background: transparent;
   color: var(--mgn-column-text);
+  font-family: var(--mgn-font-family-heading);
   font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 14px;
   outline: none;
 }
 .mgn-col-count {
   font-size: 11px;
-  background: var(--mgn-column-chip-bg);
-  border-radius: 10px;
-  padding: 1px 7px;
+  opacity: 0.6;
+  color: var(--mgn-column-text);
 }
 .mgn-col-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--mgn-space-sm);
   min-height: 40px;
 }
 .mgn-col-body .mgn-card {

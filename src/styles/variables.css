@@ -46,8 +46,8 @@
   --mgn-link: #2f6fbd;
   --mgn-board-bg: #fbfbfd;
 
-  /* column card overlay (always dark, sits on the dark canvas regardless of card theme) */
-  --mgn-column-bg: rgba(255, 255, 255, 0.09);
+  /* column card (solid panel, distinct from the canvas and from cards) */
+  --mgn-column-bg: #3a3947;
   --mgn-column-border: rgba(255, 255, 255, 0.22);
   --mgn-column-chip-bg: rgba(255, 255, 255, 0.15);
   --mgn-column-empty-border: rgba(255, 255, 255, 0.15);
@@ -61,6 +61,16 @@
 
   /* customization: font override (set from Settings) */
   --mgn-font-family: inherit;
+  --mgn-font-family-heading: var(--mgn-font-family);
+
+  /* standard spacing scale, used for card padding/gaps across all card types */
+  --mgn-space-xs: 4px;
+  --mgn-space-sm: 8px;
+  --mgn-space-md: 12px;
+  --mgn-space-lg: 16px;
+  /* one symmetric padding for every card, so titles/content line up identically
+     regardless of card type */
+  --mgn-card-pad: 8px;
 }
 
 /* light theme palette (applied via .mgn-theme-light on .mgn-root) */
@@ -95,7 +105,7 @@
   --mgn-link: #2f6fbd;
   --mgn-board-bg: #f7f7fa;
 
-  --mgn-column-bg: rgba(20, 20, 30, 0.05);
+  --mgn-column-bg: #e6e8ee;
   --mgn-column-border: rgba(20, 20, 30, 0.16);
   --mgn-column-chip-bg: rgba(20, 20, 30, 0.08);
   --mgn-column-empty-border: rgba(20, 20, 30, 0.14);
