@@ -48,8 +48,9 @@ export class ImportTemplateConfirmModal extends Modal {
     this.titleEl.setText("Import template?");
     this.contentEl.createEl("p", {
       text:
-        `You're about to import "${this.name}". Only import templates from people you trust — ` +
-        "a template file can bundle files of any type, and importing writes them into your vault.",
+        `You're about to import "${this.name}", replacing the board you currently have open. ` +
+        "Only import templates from people you trust — a template file can bundle files of any type, " +
+        "and importing writes them into your vault.",
     });
     new Setting(this.contentEl)
       .addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()))

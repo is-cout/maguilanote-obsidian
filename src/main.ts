@@ -101,7 +101,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view || !view.file) return false;
-        if (!checking) this.exportBoardAsTemplate(view.file);
+        if (!checking) this.exportBoardAsTemplate(view);
         return true;
       },
     });
@@ -163,8 +163,11 @@ export default class MaguilanotePlugin extends Plugin {
     return file;
   }
 
-  /** Bundles `file` and everything it references (nested boards, images, files, recordings) into a single `.board.template` in the templates folder. */
-  async exportBoardAsTemplate(file: TFile) {
+  /** Bundles `view`'s board and everything it references (nested boards, images, files, recordings) into a single `.board.template` in the templates folder. */
+  async exportBoardAsTemplate(view: BoardView) {
+    await view.save(); // flush the debounced autosave — collectBundle reads the file from disk
+    const file = view.file;
+    if (!file) return;
     const bundle = await collectBundle(this.app, file);
     const folder = normalizePath(this.settings.templatesFolder);
     if (!this.app.vault.getAbstractFileByPath(folder)) {
@@ -179,8 +182,13 @@ export default class MaguilanotePlugin extends Plugin {
     new Notice(`Template saved to ${target}`);
   }
 
-  /** Opens a file picker restricted to `.board.template` files (native dialog on desktop, defaulting to the templates folder; browser file input otherwise). */
-  async openImportTemplateDialog() {
+  /**
+   * Opens a file picker restricted to `.board.template` files (native dialog on
+   * desktop, defaulting to the templates folder; browser file input otherwise).
+   * Importing replaces `view`'s board: the picked template is unpacked next to
+   * it, opened in its place, and the board it replaces is trashed.
+   */
+  async openImportTemplateDialog(view: BoardView) {
     if (Platform.isDesktopApp) {
       const picked = this.pickTemplateFileDesktop();
       if (picked !== undefined) {
@@ -188,7 +196,7 @@ export default class MaguilanotePlugin extends Plugin {
         const fs = require("fs");
         const path = require("path");
         const raw: string = fs.readFileSync(picked, "utf8");
-        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""));
+        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""), view);
         return;
       }
     }
@@ -199,7 +207,7 @@ export default class MaguilanotePlugin extends Plugin {
       const file = input.files?.[0];
       if (!file) return;
       const raw = await file.text();
-      await this.importTemplateFile(raw, file.name.replace(/\.board\.template$/i, ""));
+      await this.importTemplateFile(raw, file.name.replace(/\.board\.template$/i, ""), view);
     };
     input.click();
   }
@@ -229,8 +237,12 @@ export default class MaguilanotePlugin extends Plugin {
     }
   }
 
-  /** Validates `raw` as a template bundle, warns the user before writing anything, then unpacks it into the templates folder. */
-  async importTemplateFile(raw: string, displayName: string) {
+  /**
+   * Validates `raw` as a template bundle, warns the user before writing anything
+   * (it replaces `view`'s current board), then unpacks it next to `view`'s file,
+   * opens the result in `view`'s place, and trashes the board it replaced.
+   */
+  async importTemplateFile(raw: string, displayName: string, view: BoardView) {
     let bundle: TemplateBundle;
     try {
       bundle = JSON.parse(raw);
@@ -241,7 +253,13 @@ export default class MaguilanotePlugin extends Plugin {
     }
     new ImportTemplateConfirmModal(this.app, displayName, async () => {
       try {
-        await unbundleTemplate(this.app, bundle, this.settings.templatesFolder);
+        const oldFile = view.file;
+        const destFolder = oldFile?.parent?.path ?? "";
+        const rootFile = await unbundleTemplate(this.app, bundle, destFolder);
+        await view.leaf.openFile(rootFile);
+        if (oldFile && oldFile.path !== rootFile.path) {
+          await this.app.vault.trash(oldFile, false); // Obsidian's trash, not the OS trash
+        }
         new Notice(`Imported template "${displayName}"`);
       } catch {
         new Notice("Failed to import template");
