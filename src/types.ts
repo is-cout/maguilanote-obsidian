@@ -48,7 +48,7 @@ export interface Item {
  * link/file/board show a title-like head unconditionally (it's the card's primary
  * content, identifying the reference), so they're not part of this opt-in system. */
 export const TITLE_ELIGIBLE_TYPES: ItemType[] = [
-  "note", "comment", "todo", "image", "swatch", "sketch", "record",
+  "note", "comment", "todo", "image", "swatch", "sketch", "record", "file",
 ];
 
 /** default title text (placeholder) per card type, used when a title is shown
@@ -61,6 +61,7 @@ export const TITLE_LABELS: Partial<Record<ItemType, string>> = {
   swatch: "Swatch",
   sketch: "Sketch",
   record: "Recording",
+  file: "File",
 };
 
 /** A world-space point used for a free (unanchored) line endpoint. */

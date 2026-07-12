@@ -340,12 +340,16 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "file": {
       const f = view.resolveFile(it.path);
       const ext = f?.extension?.toLowerCase() ?? "";
-      const head = el.createDiv({ cls: "mgn-file-head" });
-      setIcon(
-        head.createSpan({ cls: "mgn-link-ico" }),
-        AUDIO_EXTS.includes(ext) ? "music" : VIDEO_EXTS.includes(ext) ? "video" : "file"
-      );
-      head.createDiv({ cls: "mgn-link-title", text: it.title || f?.name || it.path || "File" });
+      // the icon+filename row is the card's default identity (no head shown once
+      // a custom title is on — same rule as image/note/etc. via renderCardTitle above)
+      if (!it.showTitle) {
+        const head = el.createDiv({ cls: "mgn-file-head" });
+        setIcon(
+          head.createSpan({ cls: "mgn-link-ico" }),
+          AUDIO_EXTS.includes(ext) ? "music" : VIDEO_EXTS.includes(ext) ? "video" : "file"
+        );
+        head.createDiv({ cls: "mgn-link-title", text: f?.name || it.path || "File" });
+      }
       if (!f) markMissing(el);
       if (f && AUDIO_EXTS.includes(ext)) {
         el.createEl("audio", {

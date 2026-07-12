@@ -1,6 +1,6 @@
 import { TFile, normalizePath } from "obsidian";
 import type { BoardView } from "./board-view";
-import { IMAGE_EXTS } from "./types";
+import { IMAGE_EXTS, VIDEO_EXTS } from "./types";
 
 export async function onDrop(view: BoardView, e: DragEvent) {
   e.preventDefault();
@@ -108,6 +108,7 @@ export async function importOsFile(view: BoardView, f: File, x: number, y: numbe
   if (IMAGE_EXTS.includes(lower)) {
     view.addItem({ type: "image", path: tf.path, w: 280 }, x, y);
   } else {
-    view.addItem({ type: "file", path: tf.path, title: tf.name, w: 260 }, x, y);
+    const video = VIDEO_EXTS.includes(lower);
+    view.addItem({ type: "file", path: tf.path, w: video ? 420 : 260 }, x, y);
   }
 }

@@ -7,6 +7,9 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 ## 2026-07-12 (v0.12.0)
 
 - Renamed the **Image** toolbar tool to **Media** and widened its file picker (`accept="image/*,video/*,audio/*,application/pdf"`, was `image/*`) so it can import video, audio, and PDF files, not just images — the import pipeline already routed non-image files to the `file` card type (which renders audio/video inline), so this only needed the label and accept-filter change. Files: `src/board-view.ts`.
+- Video cards (`file` cards whose extension is in `VIDEO_EXTS`) now default to a wider card (420px, was 260px) so the player isn't cramped. Files: `src/board-item-crud.ts`, `src/board-drop-import.ts`.
+- `file` cards (video/audio/PDF/other vault files) joined `TITLE_ELIGIBLE_TYPES`: like image/note/etc., they now support the toolbar's "Show/Hide title" toggle. The icon+filename row that used to be a permanent header is now the *default* state (shown when no custom title is on) instead of an unconditional one, matching how image cards show nothing until a title is opted into. `it.title` is no longer pre-filled with the filename on import/relink, so an opted-in title starts from the same empty placeholder as every other card type. Files: `src/types.ts`, `src/render.ts`, `src/board-item-crud.ts`, `src/board-drop-import.ts`, `src/file-preview.ts`.
+- Added PDF preview: double-clicking a PDF `file` card now opens it in an embedded iframe in the inline preview overlay, instead of the "No preview available" fallback. Files: `src/file-preview.ts`.
 
 ## 2026-07-12 (v0.11.0)
 
