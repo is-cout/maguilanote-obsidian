@@ -227,6 +227,7 @@ export function addSketch(view: BoardView, x?: number, y?: number) {
 /** popup editor for a sketch card (draw only inside the fixed canvas) */
 export function openSketchPopup(view: BoardView, it: Item) {
   view.closePreview();
+  view.closeCardToolbar();
   const W = 640, H = 440;
   const ov = view.contentEl.createDiv({ cls: "mgn-preview" });
   const panel = ov.createDiv({ cls: "mgn-preview-panel mgn-sketch-panel" });
@@ -269,7 +270,9 @@ export function openSketchPopup(view: BoardView, it: Item) {
     else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
   };
   document.addEventListener("keydown", keyHandler, true);
-  ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(false); });
+  // clicking outside the sketch is often accidental, so save instead of discarding;
+  // Escape remains the explicit way to discard
+  ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(true); });
 
   // reuse the same floating toolbar as board draw mode; mount inside the
   // overlay so it renders above it (a toolbar in viewportEl sits behind ov)

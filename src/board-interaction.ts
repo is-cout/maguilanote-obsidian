@@ -22,7 +22,16 @@ export type DragMode =
   | { kind: "rubber"; startX: number; startY: number; el: HTMLElement }
   | { kind: "resize"; id: string; startWX: number; startWY: number; w0: number; h0: number }
   | { kind: "connect"; from: string; tempPath: SVGPathElement }
-  | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean };
+  | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean }
+  | {
+      kind: "line-move";
+      id: string;
+      startWX: number;
+      startWY: number;
+      origFrom: { x: number; y: number };
+      origTo: { x: number; y: number };
+      moved: boolean;
+    };
 
 /** set the live drag-lean angle (deg) on each dragged card via a CSS var the
  * `.mgn-dragging` transform reads, so the tilt eases through the CSS transition */
@@ -121,6 +130,23 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
           edge.label = v || undefined;
           view.commit();
         }).open();
+      return;
+    }
+    // a "loose" line (both ends free, not anchored to any card) can be dragged
+    // by its body just like a card, not only by its endpoint handles
+    const edge = view.board.edges.find((x) => x.id === id);
+    if (edge && !edge.from && !edge.to && edge.fromPt && edge.toPt) {
+      const w = view.screenToWorld(e.clientX, e.clientY);
+      view.drag = {
+        kind: "line-move",
+        id,
+        startWX: w.x,
+        startWY: w.y,
+        origFrom: { ...edge.fromPt },
+        origTo: { ...edge.toPt },
+        moved: false,
+      };
+      view.viewportEl.setPointerCapture(e.pointerId);
     }
     return;
   }
@@ -164,6 +190,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       ids = view.cloneInPlace(ids);
       view.selection = new Set(ids);
       view.render();
+      view.syncCardToolbar();
     }
 
     const orig = new Map<string, { x: number; y: number }>();
@@ -392,6 +419,27 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
       view.drawEdges();
       break;
     }
+    case "line-move": {
+      const edge = view.board.edges.find((x) => x.id === d.id);
+      if (!edge || !edge.fromPt || !edge.toPt) break;
+      const w = view.screenToWorld(e.clientX, e.clientY);
+      const dx = w.x - d.startWX;
+      const dy = w.y - d.startWY;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
+      if (!d.moved) break;
+      const snap = snapStep(view, e);
+      let nx1 = d.origFrom.x + dx, ny1 = d.origFrom.y + dy;
+      let nx2 = d.origTo.x + dx, ny2 = d.origTo.y + dy;
+      if (snap) {
+        const sx = Math.round(nx1 / snap) * snap - nx1;
+        const sy = Math.round(ny1 / snap) * snap - ny1;
+        nx1 += sx; ny1 += sy; nx2 += sx; ny2 += sy;
+      }
+      edge.fromPt = { x: nx1, y: ny1 };
+      edge.toPt = { x: nx2, y: ny2 };
+      view.drawEdges();
+      break;
+    }
   }
 }
 
@@ -488,6 +536,10 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
         }
       }
       view.commit();
+      break;
+    }
+    case "line-move": {
+      if (d.moved) view.commit();
       break;
     }
   }
