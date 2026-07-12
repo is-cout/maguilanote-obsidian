@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (v1.0.1)
+
+- **Hotfix:** PDF preview rendered blank. The raw `<iframe src="app://...">` relied on Chromium's built-in PDF viewer plugin, which Obsidian's Electron shell doesn't expose inside iframes. Switched to Obsidian's own embed renderer (`![[file.pdf]]` through `MarkdownRenderer`), the same mechanism already used for `.md` previews. Files: `src/file-preview.ts`.
+
 ## 2026-07-12 (v1.0.0)
 
 - **First stable release.** Promotes the plugin from the `0.x` unstable line to `1.0.0`, declaring the board file format (`Board`/`Card`/`Edge` in `src/types.ts`) and the plugin API stable. No behavior change over v0.12.0 — this is the version/release marker: from here on, a breaking board-format or interaction change requires a MAJOR bump per [versioning](../.claude/instructions/versioning.instructions.md). Files: `package.json`, `manifest.json`, `versions.json`.
