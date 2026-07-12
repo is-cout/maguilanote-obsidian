@@ -340,13 +340,15 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "file": {
       const f = view.resolveFile(it.path);
       const ext = f?.extension?.toLowerCase() ?? "";
-      // the icon+filename row is the card's default identity (no head shown once
-      // a custom title is on — same rule as image/note/etc. via renderCardTitle above)
-      if (!it.showTitle) {
+      const isVideo = VIDEO_EXTS.includes(ext);
+      // a video card is just its player, like an image card — no default
+      // icon+filename head. Other file kinds (audio/pdf/…) keep the head as
+      // their identity. Either way the head hides once a custom title is on.
+      if (!it.showTitle && !isVideo) {
         const head = el.createDiv({ cls: "mgn-file-head" });
         setIcon(
           head.createSpan({ cls: "mgn-link-ico" }),
-          AUDIO_EXTS.includes(ext) ? "music" : VIDEO_EXTS.includes(ext) ? "video" : "file"
+          AUDIO_EXTS.includes(ext) ? "music" : "file"
         );
         head.createDiv({ cls: "mgn-link-title", text: f?.name || it.path || "File" });
       }
@@ -356,9 +358,9 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
           attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;" },
         });
       }
-      if (f && VIDEO_EXTS.includes(ext)) {
+      if (f && isVideo) {
         const v = el.createEl("video", {
-          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;border-radius:4px;" },
+          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;display:block;border-radius:2px;" },
         });
         v.addEventListener("loadeddata", () => view.drawEdges());
       }

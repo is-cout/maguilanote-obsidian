@@ -45,9 +45,10 @@
 .mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
   pointer-events: none !important;
 }
-/* exception: a to-do's checkbox/drag-grip and a record card's player stay live even
-   when the card isn't selected, so they work without a select-first step */
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar) {
+/* exception: a to-do's checkbox/drag-grip, a record card's player, and a video
+   player stay live even when the card isn't selected, so they work without a
+   select-first step (grab the card by its padding/head to move it) */
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, video) {
   pointer-events: auto !important;
 }
 
