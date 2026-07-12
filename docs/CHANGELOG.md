@@ -11,6 +11,7 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
   - Opening a sketch card stacked a second contextual toolbar on top of the card's own — `openSketchPopup` built the draw toolbar without closing the card toolbar first. Files: `src/drawing-toolbar.ts`.
   - Lines/arrows had no contextual toolbar; their options only lived in a right-click menu, unlike every other item type. Added an edge contextual toolbar (color, label, arrowhead, dashed, reverse, routing mode, delete) wired through the same `syncCardToolbar`/selection mechanism as cards, and removed the now-redundant right-click menu for edges. Files: `src/card-toolbar.ts`, `src/board-context-menu.ts`.
   - Note/To-do card titles used an HTML `placeholder` for the default name ("Note", "To-do"), so the field looked empty until typed into and the ghost text vanished with no real content behind it. Default titles are now assigned as the actual value on first render, so the user must delete the pre-filled name to type their own. Files: `src/render.ts`.
+  - Deleting a mixed selection of cards and lines took two presses of Delete (first press only removed the selected edges, second removed the cards) — the keydown handler special-cased `selectedEdges` instead of going through `deleteSelection`, which already merges both. Now a single Delete removes everything selected in one pass. Files: `src/board-keyboard.ts`, `src/board-clipboard.ts`.
 
 ## 2026-07-12 (v1.0.1)
 

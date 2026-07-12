@@ -36,13 +36,7 @@ export function onKeyDown(view: BoardView, e: KeyboardEvent) {
 
   if (matchesBinding(e, kb.deleteSelection) || e.key === "Backspace") {
     e.preventDefault();
-    if (view.selectedEdges.size) {
-      view.board.edges = view.board.edges.filter((x) => !view.selectedEdges.has(x.id));
-      view.selectedEdges.clear();
-      view.commit();
-    } else {
-      view.deleteSelection();
-    }
+    view.deleteSelection();
     return;
   }
   if (e.key === "Escape") {

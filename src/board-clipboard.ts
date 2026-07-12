@@ -58,14 +58,18 @@ export function duplicateSelection(view: BoardView) {
 }
 
 export function deleteSelection(view: BoardView) {
-  if (!view.selection.size) return;
+  if (!view.selection.size && !view.selectedEdges.size) return;
   const ids = new Set(view.selection);
   for (const it of view.board.items) {
     if (it.parent && ids.has(it.parent)) ids.add(it.id);
   }
+  const edgeIds = new Set(view.selectedEdges);
   view.board.items = view.board.items.filter((i) => !ids.has(i.id));
-  view.board.edges = view.board.edges.filter((e) => !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to)));
+  view.board.edges = view.board.edges.filter(
+    (e) => !edgeIds.has(e.id) && !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to))
+  );
   view.selection.clear();
+  view.selectedEdges.clear();
   view.syncCardToolbar();
   view.commit();
 }
