@@ -1,4 +1,4 @@
-# Maguilanote
+![Maguilanote Logo](https://github.com/is-cout/maguilanote-obsidian/blob/main/logo.png)
 
 A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, images, links, files, columns, to-do lists, color swatches, comments, audio recordings, nested boards and arrows on an infinite canvas, entirely inside your vault.
 
