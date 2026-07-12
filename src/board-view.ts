@@ -596,7 +596,7 @@ export class BoardView extends TextFileView {
   onDblClick(e: MouseEvent) {
     if (this.drawMode) return;
     const target = e.target as HTMLElement;
-    if (target.closest("input, textarea, audio, video, iframe, .mgn-connector, .mgn-resize")) return;
+    if (target.closest("input, textarea, audio, iframe, .mgn-connector, .mgn-resize, .mgn-video-bar")) return;
 
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {

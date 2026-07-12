@@ -42,7 +42,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (target.closest(".mgn-context-toolbar, .mgn-ctx-popover")) return;
   // never steal focus from active inputs/editors (blur would kill them)
   const interactive = !!target.closest(
-    "input, textarea, audio, video, iframe, a, button, .mgn-todo-grip, .mgn-record-player, [contenteditable=true]"
+    "input, textarea, audio, iframe, a, button, .mgn-todo-grip, .mgn-record-player, .mgn-video-bar, [contenteditable=true]"
   );
   if (!interactive) view.viewportEl.focus({ preventScroll: true });
 

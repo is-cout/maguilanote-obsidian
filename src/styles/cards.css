@@ -46,9 +46,10 @@
   pointer-events: none !important;
 }
 /* exception: a to-do's checkbox/drag-grip, a record card's player, and a video
-   player stay live even when the card isn't selected, so they work without a
-   select-first step (grab the card by its padding/head to move it) */
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, video) {
+   card's control bar stay live even when the card isn't selected, so they work
+   without a select-first step. The video *picture* stays inert so the card is
+   still draggable by its image area — only the bar is interactive. */
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
   pointer-events: auto !important;
 }
 
@@ -327,6 +328,64 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   opacity: 0.75;
+}
+
+/* video card player — a custom control bar overlaid on the bottom of the
+   picture (native <video controls> can't leave the picture area draggable) */
+.mgn-video-wrap {
+  position: relative;
+}
+.mgn-video-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 0 0 2px 2px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+}
+.mgn-card button.mgn-video-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.mgn-video-play svg {
+  width: 13px;
+  height: 13px;
+}
+.mgn-video-progress {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 30%, transparent);
+}
+.mgn-video-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: currentColor;
+  pointer-events: none;
+}
+.mgn-video-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 
 /* board card (nested board) */
