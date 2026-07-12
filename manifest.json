@@ -1,7 +1,7 @@
 {
   "id": "maguilanote",
   "name": "Maguilanote",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
   "description": "Visual workspace boards inside Obsidian: infinite canvas, notes, images, links, columns, to-do lists, arrows and more.",
   "author": "is-cout",
