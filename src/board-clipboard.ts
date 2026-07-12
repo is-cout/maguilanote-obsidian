@@ -17,6 +17,7 @@ export function copySelection(view: BoardView, cut: boolean) {
     view.board.items = view.board.items.filter((i) => !ids.has(i.id));
     view.board.edges = view.board.edges.filter((e) => !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to)));
     view.selection.clear();
+    view.syncCardToolbar();
     view.commit();
   }
   new Notice(cut ? "Cut" : "Copied");
@@ -44,6 +45,7 @@ export function pasteInternal(view: BoardView) {
   }
   view.board.items.push(...clones);
   view.selection = new Set(clones.filter((c) => !c.parent).map((c) => c.id));
+  view.syncCardToolbar();
   view.commit();
 }
 
@@ -64,5 +66,6 @@ export function deleteSelection(view: BoardView) {
   view.board.items = view.board.items.filter((i) => !ids.has(i.id));
   view.board.edges = view.board.edges.filter((e) => !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to)));
   view.selection.clear();
+  view.syncCardToolbar();
   view.commit();
 }
