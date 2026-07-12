@@ -9,6 +9,7 @@ import { SettingsModal, TextPromptModal } from "./modals";
 import { drawEdgesFn, renderCardFn } from "./render";
 import { ensureGoogleFont, fontFamilyValue } from "./fonts";
 import { ContextToolbar, DrawSession } from "./draw";
+import { syncCardToolbar as syncCardToolbarImpl } from "./card-toolbar";
 import {
   BoardData,
   CARD_COLORS,
@@ -134,6 +135,9 @@ export class BoardView extends TextFileView {
     keyHandler: (e: KeyboardEvent) => void;
   } | null = null;
 
+  // contextual toolbar for the single selected (non-drawing) card, if any
+  cardToolbar: ContextToolbar | null = null;
+
   searchHits: string[] = [];
   searchIdx = 0;
 
@@ -254,6 +258,9 @@ export class BoardView extends TextFileView {
   defaultStrokeColor(): string {
     return this.plugin.settings.theme === "dark" ? "#ffffff" : DEFAULT_STROKE_COLOR;
   }
+
+  /** open/close the card contextual toolbar to match the current selection */
+  syncCardToolbar() { return syncCardToolbarImpl(this); }
 
   /** re-pick the vault file a card points to (broken/renamed references) */
   relinkItem(it: Item) { return relinkItemImpl(this, it); }

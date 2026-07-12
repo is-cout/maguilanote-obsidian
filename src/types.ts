@@ -26,6 +26,8 @@ export interface Item {
   w: number;
   h?: number; // manual vertical size (min-height); content can still grow past it
   color?: string;
+  /** left-side accent stripe color (CARD_COLORS key), independent of `color` */
+  accentColor?: string;
   locked?: boolean;
   parent?: string; // column id when stacked inside a column
   order?: number;

@@ -1,7 +1,7 @@
 import { Menu } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { CARD_COLORS, TITLE_ELIGIBLE_TYPES, colorOf } from "./types";
+import { CARD_COLORS, colorOf } from "./types";
 
 export function onContextMenu(view: BoardView, e: MouseEvent) {
   if (view.drawMode) { e.preventDefault(); return; }
@@ -79,51 +79,6 @@ export function onContextMenu(view: BoardView, e: MouseEvent) {
     view.refreshSelectionClasses();
   }
   const menu = new Menu();
-  if (it.type !== "swatch" && it.type !== "column") {
-    menu.addItem((i) => {
-      i.setTitle("Card color").setIcon("palette");
-      const sub = (i as any).setSubmenu?.() as Menu | undefined;
-      if (sub) {
-        for (const c of CARD_COLORS) {
-          sub.addItem((si) =>
-            si.setTitle(c.name).setChecked(colorOf(it.color).key === c.key).onClick(() => {
-              for (const id of view.selection) {
-                const t = view.item(id);
-                if (t) t.color = c.key;
-              }
-              view.commit();
-            })
-          );
-        }
-      } else {
-        i.onClick(() => {
-          const idx = CARD_COLORS.findIndex((c) => c.key === colorOf(it.color).key);
-          it.color = CARD_COLORS[(idx + 1) % CARD_COLORS.length].key;
-          view.commit();
-        });
-      }
-    });
-  }
-  if (it.type === "file" || it.type === "image" || it.type === "board") {
-    menu.addItem((i) =>
-      i.setTitle("Replace reference...").setIcon("link-2").onClick(() => view.relinkItem(it))
-    );
-  }
-  if (it.type === "record" && it.path) {
-    menu.addItem((i) =>
-      i.setTitle("Transcribe text").setIcon("captions").onClick(() => view.transcribeRecord(it))
-    );
-  }
-  if (TITLE_ELIGIBLE_TYPES.includes(it.type)) {
-    menu.addItem((i) => i.setTitle(it.showTitle ? "Hide title" : "Show title").setIcon("heading").onClick(() => {
-      const show = !it.showTitle;
-      for (const id of view.selection) {
-        const t = view.item(id);
-        if (t && TITLE_ELIGIBLE_TYPES.includes(t.type)) t.showTitle = show;
-      }
-      view.commit();
-    }));
-  }
   menu.addItem((i) => i.setTitle(it.locked ? "Unlock" : "Lock on board").setIcon(it.locked ? "unlock" : "lock").onClick(() => {
     it.locked = !it.locked;
     view.commit();

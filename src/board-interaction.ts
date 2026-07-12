@@ -542,4 +542,5 @@ export function refreshSelectionClasses(view: BoardView) {
   view.worldEl.querySelectorAll<HTMLElement>(".mgn-card").forEach((el) => {
     el.toggleClass("mgn-selected", view.selection.has(el.dataset.id ?? ""));
   });
+  view.syncCardToolbar();
 }

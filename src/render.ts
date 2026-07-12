@@ -234,6 +234,9 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     el.style.background = c.bg;
     el.style.color = c.fg;
   }
+  if (it.accentColor && it.accentColor !== "default" && it.type !== "column" && it.type !== "swatch") {
+    el.style.borderLeft = `4px solid ${colorOf(it.accentColor).bg}`;
+  }
   if (view.selection.has(it.id)) el.addClass("mgn-selected");
   if (it.locked) el.addClass("mgn-locked");
   renderCardTitle(view, el, it);
