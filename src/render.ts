@@ -232,16 +232,16 @@ function applyTodoDrop(view: BoardView, source: Item, entry: TodoEntry, target: 
 
 /** optional centered title shown above a card's content when `it.showTitle` is on
  * (toggled via the card's right-click menu) — styled exactly like a column's
- * title. The placeholder is the card's own name, so an untouched title reads as
- * e.g. "Note". */
+ * title. An untouched title defaults to the card's own name, e.g. "Note", as
+ * real text the user must delete before typing their own. */
 function renderCardTitle(view: BoardView, el: HTMLElement, it: Item) {
   if (!it.showTitle || !(it.type in TITLE_LABELS)) return;
+  if (it.title === undefined) it.title = TITLE_LABELS[it.type];
   const head = el.createDiv({ cls: "mgn-card-title" });
   const input = head.createEl("input", {
     cls: "mgn-card-title-text",
     type: "text",
     value: it.title ?? "",
-    attr: { placeholder: TITLE_LABELS[it.type] ?? "Title" },
   });
   input.addEventListener("input", () => {
     it.title = input.value;
