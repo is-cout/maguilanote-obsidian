@@ -41,7 +41,7 @@ Only run this when the user explicitly asks for a release. A version bump or a m
 6. **Commit on the release branch:**
    ```
    git add package.json manifest.json versions.json docs/CHANGELOG.md
-   git commit -m "chore: release v<x.y.z>"
+   git commit -m "chore: release <x.y.z>"
    ```
 
 7. **Merge into `main`:**
@@ -50,9 +50,11 @@ Only run this when the user explicitly asks for a release. A version bump or a m
    git merge --no-ff release/<x.y.z>
    ```
 
-8. **Tag on `main`:**
+8. **Tag on `main`** — bare `x.y.z`, **never** a `v` prefix (Obsidian requires the release
+   tag to match `manifest.json`'s `version` exactly; the release workflow only triggers on
+   `[0-9]+.[0-9]+.[0-9]+`):
    ```
-   git tag -a v<x.y.z> -m "v<x.y.z>"
+   git tag -a <x.y.z> -m "<x.y.z>"
    ```
 
 9. **Merge back into `develop`:**
@@ -63,11 +65,11 @@ Only run this when the user explicitly asks for a release. A version bump or a m
 
 10. **Confirm with the user before pushing** (pushing triggers the public GitHub release
     build — this is the irreversible, visible step). Show what will be pushed:
-    `main`, `develop`, and tag `v<x.y.z>`.
+    `main`, `develop`, and tag `<x.y.z>`.
 
 11. **Push:**
     ```
-    git push origin main develop v<x.y.z>
+    git push origin main develop <x.y.z>
     ```
 
 12. **Delete the release branch** (local and remote if it was pushed):

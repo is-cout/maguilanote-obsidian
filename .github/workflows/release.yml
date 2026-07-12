@@ -3,7 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      # Obsidian requires the release tag to match manifest.json exactly — no "v" prefix.
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: write

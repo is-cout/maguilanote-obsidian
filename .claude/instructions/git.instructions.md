@@ -7,7 +7,8 @@ applyTo: '**'
 ## Branching (Git Flow)
 
 - `main` — always releasable, reflects the latest released version. Only receives merges
-  from a `release/*` (or `hotfix/*`) branch. Every merge into `main` is tagged.
+  from a `release/*` (or `hotfix/*`) branch. Every merge into `main` is tagged `x.y.z`
+  (bare numbers, no `v` prefix).
 - `develop` — integration branch. All `feature/*` and `fix/*` branches merge here first.
 - `feature/<short-name>` — new functionality. Branch off `develop`, merge back into `develop`.
 - `fix/<short-name>` — bug fixes. Branch off `develop`, merge back into `develop`.
@@ -85,9 +86,10 @@ by this point — each `feat`/`fix` bumped it when it shipped (see
 3. Confirm `docs/CHANGELOG.md` reflects everything in the release.
 4. Commit on the release branch if step 2/3 changed anything (e.g. `chore: release v0.7.2`).
 5. Merge `release/<x.y.z>` into `main`.
-6. Tag on `main`: `git tag -a v<x.y.z> -m "v<x.y.z>"`.
+6. Tag on `main`: `git tag -a <x.y.z> -m "<x.y.z>"`. **No `v` prefix** — Obsidian requires the
+   release tag to match `manifest.json`'s `version` exactly, or the plugin won't install.
 7. Merge `release/<x.y.z>` back into `develop` (keeps any release-branch fixes).
-8. Push `main`, `develop`, and the tag: `git push origin main develop v<x.y.z>`.
+8. Push `main`, `develop`, and the tag: `git push origin main develop <x.y.z>`.
 9. Delete the `release/<x.y.z>` branch.
 
-Pushing the `v*` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder).
+Pushing the `x.y.z` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder).
