@@ -282,6 +282,11 @@
 }
 
 /* record card player */
+.mgn-card.mgn-record {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* keep the player vertically centered in the card */
+}
 .mgn-record-player {
   display: flex;
   align-items: center;
@@ -293,32 +298,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  border: none;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
   border-radius: 50%;
   cursor: pointer;
-  background: var(--mgn-accent);
-  color: var(--mgn-white);
+  background: transparent;
+  color: inherit;
   box-shadow: none;
 }
 .mgn-record-play svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 .mgn-record-bar {
   flex: 1 1 auto;
   height: 5px;
   border-radius: 3px;
   cursor: pointer;
-  background: color-mix(in srgb, currentColor 20%, transparent);
+  background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .mgn-record-bar-fill {
   height: 100%;
   width: 0;
   border-radius: 3px;
-  background: var(--mgn-accent);
+  background: currentColor;
   pointer-events: none;
 }
 .mgn-record-time {

@@ -36,8 +36,13 @@ function fmtTime(s: number): string {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
+/** pause a record card's cached audio (used when the record popup closes) */
+export function pauseRecordAudio(id: string) {
+  recordAudio.get(id)?.pause();
+}
+
 /** compact play/seek/time player for a record card */
-function renderRecordPlayer(view: BoardView, el: HTMLElement, it: Item, src: string) {
+export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   let audio = recordAudio.get(it.id);
   if (!audio || audio.src !== src) {
     audio?.pause();
@@ -368,7 +373,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       } else if (!f) {
         markMissing(el);
       } else {
-        renderRecordPlayer(view, el, it, view.app.vault.getResourcePath(f));
+        renderRecordPlayer(el, it, view.app.vault.getResourcePath(f));
       }
       break;
     }

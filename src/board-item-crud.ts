@@ -51,7 +51,9 @@ export function addComment(view: BoardView, x?: number, y?: number) {
 }
 
 export function addRecord(view: BoardView, x?: number, y?: number) {
-  view.addItem({ type: "record", w: 220, h: 80 }, x, y);
+  // no fixed height: the empty-state placeholder sizes the card, and once recorded
+  // it shrinks to the compact player (a fixed h would act as a min-height floor)
+  view.addItem({ type: "record", w: 220 }, x, y);
 }
 
 export function createFromTool(view: BoardView, key: string, x: number, y: number) {
