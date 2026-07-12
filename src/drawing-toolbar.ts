@@ -50,7 +50,7 @@ function makeDrawToolbar(
 }
 
 /** popover anchored to a toolbar button; closes on outside click */
-function makePopover(view: BoardView, anchor: HTMLElement): HTMLElement {
+export function makePopover(view: BoardView, anchor: HTMLElement): HTMLElement {
   view.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
   const pop = view.contentEl.createDiv({ cls: "mgn-ctx-popover" });
   const cr = view.contentEl.getBoundingClientRect();

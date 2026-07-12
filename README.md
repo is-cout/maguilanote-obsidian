@@ -14,7 +14,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Card types**
 - Text note, image, link (auto title, YouTube embed), file (any type, audio/video player)
 - Vault file drag & drop, to-do list, column, color swatch, comment, document note
-- Record: drag onto the board, double-click to open the recording popup (pick a microphone, record, play back); right-click → "Transcribe text" sends it to the OpenAI Whisper API (requires an API key in Settings) and drops the result into a connected note card
+- Record: drag onto the board, double-click to open the recording popup (pick a microphone, record, play back); the card's contextual toolbar → "Transcribe text" sends it to the OpenAI Whisper API (requires an API key in Settings) and drops the result into a connected note card
 
 **Drawing**
 - Draw: freehand on the board (pen/select/eraser, color, stroke size, pen-pressure), strokes grouped into editable drawings on save
@@ -29,7 +29,11 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 
 **Text editing**
 - Full Markdown: headings, bold/italic/strikethrough, lists, quotes, code, links, `[[wikilinks]]`
-- Card background colors
+- Card background colors, plus an independent accent color (left-side stripe)
+
+**Contextual toolbar**
+- Selecting a card opens its options in the same lateral slot used by the Draw toolbar: card color, accent color, show/hide title, and type-specific actions (replace reference, transcribe recording)
+- Right-click keeps only structural actions: lock/unlock, duplicate, bring to front/back, delete
 
 **Canvas**
 - Select/drag, multi-select, group move, resize

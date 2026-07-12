@@ -210,11 +210,6 @@
   box-shadow: none !important;
 }
 
-/* comment card */
-.mgn-comment {
-  border-left: 4px solid var(--mgn-comment-accent);
-}
-
 /* universal optional card title — centered, no icon, styled exactly like a
  * column's title (shown above the card's content when "Show title" is on) */
 .mgn-card-title {

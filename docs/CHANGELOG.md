@@ -4,6 +4,11 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (v0.11.0)
+
+- Added a **contextual toolbar for all card types**, matching the one already used for draw/sketch. Selecting a single card (of any type) opens it in the same lateral slot as the draw toolbar (dimming the main toolbar), showing card color, the new accent color, "Show/Hide title" (for title-eligible types), and type-specific actions ("Replace reference..." for file/image/board, "Transcribe text" for record) — closes automatically on multi-select, deselect, or entering draw mode (`src/card-toolbar.ts`, new; wired via `BoardView.syncCardToolbar()` called from `refreshSelectionClasses`). The right-click menu is now structural-only: Lock/Unlock, Duplicate, Bring to front, Send to back, Delete — everything else moved to the toolbar (`src/board-context-menu.ts`).
+- Added an independent **accent color**: a left-side stripe (`Item.accentColor`, same `CARD_COLORS` palette as the card background, set via the new toolbar) that can be combined with the card's own background color. This generalizes the stripe that used to be hardcoded for the `comment` card type only — `.mgn-comment`'s automatic border-left and the `--mgn-comment-accent` var are removed, so old boards with comment cards no longer show a stripe automatically; set one via the toolbar to bring it back. Files: `src/types.ts`, `src/render.ts`, `src/styles/cards.css`, `src/styles/variables.css`.
+
 ## 2026-07-11 (v0.10.2)
 
 - Fixed toolbar/breadcrumb hover text disappearing in the light theme: `.mgn-crumb:hover`, `.mgn-tool:hover`, and `.mgn-zoom-100:hover` used `var(--mgn-white)`, which is `#fff` in both themes — invisible against the light theme's near-white hover backgrounds. Switched to themed text vars (`--mgn-text-bright` for the breadcrumb, `--mgn-panel-text-strong` for the toolbar/zoom controls, which sit on `--mgn-panel-hover-bg`). Files: `src/styles/chrome.css`.

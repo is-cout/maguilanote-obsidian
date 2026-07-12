@@ -37,7 +37,7 @@ The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in
 
 ### How does "Transcribe text" on a Record card work, and does it cost anything?
 
-It calls the OpenAI Whisper API (`whisper-1`) with the API key from Settings → Recording → "OpenAI API key". This is the only network call the plugin makes to an external service, and it's opt-in: nothing happens until the user pastes a key and right-clicks a recorded card. The Whisper API is paid (usage-based, no free tier) — see [DEPENDENCIES.md](DEPENDENCIES.md) if you're wondering whether this counts as a "dependency" (it doesn't: no npm package, just a `fetch` call).
+It calls the OpenAI Whisper API (`whisper-1`) with the API key from Settings → Recording → "OpenAI API key". This is the only network call the plugin makes to an external service, and it's opt-in: nothing happens until the user pastes a key and clicks "Transcribe text" in a selected recording card's contextual toolbar. The Whisper API is paid (usage-based, no free tier) — see [DEPENDENCIES.md](DEPENDENCIES.md) if you're wondering whether this counts as a "dependency" (it doesn't: no npm package, just a `fetch` call).
 
 ### Where is the OpenAI API key actually stored — is it in my vault?
 

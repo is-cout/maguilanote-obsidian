@@ -10,7 +10,6 @@
   --mgn-danger: #e05252;
   --mgn-danger-text: #c93c3c;
   --mgn-success: #35c26e;
-  --mgn-comment-accent: #f0b429;
   --mgn-panel-bg: #24232c;
   --mgn-panel-border: #3d3c48;
   --mgn-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -60,7 +59,6 @@
   --mgn-danger: #d84a4a;
   --mgn-danger-text: #b73434;
   --mgn-success: #2aa860;
-  --mgn-comment-accent: #d69a1a;
   --mgn-panel-bg: #ffffff;
   --mgn-panel-border: #d7d9e0;
   --mgn-panel-shadow: 0 4px 16px rgba(30, 30, 40, 0.12);
@@ -327,9 +325,6 @@
 .mgn-card textarea:focus {
   outline: none !important;
   box-shadow: none !important;
-}
-.mgn-comment {
-  border-left: 4px solid var(--mgn-comment-accent);
 }
 .mgn-card-title {
   margin-bottom: var(--mgn-space-sm);
