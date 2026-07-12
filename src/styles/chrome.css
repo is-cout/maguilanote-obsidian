@@ -178,6 +178,10 @@
 .mgn-crumb-sep {
   color: var(--mgn-panel-sep);
 }
+/* text field of the generic prompt modal */
+.mgn-prompt-input {
+  width: 100%;
+}
 /* settings modal + shared with the native plugin settings tab */
 .mgn-settings-modal h3 {
   margin: 1.2em 0 0.4em;

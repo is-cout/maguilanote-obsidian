@@ -393,10 +393,12 @@ export class BoardView extends TextFileView {
         orient: "auto-start-reverse",
       },
     });
-    // `currentColor` inside a <marker> resolves against <defs>, not the path that
-    // references it — so every marker gets an explicit fill instead
-    marker.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } })
-      .style.fill = "var(--mgn-text-dim)"; // same var as .mgn-edge's stroke
+    // fill comes from .mgn-arrowhead-path (--mgn-marker-fill, defaults to the
+    // same var as .mgn-edge's stroke)
+    marker.createSvg("path", {
+      cls: "mgn-arrowhead-path",
+      attr: { d: "M 0 0 L 10 5 L 0 10 z" },
+    });
     const selMarker = defs.createSvg("marker", {
       attr: {
         id: "mgn-arrowhead-selected",
@@ -408,8 +410,10 @@ export class BoardView extends TextFileView {
         orient: "auto-start-reverse",
       },
     });
-    selMarker.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } })
-      .style.fill = "var(--mgn-accent)";
+    selMarker.createSvg("path", {
+      cls: "mgn-arrowhead-path",
+      attr: { d: "M 0 0 L 10 5 L 0 10 z" },
+    }).setCssProps({ "--mgn-marker-fill": "var(--mgn-accent)" });
     // one fixed-fill marker per palette color ("default" excluded: an uncolored
     // edge uses the base marker above, not the default card background)
     for (const c of CARD_COLORS) {
@@ -425,8 +429,12 @@ export class BoardView extends TextFileView {
           orient: "auto-start-reverse",
         },
       });
-      const cmPath = cm.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } });
-      cmPath.style.fill = c.bg; // inline style (not the `fill` attr) so var()-based colors resolve
+      const cmPath = cm.createSvg("path", {
+        cls: "mgn-arrowhead-path",
+        attr: { d: "M 0 0 L 10 5 L 0 10 z" },
+      });
+      // custom prop (not the `fill` attr) so var()-based palette colors resolve
+      cmPath.setCssProps({ "--mgn-marker-fill": c.bg });
     }
     this.labelsEl = this.worldEl.createDiv({ cls: "mgn-edge-labels" });
     this.emptyHint = this.viewportEl.createDiv({
@@ -670,15 +678,15 @@ export class BoardView extends TextFileView {
     const body = cardEl.querySelector<HTMLElement>(".mgn-note-body");
     if (!body) return;
     body.empty();
-    body.style.pointerEvents = "auto";
+    body.addClass("mgn-note-body-editing");
     const ta = body.createEl("textarea", {
       cls: "mgn-note-edit",
       attr: { placeholder: "Start typing...", rows: "1" },
     });
     ta.value = it.text ?? "";
     const fit = () => {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
+      ta.setCssStyles({ height: "auto" });
+      ta.setCssStyles({ height: `${ta.scrollHeight}px` });
       this.drawEdges();
     };
     ta.addEventListener("input", fit);

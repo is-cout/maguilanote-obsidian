@@ -505,8 +505,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         cls: "mgn-drawing-svg",
         attr: { viewBox: `0 0 ${it.w} ${it.h ?? it.w}`, preserveAspectRatio: "none" },
       });
-      svg.style.width = "100%";
-      svg.style.height = `${it.h ?? it.w}px`;
+      svg.setCssStyles({ height: `${it.h ?? it.w}px` }); // width comes from .mgn-drawing-svg
       for (const s of it.strokes ?? []) {
         const p = svg.createSvg("path");
         p.setAttribute("d", strokeToPath(s));

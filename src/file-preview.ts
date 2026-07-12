@@ -52,18 +52,21 @@ export async function openPreviewFor(view: BoardView, it: Item) {
     await MarkdownRenderer.render(view.app, text, body, f.path, view);
   } else if (IMAGE_EXTS.includes(ext)) {
     body.createEl("img", {
-      attr: { src: view.app.vault.getResourcePath(f), style: "max-width:100%;border-radius:4px;" },
+      cls: "mgn-preview-media",
+      attr: { src: view.app.vault.getResourcePath(f) },
     });
   } else if (AUDIO_EXTS.includes(ext)) {
     body.createEl("audio", {
-      attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;" },
+      cls: "mgn-preview-media",
+      attr: { controls: "true", src: view.app.vault.getResourcePath(f) },
     });
   } else if (VIDEO_EXTS.includes(ext)) {
     body.createEl("video", {
-      attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;" },
+      cls: "mgn-preview-media",
+      attr: { controls: "true", src: view.app.vault.getResourcePath(f) },
     });
   } else if (ext === "pdf") {
-    body.style.height = "75vh";
+    body.addClass("mgn-preview-body-pdf");
     await MarkdownRenderer.render(view.app, `![[${f.path}]]`, body, f.path, view);
   } else {
     body.createDiv({ text: `No preview available for .${ext} files.` });
