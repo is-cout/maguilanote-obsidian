@@ -45,9 +45,9 @@
 .mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
   pointer-events: none !important;
 }
-/* exception: a to-do's checkbox and drag-grip stay live even when the card isn't
-   selected, so a checklist can be ticked / reordered without a select-first step */
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip) {
+/* exception: a to-do's checkbox/drag-grip and a record card's player stay live even
+   when the card isn't selected, so they work without a select-first step */
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar) {
   pointer-events: auto !important;
 }
 
@@ -279,6 +279,53 @@
   white-space: nowrap;
   margin-top: 2px;
   pointer-events: none;
+}
+
+/* record card player */
+.mgn-record-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.mgn-card button.mgn-record-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
+  box-shadow: none;
+}
+.mgn-record-play svg {
+  width: 14px;
+  height: 14px;
+}
+.mgn-record-bar {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+.mgn-record-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--mgn-accent);
+  pointer-events: none;
+}
+.mgn-record-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 
 /* board card (nested board) */

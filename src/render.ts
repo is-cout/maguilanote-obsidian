@@ -27,6 +27,58 @@ function iconPlaceholder(parent: HTMLElement, icon: string, text: string) {
   ph.createSpan({ cls: "mgn-icon-placeholder-text", text });
 }
 
+/** audio elements of record cards, kept alive across re-renders (keyed by item id)
+ * so a full board render never reloads the media (which used to flash the card) */
+const recordAudio = new Map<string, HTMLAudioElement>();
+
+function fmtTime(s: number): string {
+  if (!Number.isFinite(s) || s < 0) s = 0;
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+}
+
+/** compact play/seek/time player for a record card */
+function renderRecordPlayer(view: BoardView, el: HTMLElement, it: Item, src: string) {
+  let audio = recordAudio.get(it.id);
+  if (!audio || audio.src !== src) {
+    audio?.pause();
+    audio = new Audio(src);
+    audio.preload = "metadata";
+    recordAudio.set(it.id, audio);
+  }
+  const player = el.createDiv({ cls: "mgn-record-player" });
+  const btn = player.createEl("button", { cls: "mgn-record-play" });
+  const bar = player.createDiv({ cls: "mgn-record-bar" });
+  const fill = bar.createDiv({ cls: "mgn-record-bar-fill" });
+  const time = player.createDiv({ cls: "mgn-record-time" });
+
+  // MediaRecorder webm files carry no duration metadata (audio.duration is
+  // Infinity), so fall back to the length measured while recording
+  const total = () =>
+    Number.isFinite(audio!.duration) && audio!.duration > 0 ? audio!.duration : it.duration ?? 0;
+  const sync = () => {
+    setIcon(btn, audio!.paused ? "play" : "pause");
+    const t = total();
+    fill.style.width = t ? `${Math.min(100, (audio!.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(audio!.currentTime)} / ${fmtTime(t)}`);
+  };
+  // assigned (not addEventListener) so re-renders replace the handlers of the reused element
+  audio.onloadedmetadata = audio.ontimeupdate = audio.onplay = audio.onpause = audio.onended = sync;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (audio!.paused) audio!.play().catch(() => {});
+    else audio!.pause();
+  });
+  bar.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const t = total();
+    if (!t) return;
+    const r = bar.getBoundingClientRect();
+    audio!.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    sync();
+  });
+  sync();
+}
+
 /**
  * Grip-drag on a to-do item. Follows the pointer with a floating ghost and shows
  * a live preview of the outcome:
@@ -316,9 +368,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       } else if (!f) {
         markMissing(el);
       } else {
-        el.createEl("audio", {
-          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;display:block;" },
-        });
+        renderRecordPlayer(view, el, it, view.app.vault.getResourcePath(f));
       }
       break;
     }
