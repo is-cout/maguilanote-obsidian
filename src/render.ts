@@ -596,9 +596,13 @@ export function drawEdgesFn(view: BoardView) {
       cls: selected ? ["mgn-edge", "mgn-edge-selected"] : "mgn-edge",
       attr: { d, fill: "none" },
     });
-    const useColor = e.color && !selected;
+    // "default" (or no color) = the themed line color from CSS, not a card background
+    const useColor = e.color && e.color !== "default" && !selected;
     if (e.arrow !== false) {
-      p.setAttr("marker-end", useColor ? `url(#mgn-arrowhead-${e.color})` : "url(#mgn-arrowhead)");
+      const marker = useColor
+        ? `mgn-arrowhead-${e.color}`
+        : selected ? "mgn-arrowhead-selected" : "mgn-arrowhead";
+      p.setAttr("marker-end", `url(#${marker})`);
     }
     if (e.dashed) p.setAttr("stroke-dasharray", "6 5");
     if (useColor) {

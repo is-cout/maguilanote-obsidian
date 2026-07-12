@@ -4,6 +4,14 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-11 (v0.10.2)
+
+- Fixed toolbar/breadcrumb hover text disappearing in the light theme: `.mgn-crumb:hover`, `.mgn-tool:hover`, and `.mgn-zoom-100:hover` used `var(--mgn-white)`, which is `#fff` in both themes — invisible against the light theme's near-white hover backgrounds. Switched to themed text vars (`--mgn-text-bright` for the breadcrumb, `--mgn-panel-text-strong` for the toolbar/zoom controls, which sit on `--mgn-panel-hover-bg`). Files: `src/styles/chrome.css`.
+
+## 2026-07-11 (v0.10.1)
+
+- Fixed arrow/line colors not following the board theme. Two causes: (1) picking **Default** in the line color menu stored `color: "default"`, which painted the line with the *card* default background (white in the light theme, `#4a4b54` in the dark one) instead of the themed line color — "Default" now clears the color (`undefined`) so the line falls back to `.mgn-edge`'s `var(--mgn-text-dim)`, and legacy edges saved with `"default"` are treated the same; (2) the arrowhead `<marker>` filled with `currentColor`, which resolves against `<defs>` and not the path referencing it, so the head never matched the line (grey head on a black line in the light theme) — every marker now gets an explicit fill, plus a new `mgn-arrowhead-selected` marker so a selected line's head is accent-colored. Files: `src/board-view.ts`, `src/render.ts`, `src/board-context-menu.ts`.
+
 ## 2026-07-11 (v0.10.0)
 
 - Added an **Assets folder** setting (Settings → Board, next to Templates folder; default `"Maguilanote Assets"`). Dropped files/images and Record card recordings previously went into an `assets` subfolder next to whatever board they were added to, which scattered attachments across the vault and had no user control. They now all land in one configurable vault folder, like templates do. Template import still unpacks a bundle's assets alongside the imported board (`unbundleTemplate` keeps a bundle self-contained). Files: `src/main.ts`, `src/settings-ui.ts`, `src/board-drop-import.ts`, `src/record-card.ts`.

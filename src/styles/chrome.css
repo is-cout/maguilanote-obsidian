@@ -26,7 +26,7 @@
 }
 .mgn-tool:hover {
   background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+  color: var(--mgn-panel-text-strong);
 }
 .mgn-tool-active {
   background: var(--mgn-accent) !important;
@@ -99,7 +99,7 @@
 }
 .mgn-zoom-100:hover {
   background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+  color: var(--mgn-panel-text-strong);
 }
 .mgn-vsep {
   width: 1px;
@@ -164,7 +164,7 @@
   text-overflow: ellipsis;
 }
 .mgn-crumb:hover {
-  color: var(--mgn-white);
+  color: var(--mgn-text-bright);
   text-decoration: underline;
 }
 .mgn-crumb-current {

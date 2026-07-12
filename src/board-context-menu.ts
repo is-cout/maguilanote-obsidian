@@ -19,7 +19,7 @@ export function onContextMenu(view: BoardView, e: MouseEvent) {
         for (const c of CARD_COLORS) {
           sub.addItem((si) =>
             si.setTitle(c.name).setChecked(colorOf(edge.color).key === c.key).onClick(() => {
-              edge.color = c.key;
+              edge.color = c.key === "default" ? undefined : c.key; // default = themed line color
               view.commit();
             })
           );
@@ -27,7 +27,8 @@ export function onContextMenu(view: BoardView, e: MouseEvent) {
       } else {
         i.onClick(() => {
           const idx = CARD_COLORS.findIndex((c) => c.key === colorOf(edge.color).key);
-          edge.color = CARD_COLORS[(idx + 1) % CARD_COLORS.length].key;
+          const next = CARD_COLORS[(idx + 1) % CARD_COLORS.length].key;
+          edge.color = next === "default" ? undefined : next;
           view.commit();
         });
       }

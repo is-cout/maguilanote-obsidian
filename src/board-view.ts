@@ -382,12 +382,27 @@ export class BoardView extends TextFileView {
         orient: "auto-start-reverse",
       },
     });
-    marker.createSvg("path", {
-      attr: { d: "M 0 0 L 10 5 L 0 10 z", fill: "currentColor" },
+    // `currentColor` inside a <marker> resolves against <defs>, not the path that
+    // references it — so every marker gets an explicit fill instead
+    marker.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } })
+      .style.fill = "var(--mgn-text-dim)"; // same var as .mgn-edge's stroke
+    const selMarker = defs.createSvg("marker", {
+      attr: {
+        id: "mgn-arrowhead-selected",
+        viewBox: "0 0 10 10",
+        refX: "9",
+        refY: "5",
+        markerWidth: "7",
+        markerHeight: "7",
+        orient: "auto-start-reverse",
+      },
     });
-    // one fixed-fill marker per palette color: `currentColor` markers don't
-    // reliably pick up a per-edge inline color in Obsidian's Electron build
+    selMarker.createSvg("path", { attr: { d: "M 0 0 L 10 5 L 0 10 z" } })
+      .style.fill = "var(--mgn-accent)";
+    // one fixed-fill marker per palette color ("default" excluded: an uncolored
+    // edge uses the base marker above, not the default card background)
     for (const c of CARD_COLORS) {
+      if (c.key === "default") continue;
       const cm = defs.createSvg("marker", {
         attr: {
           id: `mgn-arrowhead-${c.key}`,
