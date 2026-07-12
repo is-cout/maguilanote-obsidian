@@ -13,6 +13,7 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
   - Note/To-do card titles used an HTML `placeholder` for the default name ("Note", "To-do"), so the field looked empty until typed into and the ghost text vanished with no real content behind it. Default titles are now assigned as the actual value on first render, so the user must delete the pre-filled name to type their own. Files: `src/render.ts`.
   - Deleting a mixed selection of cards and lines took two presses of Delete (first press only removed the selected edges, second removed the cards) — the keydown handler special-cased `selectedEdges` instead of going through `deleteSelection`, which already merges both. Now a single Delete removes everything selected in one pass. Files: `src/board-keyboard.ts`, `src/board-clipboard.ts`.
   - Clicking outside a sketch popup discarded the drawing, which is easy to trigger by accident. Now saves instead; Escape remains the explicit way to discard. Files: `src/drawing-toolbar.ts`.
+  - Loose lines (both ends free, not anchored to a card) could only be repositioned by dragging their endpoint handles one at a time — clicking and dragging the line body itself did nothing. Added a `line-move` drag mode that translates both ends together when the body is dragged, same as moving a card. Files: `src/board-interaction.ts`.
 
 ## 2026-07-12 (v1.0.1)
 
