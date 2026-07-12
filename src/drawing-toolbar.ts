@@ -227,6 +227,7 @@ export function addSketch(view: BoardView, x?: number, y?: number) {
 /** popup editor for a sketch card (draw only inside the fixed canvas) */
 export function openSketchPopup(view: BoardView, it: Item) {
   view.closePreview();
+  view.closeCardToolbar();
   const W = 640, H = 440;
   const ov = view.contentEl.createDiv({ cls: "mgn-preview" });
   const panel = ov.createDiv({ cls: "mgn-preview-panel mgn-sketch-panel" });

@@ -4,6 +4,14 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (v1.0.2)
+
+- **Hotfix, 4 bugs:**
+  - Contextual toolbar stayed open (stale) when navigating into a nested board — `setViewData` cleared selection/edge state but never closed `cardToolbar`. Now closes it alongside the selection clear. Files: `src/board-view.ts`.
+  - Opening a sketch card stacked a second contextual toolbar on top of the card's own — `openSketchPopup` built the draw toolbar without closing the card toolbar first. Files: `src/drawing-toolbar.ts`.
+  - Lines/arrows had no contextual toolbar; their options only lived in a right-click menu, unlike every other item type. Added an edge contextual toolbar (color, label, arrowhead, dashed, reverse, routing mode, delete) wired through the same `syncCardToolbar`/selection mechanism as cards, and removed the now-redundant right-click menu for edges. Files: `src/card-toolbar.ts`, `src/board-context-menu.ts`.
+  - Note/To-do card titles used an HTML `placeholder` for the default name ("Note", "To-do"), so the field looked empty until typed into and the ghost text vanished with no real content behind it. Default titles are now assigned as the actual value on first render, so the user must delete the pre-filled name to type their own. Files: `src/render.ts`.
+
 ## 2026-07-12 (v1.0.1)
 
 - **Hotfix:** PDF preview rendered blank. The raw `<iframe src="app://...">` relied on Chromium's built-in PDF viewer plugin, which Obsidian's Electron shell doesn't expose inside iframes. Switched to Obsidian's own embed renderer (`![[file.pdf]]` through `MarkdownRenderer`), the same mechanism already used for `.md` previews. Files: `src/file-preview.ts`.

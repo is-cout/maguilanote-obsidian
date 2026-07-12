@@ -9,7 +9,7 @@ import { SettingsModal, TextPromptModal } from "./modals";
 import { drawEdgesFn, renderCardFn } from "./render";
 import { ensureGoogleFont, fontFamilyValue } from "./fonts";
 import { ContextToolbar, DrawSession } from "./draw";
-import { syncCardToolbar as syncCardToolbarImpl } from "./card-toolbar";
+import { closeCardToolbar as closeCardToolbarImpl, syncCardToolbar as syncCardToolbarImpl } from "./card-toolbar";
 import {
   BoardData,
   CARD_COLORS,
@@ -181,6 +181,7 @@ export class BoardView extends TextFileView {
       this.histIdx = 0;
       this.selection.clear();
       this.selectedEdges.clear();
+      this.closeCardToolbar();
     }
     this.render();
     this.renderCrumbs();
@@ -261,6 +262,9 @@ export class BoardView extends TextFileView {
 
   /** open/close the card contextual toolbar to match the current selection */
   syncCardToolbar() { return syncCardToolbarImpl(this); }
+
+  /** close the card contextual toolbar unconditionally */
+  closeCardToolbar() { return closeCardToolbarImpl(this); }
 
   /** re-pick the vault file a card points to (broken/renamed references) */
   relinkItem(it: Item) { return relinkItemImpl(this, it); }
