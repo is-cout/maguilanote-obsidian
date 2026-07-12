@@ -36,6 +36,10 @@ function setDragTilt(view: BoardView, ids: string[], deg: number) {
 export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (view.drawMode) return; // draw surface handles its own pointers
   const target = e.target as HTMLElement;
+  // clicks inside the card contextual toolbar (or its color popover) must not
+  // reach canvas handling below, or they'd read as an empty-canvas click and
+  // clear the selection that opened the toolbar in the first place
+  if (target.closest(".mgn-context-toolbar, .mgn-ctx-popover")) return;
   // never steal focus from active inputs/editors (blur would kill them)
   const interactive = !!target.closest(
     "input, textarea, audio, video, iframe, a, button, .mgn-todo-grip, .mgn-record-player, [contenteditable=true]"

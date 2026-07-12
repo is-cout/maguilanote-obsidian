@@ -168,9 +168,23 @@ export const CARD_COLORS: CardColor[] = [
 // boards saved before "white"/"dark" were merged into "default" keep working
 const LEGACY_COLOR_ALIASES: Record<string, string> = { white: "default", dark: "default" };
 
+/** legible text color (near-black or near-white) for an arbitrary background hex */
+export function contrastColor(hex: string): string {
+  const m = hex.replace("#", "");
+  if (m.length < 6) return "#33343d";
+  const r = parseInt(m.slice(0, 2), 16),
+    g = parseInt(m.slice(2, 4), 16),
+    b = parseInt(m.slice(4, 6), 16);
+  return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? "#33343d" : "#ffffff";
+}
+
 export function colorOf(key: string | undefined): CardColor {
   const k = key ? LEGACY_COLOR_ALIASES[key] ?? key : "default";
-  return CARD_COLORS.find((c) => c.key === k) ?? CARD_COLORS[0];
+  const found = CARD_COLORS.find((c) => c.key === k);
+  if (found) return found;
+  // custom hex picked via the color picker (not one of the fixed presets)
+  if (/^#[0-9a-f]{6}$/i.test(k)) return { key: k, name: "Custom", bg: k, fg: contrastColor(k) };
+  return CARD_COLORS[0];
 }
 
 // ---------------------------------------------------------------- shortcuts

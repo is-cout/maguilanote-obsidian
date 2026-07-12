@@ -1,43 +1,61 @@
+import { setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { ContextToolbar, CtxGroup } from "./draw";
 import { makePopover } from "./drawing-toolbar";
-import { CARD_COLORS, Item, TITLE_ELIGIBLE_TYPES, colorOf } from "./types";
+import { CARD_COLORS, Item, TITLE_ELIGIBLE_TYPES } from "./types";
 
 /** types that don't get a card-color / accent-color control (same as the old context menu) */
 const COLOR_EXCLUDED_TYPES = ["swatch", "column"];
 
-/** swatch-grid button; opens a popover of CARD_COLORS and calls `apply` on pick */
+/** icon button; opens a popover with the CARD_COLORS presets + a custom picker
+ * (same layout as the Draw/Sketch color control) and applies to the selection */
 function renderCardColorControl(
   view: BoardView,
   h: HTMLElement,
   it: Item,
+  icon: string,
   label: string,
   get: (it: Item) => string | undefined,
   apply: (it: Item, key: string | undefined) => void
 ) {
-  const btn = h.createDiv({ cls: "mgn-ctx-tool mgn-ctx-swatchbtn", attr: { "aria-label": label } });
-  const dot = btn.createDiv({ cls: "mgn-ctx-colordot" });
-  dot.style.background = colorOf(get(it)).bg;
+  const btn = h.createDiv({ cls: "mgn-ctx-tool", attr: { "aria-label": label } });
+  setIcon(btn, icon);
   btn.addEventListener("click", () => {
     if (view.contentEl.querySelector(".mgn-ctx-popover")) {
       view.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
       return;
     }
     const pop = makePopover(view, btn);
+    const closePopover = () => view.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
+    const applyToSelection = (key: string | undefined, rerenderOnly = false) => {
+      for (const id of view.selection) {
+        const t = view.item(id);
+        if (t && !COLOR_EXCLUDED_TYPES.includes(t.type)) {
+          apply(t, key);
+          if (rerenderOnly) view.rerenderItem(t);
+        }
+      }
+      if (!rerenderOnly) view.commit();
+    };
     const grid = pop.createDiv({ cls: "mgn-ctx-colorgrid" });
     for (const c of CARD_COLORS) {
       const sw = grid.createDiv({ cls: "mgn-ctx-swatch", attr: { "aria-label": c.name } });
       sw.style.background = c.bg;
       sw.addEventListener("click", () => {
-        for (const id of view.selection) {
-          const t = view.item(id);
-          if (t && !COLOR_EXCLUDED_TYPES.includes(t.type)) apply(t, c.key === "default" ? undefined : c.key);
-        }
-        dot.style.background = c.bg;
-        view.contentEl.querySelectorAll(".mgn-ctx-popover").forEach((p) => p.remove());
-        view.commit();
+        applyToSelection(c.key === "default" ? undefined : c.key);
+        closePopover();
       });
     }
+    const current = get(it);
+    const custom = pop.createEl("input", {
+      type: "color",
+      cls: "mgn-ctx-customcolor",
+      value: current && /^#[0-9a-f]{6}$/i.test(current) ? current : "#000000",
+      attr: { "aria-label": "Custom color" },
+    });
+    // live preview while dragging the picker, committed once it's dismissed
+    custom.addEventListener("input", () => applyToSelection(custom.value, true));
+    custom.addEventListener("change", () => view.commit(false));
   });
 }
 
@@ -49,13 +67,13 @@ function buildGroups(view: BoardView, it: Item): CtxGroup[] {
     groups.push([
       {
         render: (h) =>
-          renderCardColorControl(view, h, it, "Card color", (t) => t.color, (t, key) => {
+          renderCardColorControl(view, h, it, "palette", "Card color", (t) => t.color, (t, key) => {
             t.color = key;
           }),
       },
       {
         render: (h) =>
-          renderCardColorControl(view, h, it, "Accent color", (t) => t.accentColor, (t, key) => {
+          renderCardColorControl(view, h, it, "paint-bucket", "Accent color", (t) => t.accentColor, (t, key) => {
             t.accentColor = key;
           }),
       },

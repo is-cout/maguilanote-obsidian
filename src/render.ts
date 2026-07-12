@@ -1,17 +1,8 @@
 import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, newId } from "./types";
+import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
 import { strokeToPath, strokesBBox } from "./draw";
-
-function contrastColor(hex: string): string {
-  const m = hex.replace("#", "");
-  if (m.length < 6) return "#33343d";
-  const r = parseInt(m.slice(0, 2), 16),
-    g = parseInt(m.slice(2, 4), 16),
-    b = parseInt(m.slice(4, 6), 16);
-  return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? "#33343d" : "#ffffff";
-}
 
 function markMissing(el: HTMLElement, label = "Missing reference") {
   el.addClass("mgn-missing");
