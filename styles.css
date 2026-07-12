@@ -173,7 +173,7 @@
 .mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
   pointer-events: none !important;
 }
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip) {
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar) {
   pointer-events: auto !important;
 }
 .mgn-card.mgn-missing {
@@ -388,6 +388,56 @@
   white-space: nowrap;
   margin-top: 2px;
   pointer-events: none;
+}
+.mgn-card.mgn-record {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mgn-record-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.mgn-card button.mgn-record-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.mgn-record-play svg {
+  width: 13px;
+  height: 13px;
+}
+.mgn-record-bar {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+.mgn-record-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: currentColor;
+  pointer-events: none;
+}
+.mgn-record-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 .mgn-board {
   text-align: center;

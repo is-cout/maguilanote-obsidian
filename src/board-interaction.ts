@@ -38,7 +38,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
   const target = e.target as HTMLElement;
   // never steal focus from active inputs/editors (blur would kill them)
   const interactive = !!target.closest(
-    "input, textarea, audio, video, iframe, a, button, .mgn-todo-grip, [contenteditable=true]"
+    "input, textarea, audio, video, iframe, a, button, .mgn-todo-grip, .mgn-record-player, [contenteditable=true]"
   );
   if (!interactive) view.viewportEl.focus({ preventScroll: true });
 

@@ -1,5 +1,6 @@
 import { Notice, TFile, normalizePath } from "obsidian";
 import type { BoardView } from "./board-view";
+import { pauseRecordAudio, renderRecordPlayer } from "./render";
 import { Item, newId } from "./types";
 
 /** save a binary blob into the board's assets folder, returning the created file */
@@ -40,13 +41,9 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const viz = body.createEl("canvas", { cls: "mgn-record-viz", attr: { width: "280", height: "56" } });
   const vizCtx = viz.getContext("2d");
   const timer = body.createDiv({ cls: "mgn-record-timer", text: "00:00" });
-  let existingAudio: HTMLAudioElement | null = null;
   if (it.path) {
     const f = view.resolveFile(it.path);
-    if (f) {
-      existingAudio = body.createEl("audio", { attr: { controls: "true" } });
-      existingAudio.src = view.app.vault.getResourcePath(f as TFile);
-    }
+    if (f) renderRecordPlayer(body, it, view.app.vault.getResourcePath(f as TFile));
   }
 
   const btnRow = body.createDiv({ cls: "mgn-record-btn-row" });
@@ -109,6 +106,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   populateMics().catch(() => { status.setText("Could not list microphones"); });
 
   const finish = () => {
+    pauseRecordAudio(it.id);
     stopTimer();
     stopViz();
     stopStream();
@@ -141,6 +139,8 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const tf = await saveAssetBinary(view, "recording.webm", buf);
       it.path = tf.path;
       it.duration = Math.round((Date.now() - startedAt) / 1000);
+      // drop the empty-state height so the card shrinks to the compact player
+      delete it.h;
       view.commit(false);
       view.rerenderItem(it);
       status.setText("Saved");

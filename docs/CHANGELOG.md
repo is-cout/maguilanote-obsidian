@@ -4,6 +4,11 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-11 (v0.9.1)
+
+- Record card: replaced the browser's native `<audio controls>` with a compact custom player (play/pause button, clickable seek bar, `current / total` time). Three fixes in one: (1) the native player reloaded its media on every full board `render()`, which flashed the card and briefly showed the player's loading dots — the new player keeps one `HTMLAudioElement` per card alive in a module-level cache across re-renders, so playback survives a board change and nothing reloads; (2) `MediaRecorder` webm files carry no duration metadata (`audio.duration` is `Infinity`, so the native UI showed `0:00`), so the total falls back to `Item.duration` measured while recording; (3) the player is now clickable on an unselected card (an exception to the "select first, then edit" rule, like the to-do checkbox), so play works in one click. Files: `src/render.ts`, `src/board-interaction.ts`, `src/styles/cards.css`, `styles.css`.
+- Record card polish: the player is vertically centered in the card, the play button is an outlined icon-only circle (no accent-blue fill) and the seek bar uses the card's own text color instead of the accent, the record popup (double-click) now shows the same player instead of the browser's native one (pausing it when the popup closes), and a new record card no longer carries a fixed `h: 80` — the empty-state placeholder sizes it, and recording clears any leftover height so the card shrinks to the compact player like a note. Files: `src/render.ts`, `src/record-card.ts`, `src/board-item-crud.ts`, `src/styles/cards.css`, `styles.css`.
+
 ## 2026-07-11 (v0.9.0)
 
 - Removed the **Comment** tool from the toolbar — comments only make sense with collaboration, which is explicitly out of scope for this local-first plugin. Existing comment cards in older boards still render (the `comment` type, its rendering, and Markdown export are kept for backward compatibility); they just can't be created anymore. Files: `src/board-view.ts`.
