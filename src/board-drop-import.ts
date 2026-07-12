@@ -90,10 +90,7 @@ export async function onPaste(view: BoardView, e: ClipboardEvent) {
 
 export async function importOsFile(view: BoardView, f: File, x: number, y: number) {
   const buf = await f.arrayBuffer();
-  const folder = view.file?.parent?.path && view.file.parent.path !== "/"
-    ? view.file.parent.path + "/assets"
-    : "assets";
-  const base = normalizePath(folder);
+  const base = normalizePath(view.plugin.settings.assetsFolder?.trim() || "Maguilanote Assets");
   if (!view.app.vault.getAbstractFileByPath(base)) {
     await view.app.vault.createFolder(base).catch(() => {});
   }

@@ -30,6 +30,8 @@ export interface MaguilanoteSettings {
   gridSize: number;
   defaultNoteWidth: number;
   templatesFolder: string;
+  /** vault folder where dropped files and recordings are saved */
+  assetsFolder: string;
   /** body text font: a value from FONT_CHOICES, a Google Font family name
    * (e.g. "Inter"), or "" to inherit Obsidian's font */
   fontFamily: string;
@@ -54,6 +56,7 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   gridSize: 24,
   defaultNoteWidth: 260,
   templatesFolder: "Maguilanote Templates",
+  assetsFolder: "Maguilanote Assets",
   fontFamily: "",
   headingFontFamily: "",
   theme: "dark",

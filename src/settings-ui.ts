@@ -100,6 +100,16 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
       })
     );
 
+  new Setting(containerEl)
+    .setName("Assets folder")
+    .setDesc("Where dropped files, images and recordings are saved.")
+    .addText((t) =>
+      t.setValue(s.assetsFolder).onChange(async (v) => {
+        s.assetsFolder = v || "Maguilanote Assets";
+        await save();
+      })
+    );
+
   containerEl.createEl("h3", { text: "Recording" });
 
   new Setting(containerEl)

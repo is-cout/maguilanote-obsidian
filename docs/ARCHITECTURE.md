@@ -10,7 +10,7 @@ Maguilanote is an [Obsidian](https://obsidian.md) plugin that registers a custom
 
 | File | Responsibility |
 |---|---|
-| `src/main.ts` | Plugin entry point. Registers the `.board` extension and the `BoardView`, adds ribbon icon/commands (new board, export to Markdown), owns plugin settings (grid snap, grid size, default note width, templates folder, font, theme, per-theme colors, keybindings) and the cross-board clipboard. |
+| `src/main.ts` | Plugin entry point. Registers the `.board` extension and the `BoardView`, adds ribbon icon/commands (new board, export to Markdown), owns plugin settings (grid snap, grid size, default note width, templates folder, assets folder, font, theme, per-theme colors, keybindings) and the cross-board clipboard. |
 | `src/types.ts` | Shared data model: `Item`, `Edge`, `BoardData`, card color palette (`CARD_COLORS`), file-extension lists used to classify dropped files, `parseBoard` (JSON → `BoardData`, tolerant of malformed/empty files), and the rebindable-shortcut model (`ShortcutActionId`, `KeyBinding`, `DEFAULT_KEYBINDINGS`, `matchesBinding`). |
 | `src/board-view.ts` | Implements `BoardView extends TextFileView` — the `TextFileView` lifecycle, DOM construction (`onOpen`), rendering entry points (`render`, `drawEdges`, `rerenderItem`), and a handful of small always-together methods (`renderCrumbs`, `applyAppearance`/`defaultStrokeColor`, `onDblClick`/`openCard`/`editNote`). Every other concern used to live here too; it's now split into the single-responsibility modules below, each exporting `function name(view: BoardView, ...)` functions that `BoardView` delegates to by method of the same name (mirrors the `render.ts` convention). |
 | `src/board-history.ts` | Undo/redo history stack: `commit`, `undo`, `redo`. |
