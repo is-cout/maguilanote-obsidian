@@ -4,6 +4,11 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (1.0.2, re-released)
+
+- **Release tags are now bare `x.y.z`, no `v` prefix.** Obsidian requires the GitHub release tag to match `manifest.json`'s `version` exactly — `v1.0.2` did not, so the plugin could not be installed from the release. The release workflow now triggers on `[0-9]+.[0-9]+.[0-9]+` instead of `v*`, and 1.0.2 is re-tagged/re-released under the bare name. No plugin code change, so no version bump. Files: `.github/workflows/release.yml`, `.claude/instructions/git.instructions.md`, `.claude/skills/release/SKILL.md`.
+- Added `demo.gif` and a demo section to the README.
+
 ## 2026-07-12 (v1.0.2)
 
 - **Hotfix, 4 bugs:**
