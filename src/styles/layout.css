@@ -1,0 +1,50 @@
+.mgn-root {
+  padding: 0 !important;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  font-family: var(--mgn-font-family);
+}
+
+/* dark dotted canvas */
+.mgn-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  outline: none;
+  cursor: default;
+  background-color: var(--mgn-canvas-bg);
+  background-image: radial-gradient(var(--mgn-canvas-dot) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  touch-action: none;
+}
+
+.mgn-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+.mgn-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--mgn-text-muted);
+  font-size: 15px;
+  pointer-events: none;
+  text-align: center;
+  max-width: 380px;
+}
+
+/* rubber band */
+.mgn-rubber {
+  position: absolute;
+  border: 1px solid var(--mgn-accent);
+  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
+  z-index: 15;
+  pointer-events: none;
+}

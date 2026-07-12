@@ -1,0 +1,58 @@
+/* ------------ inline file preview ------------ */
+.mgn-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: var(--mgn-preview-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mgn-preview-panel {
+  width: min(760px, 88%);
+  max-height: 86%;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border-radius: 10px;
+  box-shadow: var(--mgn-preview-shadow);
+  overflow: hidden;
+}
+.mgn-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.mgn-preview-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  overflow: hidden;
+}
+.mgn-preview-crumbs .mgn-crumb {
+  color: var(--text-muted);
+  cursor: default;
+}
+.mgn-preview-crumbs .mgn-crumb:hover {
+  text-decoration: none;
+  color: var(--text-muted);
+}
+.mgn-preview-crumbs .mgn-crumb-current {
+  color: var(--text-normal);
+}
+.mgn-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.mgn-preview-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+

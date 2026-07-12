@@ -1,22 +1,15 @@
-/* ============ Maguilanote — visual workspace look ============ */
-
+/* src/styles/variables.css */
 :root {
-  /* canvas */
   --mgn-canvas-bg: #31303b;
   --mgn-canvas-dot: #44434f;
   --mgn-text-muted: #8a8996;
   --mgn-text-dim: #9b9aa8;
   --mgn-text-bright: #f0f0f4;
   --mgn-column-text: #e8e8ee;
-
-  /* accent + status */
   --mgn-accent: #4ab3ff;
   --mgn-danger: #e05252;
   --mgn-danger-text: #c93c3c;
   --mgn-success: #35c26e;
-  --mgn-comment-accent: #f0b429;
-
-  /* floating panels (toolbar, zoombar, search, crumbs) */
   --mgn-panel-bg: #24232c;
   --mgn-panel-border: #3d3c48;
   --mgn-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -24,14 +17,9 @@
   --mgn-panel-hover-bg: #3a3944;
   --mgn-panel-text-strong: #eee;
   --mgn-panel-sep: #55545f;
-
-  /* card face (fallback text/placeholder tone) */
   --mgn-card-fg-default: #33343d;
-  /* "Default" card color preset: dark card face in dark theme, white in light theme */
   --mgn-card-default-bg: #4a4b54;
   --mgn-card-default-fg: #f0f0f2;
-  /* customizable card color presets (Settings → Customization), kept in sync
-     with the active theme's colors by BoardView.applyAppearance() */
   --mgn-card-color-yellow: #fff5c0;
   --mgn-card-color-orange: #ffd9b0;
   --mgn-card-color-red: #ffc7c2;
@@ -45,39 +33,32 @@
   --mgn-hit: #ffd84a;
   --mgn-link: #2f6fbd;
   --mgn-board-bg: #fbfbfd;
-
-  /* column card overlay (always dark, sits on the dark canvas regardless of card theme) */
-  --mgn-column-bg: rgba(255, 255, 255, 0.09);
+  --mgn-column-bg: #3a3947;
   --mgn-column-border: rgba(255, 255, 255, 0.22);
   --mgn-column-chip-bg: rgba(255, 255, 255, 0.15);
   --mgn-column-empty-border: rgba(255, 255, 255, 0.15);
-
-  /* preview modal */
   --mgn-preview-overlay: rgba(15, 15, 20, 0.55);
   --mgn-preview-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
-
-  /* pure white, used for the default card face and hover/active text on dark panels */
   --mgn-white: #fff;
-
-  /* customization: font override (set from Settings) */
   --mgn-font-family: inherit;
+  --mgn-font-family-heading: var(--mgn-font-family);
+  --mgn-space-xs: 4px;
+  --mgn-space-sm: 8px;
+  --mgn-space-md: 12px;
+  --mgn-space-lg: 16px;
+  --mgn-card-pad: 8px;
 }
-
-/* light theme palette (applied via .mgn-theme-light on .mgn-root) */
 .mgn-root.mgn-theme-light {
   --mgn-canvas-bg: #eceef2;
   --mgn-canvas-dot: #d5d8e0;
   --mgn-text-muted: #6b6b76;
-  --mgn-text-dim: #55555f;
+  --mgn-text-dim: #b0b0bb;
   --mgn-text-bright: #1c1c22;
   --mgn-column-text: #26262e;
-
   --mgn-accent: #2f7fd6;
   --mgn-danger: #d84a4a;
   --mgn-danger-text: #b73434;
   --mgn-success: #2aa860;
-  --mgn-comment-accent: #d69a1a;
-
   --mgn-panel-bg: #ffffff;
   --mgn-panel-border: #d7d9e0;
   --mgn-panel-shadow: 0 4px 16px rgba(30, 30, 40, 0.12);
@@ -85,7 +66,6 @@
   --mgn-panel-hover-bg: #eef0f5;
   --mgn-panel-text-strong: #1c1c22;
   --mgn-panel-sep: #cfd1d9;
-
   --mgn-card-fg-default: #33343d;
   --mgn-card-default-bg: #ffffff;
   --mgn-card-default-fg: #33343d;
@@ -94,18 +74,16 @@
   --mgn-hit: #e6b800;
   --mgn-link: #2f6fbd;
   --mgn-board-bg: #f7f7fa;
-
-  --mgn-column-bg: rgba(20, 20, 30, 0.05);
+  --mgn-column-bg: #e6e8ee;
   --mgn-column-border: rgba(20, 20, 30, 0.16);
   --mgn-column-chip-bg: rgba(20, 20, 30, 0.08);
   --mgn-column-empty-border: rgba(20, 20, 30, 0.14);
-
   --mgn-preview-overlay: rgba(20, 20, 30, 0.35);
   --mgn-preview-shadow: 0 12px 48px rgba(20, 20, 30, 0.25);
-
   --mgn-white: #fff;
 }
 
+/* src/styles/layout.css */
 .mgn-root {
   padding: 0 !important;
   overflow: hidden;
@@ -113,8 +91,6 @@
   height: 100%;
   font-family: var(--mgn-font-family);
 }
-
-/* dark dotted canvas */
 .mgn-viewport {
   position: absolute;
   inset: 0;
@@ -126,7 +102,6 @@
   background-size: 24px 24px;
   touch-action: none;
 }
-
 .mgn-world {
   position: absolute;
   top: 0;
@@ -135,7 +110,6 @@
   height: 0;
   transform-origin: 0 0;
 }
-
 .mgn-empty {
   position: absolute;
   top: 50%;
@@ -147,24 +121,38 @@
   text-align: center;
   max-width: 380px;
 }
+.mgn-rubber {
+  position: absolute;
+  border: 1px solid var(--mgn-accent);
+  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
+  z-index: 15;
+  pointer-events: none;
+}
 
-/* ------------ cards ------------ */
+/* src/styles/cards.css */
 .mgn-card {
   position: absolute;
   background: var(--mgn-white);
   color: var(--mgn-card-fg-default);
   border-radius: 3px;
   box-shadow: var(--mgn-card-shadow);
-  padding: 10px 12px;
+  padding: var(--mgn-card-pad);
   box-sizing: border-box;
   font-size: 14px;
   line-height: 1.45;
   user-select: none;
   cursor: grab;
-  overflow: visible; /* content is never clipped; cards grow vertically */
+  overflow: visible;
 }
 .mgn-card:active {
   cursor: grabbing;
+}
+.mgn-card.mgn-dragging {
+  transition: box-shadow 0.18s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scale(1.04) rotate(var(--mgn-tilt, 0deg));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+  cursor: grabbing;
+  z-index: 50;
 }
 .mgn-card.mgn-selected {
   outline: 2px solid var(--mgn-accent);
@@ -180,14 +168,12 @@
 .mgn-card.mgn-hit {
   outline: 2px solid var(--mgn-hit);
 }
-
-/* UNSELECTED cards are inert: first click selects/moves, only a selected card
-   exposes its inputs for editing */
-.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-todo-del, .mgn-col-collapse, .mgn-swatch-input) {
+.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
   pointer-events: none !important;
 }
-
-/* broken references */
+.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
+  pointer-events: auto !important;
+}
 .mgn-card.mgn-missing {
   outline: 2px dashed var(--mgn-danger);
   outline-offset: 1px;
@@ -206,16 +192,31 @@
   width: 14px;
   height: 14px;
 }
-
 .mgn-placeholder {
   color: inherit;
   opacity: 0.55;
   font-style: italic;
   font-size: 13px;
 }
-
-/* markdown body inside notes — force readable dark text on the light card,
-   overriding any Obsidian theme rule */
+.mgn-icon-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 72px;
+  flex: 1;
+  text-align: center;
+}
+.mgn-icon-placeholder-ico {
+  display: flex;
+}
+.mgn-icon-placeholder-ico svg {
+  width: 26px;
+  height: 26px;
+  opacity: 0.7;
+}
 .mgn-note-body {
   pointer-events: none;
   min-height: 22px;
@@ -240,18 +241,21 @@
 .mgn-note-body blockquote {
   color: inherit !important;
   background: transparent !important;
-  font-size: 1em !important; /* Obsidian's markdown-rendered CSS sets its own absolute
-    size here; force it back to the card's font-size */
+  font-size: 1em !important;
 }
 .mgn-note-body h1,
 .mgn-note-body h2,
 .mgn-note-body h3 {
   color: inherit !important;
   background: transparent !important;
-  font-size: 1.5em !important; /* relative to the card's font-size, for consistent heading hierarchy */
+  font-size: 1.5em !important;
 }
-.mgn-note-body h2 { font-size: 1.3em !important; }
-.mgn-note-body h3 { font-size: 1.15em !important; }
+.mgn-note-body h2 {
+  font-size: 1.3em !important;
+}
+.mgn-note-body h3 {
+  font-size: 1.15em !important;
+}
 .mgn-note-body a {
   color: var(--mgn-link) !important;
 }
@@ -293,7 +297,6 @@
 .mgn-note-body a {
   pointer-events: auto;
 }
-
 .mgn-note-edit::placeholder {
   color: inherit;
   opacity: 0.55;
@@ -301,7 +304,7 @@
 }
 .mgn-note-edit {
   width: 100% !important;
-  min-height: 60px;
+  min-height: 22px;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -312,36 +315,35 @@
   padding: 0 !important;
   pointer-events: auto;
 }
-.mgn-card input[type="text"] {
+.mgn-card input[type=text] {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   color: inherit !important;
 }
-
-/* comment card */
-.mgn-comment {
-  border-left: 4px solid var(--mgn-comment-accent);
+.mgn-card input:focus,
+.mgn-card textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
-.mgn-comment-head {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.6;
-  margin-bottom: 6px;
+.mgn-card-title {
+  margin-bottom: var(--mgn-space-sm);
 }
-.mgn-comment-head svg {
-  width: 13px;
-  height: 13px;
+.mgn-card-title-text {
+  width: 100%;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--mgn-font-family-heading);
+  font-weight: 700;
+  font-size: 14px;
+  outline: none;
+  padding: 0;
 }
-
-/* image card */
-.mgn-image {
-  padding: 5px;
+.mgn-card-title-text::placeholder {
+  color: inherit !important;
+  opacity: 1;
 }
 .mgn-image img {
   display: block;
@@ -349,13 +351,6 @@
   border-radius: 2px;
   pointer-events: none;
 }
-.mgn-caption {
-  font-size: 12px;
-  padding: 5px 3px 1px;
-  opacity: 0.75;
-}
-
-/* link card */
 .mgn-link-head,
 .mgn-file-head {
   display: flex;
@@ -363,12 +358,18 @@
   gap: 7px;
   pointer-events: none;
 }
+.mgn-link-ico {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .mgn-link-ico svg {
   width: 15px;
   height: 15px;
   opacity: 0.6;
 }
 .mgn-link-title {
+  font-family: var(--mgn-font-family-heading);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -383,11 +384,118 @@
   margin-top: 2px;
   pointer-events: none;
 }
-
-/* board card (nested board) */
+.mgn-card.mgn-record {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mgn-record-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.mgn-card button.mgn-record-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.mgn-record-play svg {
+  width: 13px;
+  height: 13px;
+}
+.mgn-record-bar {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+.mgn-record-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: currentColor;
+  pointer-events: none;
+}
+.mgn-record-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.mgn-video-wrap {
+  position: relative;
+}
+.mgn-video-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 0 0 2px 2px;
+  color: #fff;
+  background:
+    linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0));
+}
+.mgn-card button.mgn-video-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.mgn-video-play svg {
+  width: 13px;
+  height: 13px;
+}
+.mgn-video-progress {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 30%, transparent);
+}
+.mgn-video-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: currentColor;
+  pointer-events: none;
+}
+.mgn-video-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
 .mgn-board {
   text-align: center;
-  padding: 16px 12px 14px;
+  padding: var(--mgn-space-lg) var(--mgn-space-md);
   background: var(--mgn-board-bg);
 }
 .mgn-board-inner {
@@ -395,7 +503,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--mgn-space-xs);
 }
 .mgn-board-ico svg {
   width: 32px;
@@ -410,6 +518,7 @@
   min-width: 0;
 }
 .mgn-board-title {
+  font-family: var(--mgn-font-family-heading);
   font-weight: 700;
   font-size: 15px;
 }
@@ -417,20 +526,23 @@
   font-size: 11px;
   opacity: 0.55;
 }
-
-/* compact board card when stacked inside a column */
 .mgn-col-body .mgn-board {
   text-align: left;
-  padding: 9px 12px;
+  padding: var(--mgn-card-pad);
 }
 .mgn-col-body .mgn-board-inner {
   flex-direction: row;
   align-items: center;
   gap: 10px;
 }
+.mgn-col-body .mgn-board-ico {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .mgn-col-body .mgn-board-ico svg {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
 }
 .mgn-col-body .mgn-board-text {
   align-items: flex-start;
@@ -444,8 +556,6 @@
 .mgn-col-body .mgn-board-summary {
   font-size: 10px;
 }
-
-/* swatch card */
 .mgn-swatch {
   height: 110px;
   padding: 0;
@@ -473,103 +583,141 @@
 .mgn-swatch:hover .mgn-swatch-input {
   opacity: 1;
 }
-
-/* todo card */
-.mgn-todo-title {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-weight: 700;
-  font-size: 14px;
-  color: inherit;
-  padding: 0 0 4px 0;
-  outline: none;
+.mgn-todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.mgn-todo-title::placeholder,
-.mgn-todo-add::placeholder {
-  color: inherit !important; /* form-control placeholders don't inherit color by
-    default (Obsidian sets its own), so this needs !important to actually win */
-  opacity: 0.55;
+.mgn-todo-text::placeholder {
+  color: inherit !important;
+  opacity: 0.5;
   font-style: italic;
-}
-.mgn-todo-progress {
-  height: 4px;
-  border-radius: 2px;
-  background: color-mix(in srgb, currentColor 10%, transparent);
-  margin-bottom: 8px;
-  overflow: hidden;
-}
-.mgn-todo-progress-fill {
-  height: 100%;
-  background: var(--mgn-success);
-  transition: width 0.15s ease;
 }
 .mgn-todo-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 2px 0;
+  gap: 3px;
+  padding: 0 4px;
 }
-.mgn-todo-row input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 13px;
-  height: 13px;
-  margin: 0;
-  border-radius: 50%;
-  color: inherit !important; /* form controls don't inherit `color` by default,
-    so currentColor below would otherwise resolve to Obsidian's own default */
-  border: 1.5px solid currentColor;
-  opacity: 0.55;
-  background: transparent;
+.mgn-card input.mgn-todo-check {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: relative;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 5px !important;
+  color: inherit !important;
+  border: 2px solid currentColor !important;
+  opacity: 1 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
 }
-.mgn-todo-row input[type="checkbox"]:checked {
-  background: currentColor;
-  border-color: currentColor;
+.mgn-card input.mgn-todo-check:active {
+  transform: scale(0.88);
+}
+.mgn-card input.mgn-todo-check:checked {
+  background: var(--mgn-success) !important;
+  border-color: var(--mgn-success) !important;
+}
+.mgn-todo-check::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--mgn-white);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
+  opacity: 0;
+  transform: scale(0.3);
+  transition: opacity 0.12s ease, transform 0.25s cubic-bezier(0.34, 1.7, 0.5, 1);
+}
+.mgn-todo-check:checked::after {
+  opacity: 1;
+  transform: scale(1);
 }
 .mgn-todo-text {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   color: inherit;
   font-size: 13px;
   outline: none;
+  padding: 0;
+  transition: opacity 0.2s ease;
 }
 .mgn-todo-text.mgn-done {
   text-decoration: line-through;
   opacity: 0.5;
 }
-.mgn-todo-del {
+.mgn-todo-grip {
   opacity: 0;
-  cursor: pointer;
+  cursor: move;
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  touch-action: none;
+  transition: opacity 0.15s ease;
 }
-.mgn-todo-del svg {
-  width: 12px;
-  height: 12px;
+.mgn-todo-grip svg {
+  width: 14px;
+  height: 14px;
 }
-.mgn-todo-row:hover .mgn-todo-del {
-  opacity: 0.5;
+.mgn-todo-row:hover .mgn-todo-grip {
+  opacity: 0.45;
 }
-.mgn-todo-add {
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font-size: 12px;
-  outline: none;
-  margin-top: 4px;
+.mgn-todo-grip:hover {
+  opacity: 0.9 !important;
 }
-
-/* column card */
+body.mgn-todo-grabbing,
+body.mgn-todo-grabbing * {
+  cursor: move !important;
+}
+.mgn-todo-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: 240px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--mgn-panel-bg);
+  color: var(--mgn-panel-text-strong);
+  border: 1px solid var(--mgn-panel-border);
+  box-shadow: var(--mgn-panel-shadow);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+.mgn-todo-ghost-new {
+  border-style: dashed;
+  border-color: var(--mgn-accent);
+}
+.mgn-todo-drop-line {
+  height: 2px;
+  margin: 1px 0;
+  border-radius: 2px;
+  background: var(--mgn-accent);
+  pointer-events: none;
+}
+.mgn-card.mgn-todo-drop-target {
+  outline: 2px solid var(--mgn-accent);
+  outline-offset: 1px;
+}
 .mgn-column {
   background: var(--mgn-column-bg);
-  box-shadow: none;
-  border: 1px dashed var(--mgn-column-border);
+  box-shadow: var(--mgn-card-shadow);
+  border: 1px solid var(--mgn-column-border);
   border-radius: 6px;
-  padding: 8px;
+  padding: var(--mgn-space-sm);
   color: var(--mgn-column-text);
 }
 .mgn-column.mgn-col-target {
@@ -578,40 +726,31 @@
 }
 .mgn-col-head {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px 8px;
-}
-.mgn-col-collapse {
-  cursor: pointer;
-  display: flex;
-  opacity: 0.7;
-}
-.mgn-col-collapse svg {
-  width: 14px;
-  height: 14px;
+  gap: 2px;
+  padding: var(--mgn-space-xs) var(--mgn-space-sm) var(--mgn-space-sm);
 }
 .mgn-col-title {
-  flex: 1;
+  width: 100%;
+  text-align: center;
   border: none;
   background: transparent;
   color: var(--mgn-column-text);
+  font-family: var(--mgn-font-family-heading);
   font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 14px;
   outline: none;
 }
 .mgn-col-count {
   font-size: 11px;
-  background: var(--mgn-column-chip-bg);
-  border-radius: 10px;
-  padding: 1px 7px;
+  opacity: 0.6;
+  color: var(--mgn-column-text);
 }
 .mgn-col-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--mgn-space-sm);
   min-height: 40px;
 }
 .mgn-col-body .mgn-card {
@@ -627,7 +766,7 @@
   border: 1px dashed var(--mgn-column-empty-border);
 }
 
-/* connector + resize handles */
+/* src/styles/edges.css */
 .mgn-connector {
   position: absolute;
   top: -7px;
@@ -671,8 +810,6 @@
   width: 12px;
   height: 12px;
 }
-
-/* ------------ edges ------------ */
 .mgn-edges {
   position: absolute;
   top: 0;
@@ -715,7 +852,6 @@
   opacity: 0.6;
   cursor: grab;
 }
-/* card highlighted as a line-endpoint drop target */
 .mgn-conn-target {
   outline: 2px solid var(--mgn-accent);
   outline-offset: 2px;
@@ -738,7 +874,7 @@
   cursor: pointer;
 }
 
-/* ------------ toolbar ------------ */
+/* src/styles/chrome.css */
 .mgn-toolbar {
   position: absolute;
   left: 12px;
@@ -751,7 +887,7 @@
   background: var(--mgn-panel-bg);
   border: 1px solid var(--mgn-panel-border);
   border-radius: 8px;
-  padding: 6px;
+  padding: 4px;
   box-shadow: var(--mgn-panel-shadow);
 }
 .mgn-tool {
@@ -766,7 +902,7 @@
 }
 .mgn-tool:hover {
   background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+  color: var(--mgn-panel-text-strong);
 }
 .mgn-tool-active {
   background: var(--mgn-accent) !important;
@@ -781,14 +917,19 @@
   background: var(--mgn-panel-border);
   margin: 4px 2px;
 }
-/* drag-only tool clicked instead of dragged: shake + hint */
 .mgn-tool-shake {
   animation: mgn-shake 0.4s ease;
 }
 @keyframes mgn-shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-4px); }
-  40%, 80% { transform: translateX(4px); }
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-4px);
+  }
+  40%, 80% {
+    transform: translateX(4px);
+  }
 }
 .mgn-drag-hint {
   position: absolute;
@@ -804,8 +945,6 @@
   pointer-events: none;
   z-index: 30;
 }
-
-/* ------------ bottom bar (zoom + snap) ------------ */
 .mgn-zoombar {
   position: absolute;
   right: 14px;
@@ -839,7 +978,7 @@
 }
 .mgn-zoom-100:hover {
   background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+  color: var(--mgn-panel-text-strong);
 }
 .mgn-vsep {
   width: 1px;
@@ -847,8 +986,6 @@
   background: var(--mgn-panel-border);
   margin: 0 4px;
 }
-
-/* ------------ search ------------ */
 .mgn-search {
   position: absolute;
   top: 10px;
@@ -875,12 +1012,10 @@
   color: var(--mgn-text-muted);
   font-size: 12px;
 }
-
-/* ------------ breadcrumbs ------------ */
 .mgn-crumbs {
   position: absolute;
   top: 10px;
-  left: 52px; /* 12px + settings gear (32px) + 8px gap */
+  left: 12px;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -904,7 +1039,7 @@
   text-overflow: ellipsis;
 }
 .mgn-crumb:hover {
-  color: var(--mgn-white);
+  color: var(--mgn-text-bright);
   text-decoration: underline;
 }
 .mgn-crumb-current {
@@ -918,34 +1053,6 @@
 .mgn-crumb-sep {
   color: var(--mgn-panel-sep);
 }
-.mgn-settings-btn {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  z-index: 20;
-  width: 32px;
-  height: 32px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mgn-panel-bg);
-  border: 1px solid var(--mgn-panel-border);
-  border-radius: 8px;
-  box-shadow: var(--mgn-panel-shadow);
-  color: var(--mgn-panel-text);
-  cursor: pointer;
-}
-.mgn-settings-btn:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
-}
-.mgn-settings-btn svg {
-  width: 17px;
-  height: 17px;
-}
-
-/* settings modal + shared with the native plugin settings tab */
 .mgn-settings-modal h3 {
   margin: 1.2em 0 0.4em;
 }
@@ -964,8 +1071,22 @@
 .mgn-shortcuts-foldout .mgn-shortcuts {
   margin-top: 6px;
 }
+.mgn-shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mgn-shortcuts td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 13px;
+}
+.mgn-shortcut-key {
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  color: var(--text-accent);
+}
 
-/* ------------ inline file preview ------------ */
+/* src/styles/preview.css */
 .mgn-preview {
   position: absolute;
   inset: 0;
@@ -1023,40 +1144,12 @@
   overflow-y: auto;
 }
 
-/* rubber band */
-.mgn-rubber {
-  position: absolute;
-  border: 1px solid var(--mgn-accent);
-  background: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
-  z-index: 15;
-  pointer-events: none;
-}
-
-/* shortcuts modal */
-.mgn-shortcuts {
-  width: 100%;
-  border-collapse: collapse;
-}
-.mgn-shortcuts td {
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  font-size: 13px;
-}
-.mgn-shortcut-key {
-  font-family: var(--font-monospace);
-  white-space: nowrap;
-  color: var(--text-accent);
-}
-
-/* ------------ drawing / sketch ------------ */
-/* main toolbar dimmed while a contextual toolbar is open */
+/* src/styles/drawing.css */
 .mgn-toolbar-dimmed {
   opacity: 0.35;
   pointer-events: none;
   filter: grayscale(0.4);
 }
-
-/* contextual toolbar: floating popup just right of the main toolbar */
 .mgn-context-toolbar {
   position: absolute;
   left: 60px;
@@ -1073,7 +1166,6 @@
   padding: 6px;
   box-shadow: var(--mgn-panel-shadow);
 }
-/* inline variant lives inside the sketch popup header */
 .mgn-context-inline {
   position: static;
   transform: none;
@@ -1124,20 +1216,16 @@
   align-items: center;
   justify-content: center;
 }
-/* current-color dot on the color button */
 .mgn-ctx-colordot {
   width: 16px;
   height: 16px;
   border-radius: 3px;
   border: 1px solid var(--mgn-panel-border);
 }
-/* current-size dot on the size button */
 .mgn-ctx-sizedot {
   border-radius: 50%;
   background: currentColor;
 }
-
-/* popover for color/size choices */
 .mgn-ctx-popover {
   position: absolute;
   z-index: 50;
@@ -1189,21 +1277,16 @@
 .mgn-ctx-sizerow:hover {
   background: var(--mgn-panel-hover-bg);
 }
-
-/* fade the whole board (all cards incl. drawings) uniformly while drawing,
-   and make every card inert so nothing underneath can be clicked */
 .mgn-draw-active .mgn-world {
   opacity: 0.4;
   pointer-events: none;
 }
-/* subtle tint over the board while drawing (blocks node interaction) */
 .mgn-draw-scrim {
   position: absolute;
   inset: 0;
   z-index: 30;
   background: color-mix(in srgb, var(--mgn-preview-overlay) 40%, transparent);
 }
-/* the SVG surface that captures strokes (above the scrim) */
 .mgn-draw-surface {
   position: absolute;
   inset: 0;
@@ -1233,8 +1316,6 @@
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
-
-/* sketch popup */
 .mgn-sketch-panel {
   width: auto;
 }
@@ -1245,7 +1326,6 @@
   align-items: center;
 }
 .mgn-sketch-surface {
-  /* override the board-overlay positioning: sit in normal flow, centered by the panel */
   position: static;
   inset: auto;
   background: var(--background-primary);
@@ -1254,11 +1334,6 @@
   cursor: crosshair;
   touch-action: none;
 }
-
-/* native <select> auto-sizes to its widest OPTION, not the selected one — long
-   mic device names would otherwise balloon this past every other dropdown's
-   width (e.g. the Font dropdown, which stays narrow only because its longest
-   label is short). Cap it back to a normal dropdown width. */
 .mgn-mic-dropdown {
   width: 170px !important;
   max-width: 170px !important;
@@ -1266,17 +1341,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.mgn-record-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 36px;
-  margin-top: 4px;
-}
-
-/* record popup */
 .mgn-record-panel {
   width: auto;
 }
@@ -1309,8 +1373,6 @@
   display: flex;
   gap: 8px;
 }
-
-/* drawing card + sketch preview */
 .mgn-drawing {
   padding: 0;
   border: none;
@@ -1321,21 +1383,14 @@
   display: block;
   width: 100%;
 }
-.mgn-sketch-head {
+.mgn-card.mgn-sketch {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  opacity: 0.7;
-  margin-bottom: 4px;
-}
-.mgn-sketch-head svg {
-  width: 14px;
-  height: 14px;
+  flex-direction: column;
 }
 .mgn-sketch-preview {
   width: 100%;
   min-height: 120px;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1343,3 +1398,5 @@
 .mgn-sketch-preview .mgn-drawing-svg {
   max-height: 240px;
 }
+
+/* src/styles/index.css */

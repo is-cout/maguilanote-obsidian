@@ -1,23 +1,253 @@
 import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { AUDIO_EXTS, IMAGE_EXTS, Item, VIDEO_EXTS, colorOf } from "./types";
+import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
 import { strokeToPath, strokesBBox } from "./draw";
-
-function contrastColor(hex: string): string {
-  const m = hex.replace("#", "");
-  if (m.length < 6) return "#33343d";
-  const r = parseInt(m.slice(0, 2), 16),
-    g = parseInt(m.slice(2, 4), 16),
-    b = parseInt(m.slice(4, 6), 16);
-  return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? "#33343d" : "#ffffff";
-}
 
 function markMissing(el: HTMLElement, label = "Missing reference") {
   el.addClass("mgn-missing");
   const w = el.createDiv({ cls: "mgn-missing-label" });
   setIcon(w.createSpan(), "alert-triangle");
   w.createSpan({ text: label });
+}
+
+/** centered empty-state placeholder: an icon above a "double-click to…" hint */
+function iconPlaceholder(parent: HTMLElement, icon: string, text: string) {
+  const ph = parent.createDiv({ cls: "mgn-placeholder mgn-icon-placeholder" });
+  setIcon(ph.createSpan({ cls: "mgn-icon-placeholder-ico" }), icon);
+  ph.createSpan({ cls: "mgn-icon-placeholder-text", text });
+}
+
+/** audio elements of record cards, kept alive across re-renders (keyed by item id)
+ * so a full board render never reloads the media (which used to flash the card) */
+const recordAudio = new Map<string, HTMLAudioElement>();
+
+function fmtTime(s: number): string {
+  if (!Number.isFinite(s) || s < 0) s = 0;
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+}
+
+/** pause a record card's cached audio (used when the record popup closes) */
+export function pauseRecordAudio(id: string) {
+  recordAudio.get(id)?.pause();
+}
+
+/** video card player: the picture stays a plain drag surface (like an image
+ * card) and a custom control bar overlays the bottom, so play/seek work by
+ * clicking the bar without first selecting the card — native <video controls>
+ * can't do this, as its picture and controls are one non-splittable element. */
+export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string) {
+  const wrap = el.createDiv({ cls: "mgn-video-wrap" });
+  const v = wrap.createEl("video", {
+    attr: { src, preload: "metadata", style: "width:100%;display:block;border-radius:2px;" },
+  });
+  v.addEventListener("loadeddata", () => view.drawEdges());
+
+  const player = wrap.createDiv({ cls: "mgn-video-bar" });
+  const btn = player.createEl("button", { cls: "mgn-video-play" });
+  const bar = player.createDiv({ cls: "mgn-video-progress" });
+  const fill = bar.createDiv({ cls: "mgn-video-progress-fill" });
+  const time = player.createDiv({ cls: "mgn-video-time" });
+
+  const sync = () => {
+    setIcon(btn, v.paused ? "play" : "pause");
+    const t = v.duration || 0;
+    fill.style.width = t ? `${Math.min(100, (v.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(v.currentTime)} / ${fmtTime(t)}`);
+  };
+  v.onloadedmetadata = v.ontimeupdate = v.onplay = v.onpause = v.onended = sync;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (v.paused) v.play().catch(() => {});
+    else v.pause();
+  });
+  bar.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const t = v.duration || 0;
+    if (!t) return;
+    const r = bar.getBoundingClientRect();
+    v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    sync();
+  });
+  sync();
+}
+
+/** compact play/seek/time player for a record card */
+export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
+  let audio = recordAudio.get(it.id);
+  if (!audio || audio.src !== src) {
+    audio?.pause();
+    audio = new Audio(src);
+    audio.preload = "metadata";
+    recordAudio.set(it.id, audio);
+  }
+  const player = el.createDiv({ cls: "mgn-record-player" });
+  const btn = player.createEl("button", { cls: "mgn-record-play" });
+  const bar = player.createDiv({ cls: "mgn-record-bar" });
+  const fill = bar.createDiv({ cls: "mgn-record-bar-fill" });
+  const time = player.createDiv({ cls: "mgn-record-time" });
+
+  // MediaRecorder webm files carry no duration metadata (audio.duration is
+  // Infinity), so fall back to the length measured while recording
+  const total = () =>
+    Number.isFinite(audio!.duration) && audio!.duration > 0 ? audio!.duration : it.duration ?? 0;
+  const sync = () => {
+    setIcon(btn, audio!.paused ? "play" : "pause");
+    const t = total();
+    fill.style.width = t ? `${Math.min(100, (audio!.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(audio!.currentTime)} / ${fmtTime(t)}`);
+  };
+  // assigned (not addEventListener) so re-renders replace the handlers of the reused element
+  audio.onloadedmetadata = audio.ontimeupdate = audio.onplay = audio.onpause = audio.onended = sync;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (audio!.paused) audio!.play().catch(() => {});
+    else audio!.pause();
+  });
+  bar.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const t = total();
+    if (!t) return;
+    const r = bar.getBoundingClientRect();
+    audio!.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    sync();
+  });
+  sync();
+}
+
+/**
+ * Grip-drag on a to-do item. Follows the pointer with a floating ghost and shows
+ * a live preview of the outcome:
+ *   - over the SAME card  → an insertion line previews the reorder,
+ *   - over ANOTHER to-do card → that card highlights + an insertion line previews the move,
+ *   - over empty canvas   → the ghost switches to a "new card" style.
+ * The model is only mutated on drop (`applyTodoDrop`); if the source card is left
+ * empty by a move, it's deleted. Listens on `window` so nothing kills the drag.
+ */
+type TodoDropTarget = { card: Item; index: number } | null;
+
+function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: PointerEvent) {
+  if (!source.todos || source.todos.length === 0) return;
+  e.preventDefault();
+  e.stopPropagation(); // don't let the board start a card-move drag
+  const entry = source.todos[startIdx];
+
+  const ghost = document.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
+  const dropLine = createDiv({ cls: "mgn-todo-drop-line" });
+  document.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
+
+  let target: TodoDropTarget = null;
+  let hlEl: HTMLElement | null = null;
+
+  const positionGhost = (ev: PointerEvent) => {
+    ghost.style.left = `${ev.clientX + 12}px`;
+    ghost.style.top = `${ev.clientY + 6}px`;
+  };
+  const clearTarget = () => {
+    hlEl?.removeClass("mgn-todo-drop-target");
+    hlEl = null;
+    dropLine.remove();
+  };
+
+  const onMove = (ev: PointerEvent) => {
+    positionGhost(ev);
+    const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+    const cardEl = under?.closest<HTMLElement>(".mgn-card.mgn-todo");
+    const overItem = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : null;
+    if (cardEl && overItem?.type === "todo") {
+      if (hlEl !== cardEl) { clearTarget(); hlEl = cardEl; cardEl.addClass("mgn-todo-drop-target"); }
+      const listEl = cardEl.querySelector<HTMLElement>(".mgn-todo-list") ?? cardEl;
+      const rows = Array.from(cardEl.querySelectorAll<HTMLElement>(".mgn-todo-row"));
+      let index = rows.length;
+      for (let i = 0; i < rows.length; i++) {
+        const rr = rows[i].getBoundingClientRect();
+        if (ev.clientY < rr.top + rr.height / 2) { index = i; break; }
+      }
+      if (index < rows.length) listEl.insertBefore(dropLine, rows[index]);
+      else listEl.appendChild(dropLine);
+      ghost.removeClass("mgn-todo-ghost-new");
+      target = { card: overItem, index };
+    } else {
+      clearTarget();
+      ghost.addClass("mgn-todo-ghost-new"); // hints "drop here to make a new card"
+      target = null;
+    }
+  };
+
+  const onUp = (ev: PointerEvent) => {
+    window.removeEventListener("pointermove", onMove, true);
+    window.removeEventListener("pointerup", onUp, true);
+    clearTarget();
+    ghost.remove();
+    document.body.removeClass("mgn-todo-grabbing");
+    applyTodoDrop(view, source, entry, target, ev);
+  };
+
+  window.addEventListener("pointermove", onMove, true);
+  window.addEventListener("pointerup", onUp, true);
+  onMove(e); // seed the preview immediately (grip pointerdown already located us)
+}
+
+/** commit a to-do item drop: reorder in place, move into another card, or spin
+ * off a new card — deleting the source card if the move empties it */
+function applyTodoDrop(view: BoardView, source: Item, entry: TodoEntry, target: TodoDropTarget, ev: PointerEvent) {
+  const srcIdx = source.todos?.indexOf(entry) ?? -1;
+  if (srcIdx < 0) return;
+
+  if (target && target.card === source) {
+    // reorder within the same card
+    source.todos!.splice(srcIdx, 1);
+    let idx = target.index;
+    if (idx > srcIdx) idx--; // the removed row shifts everything after it up by one
+    source.todos!.splice(idx, 0, entry);
+    view.commit();
+    return;
+  }
+
+  // moving the item out of its source card
+  source.todos!.splice(srcIdx, 1);
+  if (target) {
+    (target.card.todos ??= []).splice(target.index, 0, entry);
+  } else {
+    const w = view.screenToWorld(ev.clientX, ev.clientY);
+    const nc: Item = {
+      id: newId(),
+      type: "todo",
+      x: w.x,
+      y: w.y,
+      w: view.plugin.settings.defaultNoteWidth,
+      todos: [entry],
+    };
+    view.board.items.push(nc);
+    view.selection = new Set([nc.id]);
+  }
+  // a source card left with no items is deleted (card + any edges touching it)
+  if (source.todos!.length === 0) {
+    view.board.items = view.board.items.filter((i) => i.id !== source.id);
+    view.board.edges = view.board.edges.filter((e) => e.from !== source.id && e.to !== source.id);
+    view.selection.delete(source.id);
+  }
+  view.commit();
+}
+
+/** optional centered title shown above a card's content when `it.showTitle` is on
+ * (toggled via the card's right-click menu) — styled exactly like a column's
+ * title. The placeholder is the card's own name, so an untouched title reads as
+ * e.g. "Note". */
+function renderCardTitle(view: BoardView, el: HTMLElement, it: Item) {
+  if (!it.showTitle || !(it.type in TITLE_LABELS)) return;
+  const head = el.createDiv({ cls: "mgn-card-title" });
+  const input = head.createEl("input", {
+    cls: "mgn-card-title-text",
+    type: "text",
+    value: it.title ?? "",
+    attr: { placeholder: TITLE_LABELS[it.type] ?? "Title" },
+  });
+  input.addEventListener("input", () => {
+    it.title = input.value;
+    view.requestSave();
+  });
+  input.addEventListener("change", () => view.commit(false));
 }
 
 export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLElement {
@@ -35,17 +265,16 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     el.style.background = c.bg;
     el.style.color = c.fg;
   }
+  if (it.accentColor && it.accentColor !== "default" && it.type !== "column" && it.type !== "swatch") {
+    el.style.borderLeft = `4px solid ${colorOf(it.accentColor).bg}`;
+  }
   if (view.selection.has(it.id)) el.addClass("mgn-selected");
   if (it.locked) el.addClass("mgn-locked");
+  renderCardTitle(view, el, it);
 
   switch (it.type) {
     case "note":
     case "comment": {
-      if (it.type === "comment") {
-        const h = el.createDiv({ cls: "mgn-comment-head" });
-        setIcon(h.createSpan(), "message-circle");
-        h.createSpan({ text: "Comment" });
-      }
       const body = el.createDiv({ cls: "mgn-note-body" });
       if (it.text?.trim()) {
         MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
@@ -58,67 +287,62 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       break;
     }
     case "todo": {
-      const title = el.createEl("input", {
-        cls: "mgn-todo-title",
-        type: "text",
-        value: it.title ?? "",
-        attr: { placeholder: "To-do" },
-      });
-      title.addEventListener("change", () => {
-        it.title = title.value;
-        view.commit(false);
-      });
-      const done = (it.todos ?? []).filter((t) => t.done).length;
-      const total = (it.todos ?? []).length;
-      const prog = el.createDiv({ cls: "mgn-todo-progress" });
-      prog.createDiv({
-        cls: "mgn-todo-progress-fill",
-        attr: { style: `width:${total ? (done / total) * 100 : 0}%` },
-      });
+      if (!it.todos?.length) it.todos = [{ text: "", done: false }]; // always at least one editable row to start typing into
       const list = el.createDiv({ cls: "mgn-todo-list" });
+      const focusTodoText = (idx: number, caretEnd = false) => {
+        window.setTimeout(() => {
+          const fresh = view.worldEl.querySelectorAll<HTMLInputElement>(
+            `.mgn-card[data-id="${it.id}"] .mgn-todo-text`
+          )[idx];
+          if (!fresh) return;
+          fresh.focus();
+          if (caretEnd) fresh.setSelectionRange(fresh.value.length, fresh.value.length);
+        }, 10);
+      };
       (it.todos ?? []).forEach((t, idx) => {
         const row = list.createDiv({ cls: "mgn-todo-row" });
-        const cb = row.createEl("input", { type: "checkbox" });
+        const cb = row.createEl("input", { type: "checkbox", cls: "mgn-todo-check" });
         cb.checked = t.done;
-        cb.addEventListener("change", () => {
-          t.done = cb.checked;
-          view.commit(false);
-          view.rerenderItem(it);
-        });
         const txt = row.createEl("input", {
           type: "text",
           cls: "mgn-todo-text" + (t.done ? " mgn-done" : ""),
           value: t.text,
+          attr: { placeholder: "Add item" },
         });
-        txt.addEventListener("change", () => {
+        // toggle in place (no rerender) so the checkbox's check-in animation plays
+        cb.addEventListener("change", () => {
+          t.done = cb.checked;
+          txt.toggleClass("mgn-done", cb.checked);
+          view.commit(false);
+        });
+        // keep the model live on every keystroke so a rerender never drops text
+        // (persist without a history snapshot); one undo step per edit on blur
+        txt.addEventListener("input", () => {
           t.text = txt.value;
-          view.commit(false);
+          view.requestSave();
         });
-        const del = row.createDiv({ cls: "mgn-todo-del" });
-        setIcon(del, "x");
-        del.addEventListener("click", () => {
-          it.todos?.splice(idx, 1);
-          view.commit(false);
-          view.rerenderItem(it);
+        txt.addEventListener("change", () => view.commit(false));
+        txt.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            (it.todos ??= []).splice(idx + 1, 0, { text: "", done: false });
+            view.commit(false);
+            view.rerenderItem(it);
+            focusTodoText(idx + 1);
+          } else if (e.key === "Backspace" && !txt.value && (it.todos?.length ?? 0) > 1) {
+            e.preventDefault();
+            it.todos?.splice(idx, 1);
+            view.commit(false);
+            view.rerenderItem(it);
+            focusTodoText(Math.max(0, idx - 1), true);
+          }
         });
-      });
-      const add = el.createEl("input", {
-        type: "text",
-        cls: "mgn-todo-add",
-        attr: { placeholder: "+ add item" },
-      });
-      add.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && add.value.trim()) {
-          (it.todos ??= []).push({ text: add.value.trim(), done: false });
-          view.commit(false);
-          view.rerenderItem(it);
-          window.setTimeout(() => {
-            const fresh = view.worldEl.querySelector<HTMLInputElement>(
-              `.mgn-card[data-id="${it.id}"] .mgn-todo-add`
-            );
-            fresh?.focus();
-          }, 10);
-        }
+        // grip: drag to reorder within the list, or drag out of the card to
+        // split this item off into a new to-do card (replaces the old "x" delete —
+        // items are now removed by clearing their text and pressing Backspace)
+        const grip = row.createDiv({ cls: "mgn-todo-grip" });
+        setIcon(grip, "grip-vertical");
+        grip.addEventListener("pointerdown", (e) => startTodoItemDrag(view, it, idx, e));
       });
       break;
     }
@@ -132,7 +356,6 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       } else {
         markMissing(el);
       }
-      if (it.title) el.createDiv({ cls: "mgn-caption", text: it.title });
       break;
     }
     case "link": {
@@ -157,39 +380,37 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "file": {
       const f = view.resolveFile(it.path);
       const ext = f?.extension?.toLowerCase() ?? "";
-      const head = el.createDiv({ cls: "mgn-file-head" });
-      setIcon(
-        head.createSpan({ cls: "mgn-link-ico" }),
-        AUDIO_EXTS.includes(ext) ? "music" : VIDEO_EXTS.includes(ext) ? "video" : "file"
-      );
-      head.createDiv({ cls: "mgn-link-title", text: it.title || f?.name || it.path || "File" });
+      const isVideo = VIDEO_EXTS.includes(ext);
+      // a video card is just its player, like an image card — no default
+      // icon+filename head. Other file kinds (audio/pdf/…) keep the head as
+      // their identity. Either way the head hides once a custom title is on.
+      if (!it.showTitle && !isVideo) {
+        const head = el.createDiv({ cls: "mgn-file-head" });
+        setIcon(
+          head.createSpan({ cls: "mgn-link-ico" }),
+          AUDIO_EXTS.includes(ext) ? "music" : "file"
+        );
+        head.createDiv({ cls: "mgn-link-title", text: f?.name || it.path || "File" });
+      }
       if (!f) markMissing(el);
       if (f && AUDIO_EXTS.includes(ext)) {
         el.createEl("audio", {
           attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;" },
         });
       }
-      if (f && VIDEO_EXTS.includes(ext)) {
-        const v = el.createEl("video", {
-          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;border-radius:4px;" },
-        });
-        v.addEventListener("loadeddata", () => view.drawEdges());
+      if (f && isVideo) {
+        renderVideoPlayer(view, el, view.app.vault.getResourcePath(f));
       }
       break;
     }
     case "record": {
-      const head = el.createDiv({ cls: "mgn-file-head" });
-      setIcon(head.createSpan({ cls: "mgn-link-ico" }), "mic");
-      head.createDiv({ cls: "mgn-link-title", text: "Record" });
       const f = view.resolveFile(it.path);
       if (!it.path) {
-        el.createDiv({ cls: "mgn-placeholder mgn-record-placeholder", text: "Double-click to record" });
+        iconPlaceholder(el, "mic", "Double-click to record");
       } else if (!f) {
         markMissing(el);
       } else {
-        el.createEl("audio", {
-          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;" },
-        });
+        renderRecordPlayer(el, it, view.app.vault.getResourcePath(f));
       }
       break;
     }
@@ -256,31 +477,27 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     }
     case "column": {
       const head = el.createDiv({ cls: "mgn-col-head" });
-      const collapse = head.createDiv({ cls: "mgn-col-collapse" });
-      setIcon(collapse, it.collapsed ? "chevron-right" : "chevron-down");
-      collapse.addEventListener("click", () => {
-        it.collapsed = !it.collapsed;
-        view.commit();
-      });
       const title = head.createEl("input", {
         type: "text",
         cls: "mgn-col-title",
         value: it.title ?? "",
         attr: { placeholder: "Column" },
       });
-      title.addEventListener("change", () => {
+      title.addEventListener("input", () => {
         it.title = title.value;
-        view.commit(false);
+        view.requestSave();
       });
+      title.addEventListener("change", () => view.commit(false));
       const children = view.board.items
         .filter((ch) => ch.parent === it.id)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      head.createDiv({ cls: "mgn-col-count", text: String(children.length) });
-      if (!it.collapsed) {
-        const body = el.createDiv({ cls: "mgn-col-body" });
-        for (const ch of children) body.appendChild(renderCardFn(view, ch, true));
-        if (!children.length) body.createDiv({ cls: "mgn-col-empty" });
-      }
+      head.createDiv({
+        cls: "mgn-col-count",
+        text: `${children.length} ${children.length === 1 ? "card" : "cards"}`,
+      });
+      const body = el.createDiv({ cls: "mgn-col-body" });
+      for (const ch of children) body.appendChild(renderCardFn(view, ch, true));
+      if (!children.length) body.createDiv({ cls: "mgn-col-empty" });
       break;
     }
     case "drawing": {
@@ -298,9 +515,6 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
       break;
     }
     case "sketch": {
-      const head = el.createDiv({ cls: "mgn-sketch-head" });
-      setIcon(head.createSpan(), "pen-tool");
-      head.createSpan({ text: "Sketch" });
       const prev = el.createDiv({ cls: "mgn-sketch-preview" });
       const strokes = it.strokes ?? [];
       if (strokes.length) {
@@ -318,7 +532,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
           p.setAttribute("fill", s.color);
         }
       } else {
-        prev.createDiv({ cls: "mgn-placeholder", text: "Double-click to draw" });
+        iconPlaceholder(prev, "pen-tool", "Double-click to draw");
       }
       break;
     }
@@ -419,9 +633,13 @@ export function drawEdgesFn(view: BoardView) {
       cls: selected ? ["mgn-edge", "mgn-edge-selected"] : "mgn-edge",
       attr: { d, fill: "none" },
     });
-    const useColor = e.color && !selected;
+    // "default" (or no color) = the themed line color from CSS, not a card background
+    const useColor = e.color && e.color !== "default" && !selected;
     if (e.arrow !== false) {
-      p.setAttr("marker-end", useColor ? `url(#mgn-arrowhead-${e.color})` : "url(#mgn-arrowhead)");
+      const marker = useColor
+        ? `mgn-arrowhead-${e.color}`
+        : selected ? "mgn-arrowhead-selected" : "mgn-arrowhead";
+      p.setAttr("marker-end", `url(#${marker})`);
     }
     if (e.dashed) p.setAttr("stroke-dasharray", "6 5");
     if (useColor) {

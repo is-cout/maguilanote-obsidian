@@ -1,6 +1,6 @@
 {
   "name": "maguilanote",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "description": "Visual workspace boards for Obsidian",
   "main": "main.js",
   "scripts": {

@@ -26,19 +26,43 @@ export interface Item {
   w: number;
   h?: number; // manual vertical size (min-height); content can still grow past it
   color?: string;
+  /** left-side accent stripe color (CARD_COLORS key), independent of `color` */
+  accentColor?: string;
   locked?: boolean;
   parent?: string; // column id when stacked inside a column
   order?: number;
   text?: string;
   title?: string;
+  /** show the optional title row (icon + title text) above the card's content.
+   * Columns always show their title regardless of this field. */
+  showTitle?: boolean;
   url?: string;
   path?: string;
   todos?: TodoEntry[];
   swatch?: string;
-  collapsed?: boolean;
   strokes?: Stroke[]; // drawing / sketch freehand strokes (local coords)
   duration?: number; // record card: recording length in seconds
 }
+
+/** card types that support the optional title row (icon + editable title text).
+ * link/file/board show a title-like head unconditionally (it's the card's primary
+ * content, identifying the reference), so they're not part of this opt-in system. */
+export const TITLE_ELIGIBLE_TYPES: ItemType[] = [
+  "note", "comment", "todo", "image", "swatch", "sketch", "record", "file",
+];
+
+/** default title text (placeholder) per card type, used when a title is shown
+ * but the user hasn't typed one — the card's own name, still editable. */
+export const TITLE_LABELS: Partial<Record<ItemType, string>> = {
+  note: "Note",
+  comment: "Comment",
+  todo: "To-do",
+  image: "Image",
+  swatch: "Swatch",
+  sketch: "Sketch",
+  record: "Recording",
+  file: "File",
+};
 
 /** A world-space point used for a free (unanchored) line endpoint. */
 export interface Point { x: number; y: number; }
@@ -145,9 +169,23 @@ export const CARD_COLORS: CardColor[] = [
 // boards saved before "white"/"dark" were merged into "default" keep working
 const LEGACY_COLOR_ALIASES: Record<string, string> = { white: "default", dark: "default" };
 
+/** legible text color (near-black or near-white) for an arbitrary background hex */
+export function contrastColor(hex: string): string {
+  const m = hex.replace("#", "");
+  if (m.length < 6) return "#33343d";
+  const r = parseInt(m.slice(0, 2), 16),
+    g = parseInt(m.slice(2, 4), 16),
+    b = parseInt(m.slice(4, 6), 16);
+  return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? "#33343d" : "#ffffff";
+}
+
 export function colorOf(key: string | undefined): CardColor {
   const k = key ? LEGACY_COLOR_ALIASES[key] ?? key : "default";
-  return CARD_COLORS.find((c) => c.key === k) ?? CARD_COLORS[0];
+  const found = CARD_COLORS.find((c) => c.key === k);
+  if (found) return found;
+  // custom hex picked via the color picker (not one of the fixed presets)
+  if (/^#[0-9a-f]{6}$/i.test(k)) return { key: k, name: "Custom", bg: k, fg: contrastColor(k) };
+  return CARD_COLORS[0];
 }
 
 // ---------------------------------------------------------------- shortcuts

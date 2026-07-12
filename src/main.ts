@@ -12,6 +12,8 @@ import {
 import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
 import { renderSettingsUI } from "./settings-ui";
 import { loadOpenAiApiKey } from "./secrets";
+import { ImportTemplateConfirmModal } from "./modals";
+import { TemplateBundle, collectBundle, unbundleTemplate } from "./template-bundle";
 import {
   BoardData,
   DEFAULT_BOARD,
@@ -28,8 +30,14 @@ export interface MaguilanoteSettings {
   gridSize: number;
   defaultNoteWidth: number;
   templatesFolder: string;
-  /** CSS font-family value, or "" to inherit Obsidian's font */
+  /** vault folder where dropped files and recordings are saved */
+  assetsFolder: string;
+  /** body text font: a value from FONT_CHOICES, a Google Font family name
+   * (e.g. "Inter"), or "" to inherit Obsidian's font */
   fontFamily: string;
+  /** heading font (card titles, column titles): same value shapes as fontFamily,
+   * "" falls back to the body font */
+  headingFontFamily: string;
   theme: "dark" | "light";
   keybindings: Record<ShortcutActionId, KeyBinding | null>;
   /** customizable background colors, kept separately per theme */
@@ -48,7 +56,9 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   gridSize: 24,
   defaultNoteWidth: 260,
   templatesFolder: "Maguilanote Templates",
+  assetsFolder: "Maguilanote Assets",
   fontFamily: "",
+  headingFontFamily: "",
   theme: "dark",
   keybindings: { ...DEFAULT_KEYBINDINGS },
   colors: { light: { ...DEFAULT_THEME_COLORS.light }, dark: { ...DEFAULT_THEME_COLORS.dark } },
@@ -99,7 +109,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view || !view.file) return false;
-        if (!checking) this.saveAsTemplate(view.file);
+        if (!checking) this.exportBoardAsTemplate(view);
         return true;
       },
     });
@@ -161,18 +171,109 @@ export default class MaguilanotePlugin extends Plugin {
     return file;
   }
 
-  async saveAsTemplate(file: TFile) {
+  /** Bundles `view`'s board and everything it references (nested boards, images, files, recordings) into a single `.board.template` in the templates folder. */
+  async exportBoardAsTemplate(view: BoardView) {
+    await view.save(); // flush the debounced autosave — collectBundle reads the file from disk
+    const file = view.file;
+    if (!file) return;
+    const bundle = await collectBundle(this.app, file);
     const folder = normalizePath(this.settings.templatesFolder);
     if (!this.app.vault.getAbstractFileByPath(folder)) {
       await this.app.vault.createFolder(folder).catch(() => {});
     }
-    let target = normalizePath(`${folder}/${file.basename}.board`);
+    let target = normalizePath(`${folder}/${file.basename}.board.template`);
     let i = 1;
     while (this.app.vault.getAbstractFileByPath(target)) {
-      target = normalizePath(`${folder}/${file.basename} ${i++}.board`);
+      target = normalizePath(`${folder}/${file.basename} ${i++}.board.template`);
     }
-    await this.app.vault.copy(file, target);
+    await this.app.vault.create(target, JSON.stringify(bundle, null, 2));
     new Notice(`Template saved to ${target}`);
+  }
+
+  /**
+   * Opens a file picker restricted to `.board.template` files (native dialog on
+   * desktop, defaulting to the templates folder; browser file input otherwise).
+   * Importing replaces `view`'s board: the picked template is unpacked next to
+   * it, opened in its place, and the board it replaces is trashed.
+   */
+  async openImportTemplateDialog(view: BoardView) {
+    if (Platform.isDesktopApp) {
+      const picked = this.pickTemplateFileDesktop();
+      if (picked !== undefined) {
+        if (picked === null) return; // user cancelled the native dialog
+        const fs = require("fs");
+        const path = require("path");
+        const raw: string = fs.readFileSync(picked, "utf8");
+        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""), view);
+        return;
+      }
+    }
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".template";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const raw = await file.text();
+      await this.importTemplateFile(raw, file.name.replace(/\.board\.template$/i, ""), view);
+    };
+    input.click();
+  }
+
+  /** Native Electron open-dialog, defaulting to the templates folder on disk. Returns `undefined` if Electron's dialog isn't available (caller should fall back), `null` if the user cancelled, or the chosen absolute path. */
+  private pickTemplateFileDesktop(): string | null | undefined {
+    try {
+      const electron = (window as any).require("electron");
+      const dialog = electron.remote?.dialog ?? electron.dialog;
+      if (!dialog?.showOpenDialogSync) return undefined;
+      const adapter = this.app.vault.adapter as any;
+      let defaultPath: string | undefined;
+      if (adapter?.basePath) {
+        const path = require("path");
+        const folder = this.settings.templatesFolder?.trim();
+        defaultPath = folder ? path.join(adapter.basePath, folder) : adapter.basePath;
+      }
+      const result = dialog.showOpenDialogSync({
+        title: "Import Maguilanote template",
+        defaultPath,
+        filters: [{ name: "Maguilanote template", extensions: ["template"] }],
+        properties: ["openFile"],
+      });
+      return result?.[0] ?? null;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Validates `raw` as a template bundle, warns the user before writing anything
+   * (it replaces `view`'s current board), then unpacks it next to `view`'s file,
+   * opens the result in `view`'s place, and trashes the board it replaced.
+   */
+  async importTemplateFile(raw: string, displayName: string, view: BoardView) {
+    let bundle: TemplateBundle;
+    try {
+      bundle = JSON.parse(raw);
+      if (bundle.format !== "maguilanote-template") throw new Error("not a template");
+    } catch {
+      new Notice("Not a valid Maguilanote template file");
+      return;
+    }
+    new ImportTemplateConfirmModal(this.app, displayName, async () => {
+      try {
+        const oldFile = view.file;
+        const destFolder = oldFile?.parent?.path ?? "";
+        const rootFile = await unbundleTemplate(this.app, bundle, destFolder);
+        await view.leaf.openFile(rootFile);
+        if (oldFile && oldFile.path !== rootFile.path) {
+          await this.app.vault.trash(oldFile, false); // Obsidian's trash, not the OS trash
+        }
+        new Notice(`Imported template "${displayName}"`);
+      } catch (e) {
+        console.error("Maguilanote: template import failed", e);
+        new Notice(`Failed to import template: ${e instanceof Error ? e.message : e}`);
+      }
+    }).open();
   }
 
   async exportMarkdown(view: BoardView) {
@@ -274,21 +375,22 @@ class TemplatePicker extends FuzzySuggestModal<TFile> {
     const folder = normalizePath(this.plugin.settings.templatesFolder);
     return this.app.vault
       .getFiles()
-      .filter((f) => f.extension === "board" && f.path.startsWith(folder));
+      .filter((f) => f.path.startsWith(folder) && f.path.toLowerCase().endsWith(".board.template"));
   }
   getItemText(f: TFile): string {
-    return f.basename;
+    return f.name.replace(/\.board\.template$/i, "");
   }
   async onChooseItem(f: TFile) {
     const raw = await this.app.vault.read(f);
-    const folder = this.app.workspace.getActiveFile()?.parent?.path ?? "";
-    const prefix = folder && folder !== "/" ? folder + "/" : "";
-    let path = normalizePath(`${prefix}${f.basename}.board`);
-    let i = 1;
-    while (this.app.vault.getAbstractFileByPath(path)) {
-      path = normalizePath(`${prefix}${f.basename} ${i++}.board`);
+    let bundle: TemplateBundle;
+    try {
+      bundle = JSON.parse(raw);
+    } catch {
+      new Notice("Invalid template file");
+      return;
     }
-    const nf = await this.app.vault.create(path, raw);
+    const folder = this.app.workspace.getActiveFile()?.parent?.path ?? "";
+    const nf = await unbundleTemplate(this.app, bundle, folder);
     await this.app.workspace.getLeaf(false).openFile(nf);
   }
 }

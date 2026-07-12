@@ -19,7 +19,7 @@ This project pins **exact** dependency versions (no `^`/`~` ranges) — see [DEP
 npm run build
 ```
 
-Runs `tsc -noEmit -skipLibCheck` (type-check only, no emit), then `esbuild.config.mjs production` (bundles `src/main.ts` into `main.js` at the project root), then `scripts/copy-to-vault.mjs`.
+Runs `tsc -noEmit -skipLibCheck` (type-check only, no emit), then `esbuild.config.mjs production` — which bundles `src/main.ts` into `main.js` **and** bundles `src/styles/index.css` (which `@import`s the partials under `src/styles/`) into the root `styles.css` — then `scripts/copy-to-vault.mjs`. The root `styles.css` is generated; edit the partials under `src/styles/` instead of the root file.
 
 The copy step is optional and local-only: if a `.env.local` file exists at the project root with an `OBSIDIAN_PLUGIN_DIR=<path>` line, `main.js`, `manifest.json` and `styles.css` are copied there automatically after a successful build. `.env.local` is gitignored, so each contributor points it at their own vault; without it, the copy step is a no-op.
 
@@ -37,7 +37,7 @@ If npm/the registry isn't available in your environment, `build-local.mjs` build
 node build-local.mjs
 ```
 
-Both paths produce `main.js` at the project root. This is a fallback path, not the primary one — prefer `npm run build` when npm is available.
+Both paths produce `main.js` at the project root. This is a fallback path, not the primary one — prefer `npm run build` when npm is available. It concatenates `src/*.ts` in dependency order (see the file list at the top of `build-local.mjs`) and does not bundle `styles.css` — if you use this path, build CSS separately (e.g. `npx esbuild src/styles/index.css --bundle --outfile=styles.css`) or copy an existing `styles.css`.
 
 ## Load the plugin in Obsidian
 

@@ -1,0 +1,215 @@
+/* ------------ toolbar ------------ */
+.mgn-toolbar {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+.mgn-tool {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--mgn-panel-text);
+  cursor: pointer;
+}
+.mgn-tool:hover {
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-panel-text-strong);
+}
+.mgn-tool-active {
+  background: var(--mgn-accent) !important;
+  color: var(--mgn-white) !important;
+}
+.mgn-tool svg {
+  width: 17px;
+  height: 17px;
+}
+.mgn-tool-sep {
+  height: 1px;
+  background: var(--mgn-panel-border);
+  margin: 4px 2px;
+}
+/* drag-only tool clicked instead of dragged: shake + hint */
+.mgn-tool-shake {
+  animation: mgn-shake 0.4s ease;
+}
+@keyframes mgn-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.mgn-drag-hint {
+  position: absolute;
+  left: calc(100% + 8px);
+  white-space: nowrap;
+  background: var(--mgn-panel-bg);
+  color: var(--mgn-panel-text);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  box-shadow: var(--mgn-panel-shadow);
+  pointer-events: none;
+  z-index: 30;
+}
+
+/* ------------ bottom bar (zoom + snap) ------------ */
+.mgn-zoombar {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+.mgn-zoom-label {
+  color: var(--mgn-panel-text);
+  font-size: 12px;
+  min-width: 44px;
+  text-align: center;
+}
+.mgn-zoom-100 {
+  color: var(--mgn-panel-text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 8px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mgn-zoom-100:hover {
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-panel-text-strong);
+}
+.mgn-vsep {
+  width: 1px;
+  height: 20px;
+  background: var(--mgn-panel-border);
+  margin: 0 4px;
+}
+
+/* ------------ search ------------ */
+.mgn-search {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+.mgn-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--mgn-panel-text-strong);
+  font-size: 13px;
+  width: 180px;
+}
+.mgn-search-count {
+  color: var(--mgn-text-muted);
+  font-size: 12px;
+}
+
+/* ------------ breadcrumbs ------------ */
+.mgn-crumbs {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  height: 32px;
+  box-sizing: border-box;
+  box-shadow: var(--mgn-panel-shadow);
+  font-size: 14px;
+  max-width: 60%;
+  overflow: hidden;
+}
+.mgn-crumb {
+  color: var(--mgn-text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mgn-crumb:hover {
+  color: var(--mgn-text-bright);
+  text-decoration: underline;
+}
+.mgn-crumb-current {
+  color: var(--mgn-text-bright);
+  font-weight: 600;
+  cursor: default;
+}
+.mgn-crumb-current:hover {
+  text-decoration: none;
+}
+.mgn-crumb-sep {
+  color: var(--mgn-panel-sep);
+}
+/* settings modal + shared with the native plugin settings tab */
+.mgn-settings-modal h3 {
+  margin: 1.2em 0 0.4em;
+}
+.mgn-settings-modal h3:first-child {
+  margin-top: 0;
+}
+.mgn-shortcuts-foldout {
+  margin-top: 1em;
+}
+.mgn-shortcuts-foldout summary {
+  cursor: pointer;
+  font-weight: 600;
+  opacity: 0.7;
+  padding: 4px 0;
+}
+.mgn-shortcuts-foldout .mgn-shortcuts {
+  margin-top: 6px;
+}
+
+/* shortcuts modal */
+.mgn-shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mgn-shortcuts td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 13px;
+}
+.mgn-shortcut-key {
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  color: var(--text-accent);
+}

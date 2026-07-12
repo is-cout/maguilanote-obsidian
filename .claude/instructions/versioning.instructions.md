@@ -29,6 +29,8 @@ A change does **not** bump the version when it only touches non-shipping files:
 
 If a single change mixes plugin code with docs, bump for the plugin part.
 
+**When to bump:** as part of the commit that ships the change (same as the CHANGELOG entry) — don't defer it to release time. Tagging and building the GitHub Release are the separate, user-requested step described in [Git Workflow & Commits](git.instructions.md); the version number itself moves with the code.
+
 ## Which number to increment
 
 Given `MAJOR.MINOR.PATCH`, increment:

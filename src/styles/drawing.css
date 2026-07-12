@@ -1,0 +1,279 @@
+/* ------------ drawing / sketch ------------ */
+/* main toolbar dimmed while a contextual toolbar is open */
+.mgn-toolbar-dimmed {
+  opacity: 0.35;
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+
+/* contextual toolbar: floating popup just right of the main toolbar */
+.mgn-context-toolbar {
+  position: absolute;
+  left: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+/* inline variant lives inside the sketch popup header */
+.mgn-context-inline {
+  position: static;
+  transform: none;
+  flex-direction: row;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.mgn-ctx-tool {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--mgn-panel-text);
+  cursor: pointer;
+}
+.mgn-context-inline .mgn-ctx-tool {
+  color: var(--text-normal);
+}
+.mgn-ctx-tool:hover {
+  background: var(--mgn-panel-hover-bg);
+  color: var(--mgn-white);
+}
+.mgn-ctx-tool svg {
+  width: 17px;
+  height: 17px;
+}
+.mgn-ctx-active {
+  background: var(--mgn-accent) !important;
+  color: var(--mgn-white) !important;
+}
+.mgn-ctx-sep {
+  width: 20px;
+  height: 1px;
+  background: var(--mgn-panel-border);
+  margin: 4px 0;
+}
+.mgn-context-inline .mgn-ctx-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+}
+.mgn-ctx-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* current-color dot on the color button */
+.mgn-ctx-colordot {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--mgn-panel-border);
+}
+/* current-size dot on the size button */
+.mgn-ctx-sizedot {
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* popover for color/size choices */
+.mgn-ctx-popover {
+  position: absolute;
+  z-index: 50;
+  background: var(--mgn-panel-bg);
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: var(--mgn-panel-shadow);
+}
+.mgn-ctx-colorgrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mgn-ctx-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--mgn-panel-border);
+  cursor: pointer;
+}
+.mgn-ctx-swatch:hover {
+  outline: 2px solid var(--mgn-accent);
+}
+.mgn-ctx-customcolor {
+  width: 100%;
+  height: 26px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.mgn-ctx-sizelist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mgn-ctx-sizerow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 40px;
+  border-radius: 6px;
+  color: var(--mgn-panel-text);
+  cursor: pointer;
+}
+.mgn-ctx-sizerow:hover {
+  background: var(--mgn-panel-hover-bg);
+}
+
+/* fade the whole board (all cards incl. drawings) uniformly while drawing,
+   and make every card inert so nothing underneath can be clicked */
+.mgn-draw-active .mgn-world {
+  opacity: 0.4;
+  pointer-events: none;
+}
+/* subtle tint over the board while drawing (blocks node interaction) */
+.mgn-draw-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--mgn-preview-overlay) 40%, transparent);
+}
+/* the SVG surface that captures strokes (above the scrim) */
+.mgn-draw-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+.mgn-draw-stroke,
+.mgn-draw-live {
+  stroke: none;
+}
+.mgn-draw-selected {
+  opacity: 0.85;
+}
+.mgn-draw-selbox {
+  fill: none;
+  stroke: var(--mgn-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+}
+.mgn-draw-selrect {
+  fill: color-mix(in srgb, var(--mgn-accent) 12%, transparent);
+  stroke: var(--mgn-accent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* sketch popup */
+.mgn-sketch-panel {
+  width: auto;
+}
+.mgn-sketch-body {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.mgn-sketch-surface {
+  /* override the board-overlay positioning: sit in normal flow, centered by the panel */
+  position: static;
+  inset: auto;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* native <select> auto-sizes to its widest OPTION, not the selected one — long
+   mic device names would otherwise balloon this past every other dropdown's
+   width (e.g. the Font dropdown, which stays narrow only because its longest
+   label is short). Cap it back to a normal dropdown width. */
+.mgn-mic-dropdown {
+  width: 170px !important;
+  max-width: 170px !important;
+  flex: 0 0 auto !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* record popup */
+.mgn-record-panel {
+  width: auto;
+}
+.mgn-record-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+}
+.mgn-record-mic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.mgn-record-viz {
+  width: 100%;
+  height: 56px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  color: var(--mgn-accent);
+}
+.mgn-record-timer {
+  font-size: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
+.mgn-record-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* drawing card + sketch preview */
+.mgn-drawing {
+  padding: 0;
+  border: none;
+  background: transparent !important;
+  box-shadow: none;
+}
+.mgn-drawing-svg {
+  display: block;
+  width: 100%;
+}
+.mgn-card.mgn-sketch {
+  display: flex;
+  flex-direction: column;
+}
+.mgn-sketch-preview {
+  width: 100%;
+  min-height: 120px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mgn-sketch-preview .mgn-drawing-svg {
+  max-height: 240px;
+}

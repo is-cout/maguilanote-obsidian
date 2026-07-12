@@ -40,6 +40,35 @@ export class TextPromptModal extends Modal {
   }
 }
 
+export class ImportTemplateConfirmModal extends Modal {
+  constructor(app: App, private name: string, private onConfirm: () => void) {
+    super(app);
+  }
+  onOpen() {
+    this.titleEl.setText("Import template?");
+    this.contentEl.createEl("p", {
+      text:
+        `You're about to import "${this.name}", replacing the board you currently have open. ` +
+        "Only import templates from people you trust — a template file can bundle files of any type, " +
+        "and importing writes them into your vault.",
+    });
+    new Setting(this.contentEl)
+      .addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()))
+      .addButton((b) =>
+        b
+          .setButtonText("Import")
+          .setCta()
+          .onClick(() => {
+            this.close();
+            this.onConfirm();
+          })
+      );
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+}
+
 export class VaultFilePicker extends FuzzySuggestModal<TFile> {
   constructor(app: App, private cb: (f: TFile) => void) {
     super(app);

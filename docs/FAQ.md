@@ -37,7 +37,7 @@ The stroke *look* (smoothing/thinning/pressure response) is in `strokeToPath` in
 
 ### How does "Transcribe text" on a Record card work, and does it cost anything?
 
-It calls the OpenAI Whisper API (`whisper-1`) with the API key from Settings → Recording → "OpenAI API key". This is the only network call the plugin makes to an external service, and it's opt-in: nothing happens until the user pastes a key and right-clicks a recorded card. The Whisper API is paid (usage-based, no free tier) — see [DEPENDENCIES.md](DEPENDENCIES.md) if you're wondering whether this counts as a "dependency" (it doesn't: no npm package, just a `fetch` call).
+It calls the OpenAI Whisper API (`whisper-1`) with the API key from Settings → Recording → "OpenAI API key". This is the only network call the plugin makes to an external service, and it's opt-in: nothing happens until the user pastes a key and clicks "Transcribe text" in a selected recording card's contextual toolbar. The Whisper API is paid (usage-based, no free tier) — see [DEPENDENCIES.md](DEPENDENCIES.md) if you're wondering whether this counts as a "dependency" (it doesn't: no npm package, just a `fetch` call).
 
 ### Where is the OpenAI API key actually stored — is it in my vault?
 
@@ -53,11 +53,19 @@ Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb tra
 
 ### How do I change font / theme / color defaults?
 
-`DEFAULT_SETTINGS.fontFamily` and `.theme` (`"dark" | "light"`) in `src/main.ts` — both exposed as user settings (gear icon → Settings → Customization). The board/card colors themselves live in `DEFAULT_THEME_COLORS` (`src/types.ts`), one `ThemeColors` object per theme (`canvasBg`, `cardDefaultBg`, and the 8 named card colors); users can override any of them per-theme from the same Customization section, stored in `settings.colors.light` / `settings.colors.dark`. `BoardView.applyAppearance()` (`src/board-view.ts`) writes the active theme's values onto the corresponding `--mgn-canvas-bg` / `--mgn-card-default-bg` / `--mgn-card-color-*` CSS variables, and toggles the `.mgn-theme-light` class for the rest of the palette (defined in `:root` / `.mgn-root.mgn-theme-light` in `styles.css`).
+`DEFAULT_SETTINGS.fontFamily` (body font), `.headingFontFamily` (card/column titles, falls back to the body font when blank), and `.theme` (`"dark" | "light"`) in `src/main.ts` — all exposed as user settings (gear icon → Settings → Customization). Font values are either a preset (`FONT_CHOICES` in `src/settings-ui.ts`) or a free-typed Google Font family name; `src/fonts.ts`'s `ensureGoogleFont()` fetches it via a `fonts.googleapis.com` stylesheet `<link>` and `fontFamilyValue()` turns the setting into the actual CSS `font-family` value written onto `--mgn-font-family` / `--mgn-font-family-heading` by `BoardView.applyAppearance()`. The board/card colors themselves live in `DEFAULT_THEME_COLORS` (`src/types.ts`), one `ThemeColors` object per theme (`canvasBg`, `cardDefaultBg`, and the 8 named card colors); users can override any of them per-theme from the same Customization section, stored in `settings.colors.light` / `settings.colors.dark`. `BoardView.applyAppearance()` (`src/board-view.ts`) writes the active theme's values onto the corresponding `--mgn-canvas-bg` / `--mgn-card-default-bg` / `--mgn-card-color-*` CSS variables, and toggles the `.mgn-theme-light` class for the rest of the palette (defined in `:root` / `.mgn-root.mgn-theme-light` in `styles.css`).
 
 ### How do I change the default templates folder name?
 
 `DEFAULT_SETTINGS.templatesFolder` in `src/main.ts` (default: `"Maguilanote Templates"`). Also a user-facing setting.
+
+### Where do dropped files, images and recordings get saved?
+
+Into the **Assets folder** — `DEFAULT_SETTINGS.assetsFolder` in `src/main.ts` (default: `"Maguilanote Assets"`), a user-facing setting next to the templates folder. Read by `importOsFile` (`src/board-drop-import.ts`) and `saveAssetBinary` (`src/record-card.ts`); the folder is created on first use. Assets unpacked from a `.board.template` are the one exception — they land next to the imported board so a bundle stays self-contained (`unbundleTemplate` in `src/template-bundle.ts`).
+
+### How do I export or import a template?
+
+Zoombar (bottom bar) → the download/upload icons next to Snap to grid. Export ("Save current board as template" as a command too) takes the currently open board, walks it recursively (nested board cards, images, files, recordings), and packs everything into one `<name>.board.template` file in the templates folder — a single portable, self-contained file, unlike a plain `.board` copy which breaks the moment the board references anything outside itself. **Import replaces the board you have open**: it reads a `.board.template` from anywhere (file picker restricted to that extension; defaults to the templates folder on desktop), and after a confirmation modal (cancellable — a template file can bundle files of any type) unpacks it next to your current board, opens the result in its place, and sends the board it replaced to Obsidian's trash. To add a template to your library *without* replacing anything, use the "New board from template" command instead — it picks from `.board.template` files already in the templates folder and opens the unpacked result as a new board next to the active file. Format and logic live in `src/template-bundle.ts` (`TemplateBundle`, `collectBundle`, `unbundleTemplate`); wiring in `MaguilanotePlugin.exportBoardAsTemplate()` / `.importTemplateFile()` / `.openImportTemplateDialog()` in `src/main.ts`.
 
 ### Where is the board file format defined, and is it stable?
 

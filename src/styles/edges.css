@@ -1,0 +1,111 @@
+/* connector + resize handles */
+.mgn-connector {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--mgn-accent);
+  border: 2px solid var(--mgn-white);
+  opacity: 0;
+  cursor: crosshair;
+  z-index: 5;
+}
+.mgn-card:hover .mgn-connector {
+  opacity: 1;
+}
+.mgn-resize {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  opacity: 0;
+  border-right: 3px solid var(--mgn-accent);
+  border-bottom: 3px solid var(--mgn-accent);
+  border-radius: 0 0 4px 0;
+  z-index: 5;
+}
+.mgn-card:hover .mgn-resize {
+  opacity: 0.8;
+}
+.mgn-lock-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.mgn-lock-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ------------ edges ------------ */
+.mgn-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+.mgn-edge {
+  stroke: var(--mgn-text-dim);
+  stroke-width: 2;
+  color: var(--mgn-text-dim);
+  pointer-events: none;
+}
+.mgn-edge-selected {
+  stroke: var(--mgn-accent);
+  color: var(--mgn-accent);
+}
+.mgn-edge-temp {
+  stroke: var(--mgn-accent);
+  color: var(--mgn-accent);
+  stroke-dasharray: 5 4;
+}
+.mgn-edge-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.mgn-edge-handle {
+  fill: var(--mgn-white);
+  stroke: var(--mgn-accent);
+  stroke-width: 2;
+  pointer-events: all;
+  cursor: grab;
+}
+.mgn-edge-bend-handle {
+  fill: var(--mgn-accent);
+  opacity: 0.6;
+  cursor: grab;
+}
+/* card highlighted as a line-endpoint drop target */
+.mgn-conn-target {
+  outline: 2px solid var(--mgn-accent);
+  outline-offset: 2px;
+}
+.mgn-edge-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.mgn-edge-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: var(--mgn-canvas-bg);
+  color: var(--mgn-column-text);
+  border: 1px solid var(--mgn-panel-sep);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
