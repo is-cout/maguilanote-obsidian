@@ -12,6 +12,7 @@ import {
 import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
 import { renderSettingsUI } from "./settings-ui";
 import { loadOpenAiApiKey } from "./secrets";
+import { removeGoogleFonts } from "./fonts";
 import { ImportTemplateConfirmModal } from "./modals";
 import { TemplateBundle, collectBundle, unbundleTemplate } from "./template-bundle";
 import {
@@ -363,6 +364,10 @@ export default class MaguilanotePlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  onunload() {
+    removeGoogleFonts(); // drop the <style> elements injected into document.head
   }
 }
 

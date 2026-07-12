@@ -227,6 +227,9 @@
 .mgn-note-body code {
   white-space: pre-wrap;
 }
+.mgn-note-body-editing {
+  pointer-events: auto;
+}
 .mgn-note-body,
 .mgn-note-body p,
 .mgn-note-body li,
@@ -819,6 +822,9 @@ body.mgn-todo-grabbing * {
   overflow: visible;
   pointer-events: none;
 }
+.mgn-arrowhead-path {
+  fill: var(--mgn-marker-fill, var(--mgn-text-dim));
+}
 .mgn-edge {
   stroke: var(--mgn-text-dim);
   stroke-width: 2;
@@ -1053,6 +1059,9 @@ body.mgn-todo-grabbing * {
 .mgn-crumb-sep {
   color: var(--mgn-panel-sep);
 }
+.mgn-prompt-input {
+  width: 100%;
+}
 .mgn-settings-modal h3 {
   margin: 1.2em 0 0.4em;
 }
@@ -1142,6 +1151,17 @@ body.mgn-todo-grabbing * {
 .mgn-preview-body {
   padding: 16px 20px;
   overflow-y: auto;
+}
+.mgn-preview-body-pdf {
+  height: 75vh;
+}
+.mgn-preview-media {
+  width: 100%;
+  border-radius: 4px;
+}
+img.mgn-preview-media {
+  width: auto;
+  max-width: 100%;
 }
 
 /* src/styles/drawing.css */

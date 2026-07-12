@@ -113,6 +113,10 @@
 .mgn-note-body code {
   white-space: pre-wrap;
 }
+/* while the inline textarea editor is open the body must take pointer events */
+.mgn-note-body-editing {
+  pointer-events: auto;
+}
 .mgn-note-body,
 .mgn-note-body p,
 .mgn-note-body li,

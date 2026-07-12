@@ -55,4 +55,17 @@
   padding: 16px 20px;
   overflow-y: auto;
 }
+/* the embedded PDF viewer needs an explicit height to render */
+.mgn-preview-body-pdf {
+  height: 75vh;
+}
+.mgn-preview-media {
+  width: 100%;
+  border-radius: 4px;
+}
+/* images keep their intrinsic size (only shrink to fit), unlike audio/video */
+img.mgn-preview-media {
+  width: auto;
+  max-width: 100%;
+}
 

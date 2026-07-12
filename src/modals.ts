@@ -16,7 +16,7 @@ export class TextPromptModal extends Modal {
     let value = this.initial;
     new Setting(this.contentEl).addText((t) => {
       t.setValue(this.initial).onChange((v) => (value = v));
-      t.inputEl.style.width = "100%";
+      t.inputEl.addClass("mgn-prompt-input");
       t.inputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();

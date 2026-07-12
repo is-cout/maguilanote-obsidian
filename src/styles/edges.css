@@ -53,6 +53,11 @@
   overflow: visible;
   pointer-events: none;
 }
+/* `currentColor` inside a <marker> resolves against <defs>, not the referencing
+ * path — so each marker carries its own fill, set via --mgn-marker-fill */
+.mgn-arrowhead-path {
+  fill: var(--mgn-marker-fill, var(--mgn-text-dim));
+}
 .mgn-edge {
   stroke: var(--mgn-text-dim);
   stroke-width: 2;
