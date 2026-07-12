@@ -4,6 +4,13 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (1.0.3)
+
+- **Fixed the errors from the Obsidian plugin-directory review.** No behavior change, only compliance:
+  - `manifest.json` description no longer contains the word "Obsidian" (redundant in the directory context).
+  - Static inline style assignments replaced with CSS classes / `setCssStyles` / `setCssProps`: arrowhead markers now use `.mgn-arrowhead-path` with a `--mgn-marker-fill` custom prop, the note editor uses `.mgn-note-body-editing`, the preview media/PDF use `.mgn-preview-media` / `.mgn-preview-body-pdf`, and the prompt modal's input uses `.mgn-prompt-input`. Files: `src/board-view.ts`, `src/file-preview.ts`, `src/modals.ts`, `src/render.ts`, `src/styles/cards.css`, `src/styles/chrome.css`, `src/styles/edges.css`, `src/styles/preview.css`.
+  - Google Fonts are no longer loaded through a `<link>` element (not allowed). The stylesheet is fetched with `requestUrl` and injected as a `<style>` element, which `onunload` now removes. Files: `src/fonts.ts`, `src/main.ts`.
+
 ## 2026-07-12 (1.0.2, re-released)
 
 - **Release tags are now bare `x.y.z`, no `v` prefix.** Obsidian requires the GitHub release tag to match `manifest.json`'s `version` exactly — `v1.0.2` did not, so the plugin could not be installed from the release. The release workflow now triggers on `[0-9]+.[0-9]+.[0-9]+` instead of `v*`, and 1.0.2 is re-tagged/re-released under the bare name. No plugin code change, so no version bump. Files: `.github/workflows/release.yml`, `.claude/instructions/git.instructions.md`, `.claude/skills/release/SKILL.md`.
