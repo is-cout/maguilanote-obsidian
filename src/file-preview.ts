@@ -63,9 +63,8 @@ export async function openPreviewFor(view: BoardView, it: Item) {
       attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;" },
     });
   } else if (ext === "pdf") {
-    body.createEl("iframe", {
-      attr: { src: view.app.vault.getResourcePath(f), style: "width:100%;height:75vh;border:none;" },
-    });
+    body.style.height = "75vh";
+    await MarkdownRenderer.render(view.app, `![[${f.path}]]`, body, f.path, view);
   } else {
     body.createDiv({ text: `No preview available for .${ext} files.` });
   }
