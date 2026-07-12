@@ -32,6 +32,46 @@ export function pauseRecordAudio(id: string) {
   recordAudio.get(id)?.pause();
 }
 
+/** video card player: the picture stays a plain drag surface (like an image
+ * card) and a custom control bar overlays the bottom, so play/seek work by
+ * clicking the bar without first selecting the card — native <video controls>
+ * can't do this, as its picture and controls are one non-splittable element. */
+export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string) {
+  const wrap = el.createDiv({ cls: "mgn-video-wrap" });
+  const v = wrap.createEl("video", {
+    attr: { src, preload: "metadata", style: "width:100%;display:block;border-radius:2px;" },
+  });
+  v.addEventListener("loadeddata", () => view.drawEdges());
+
+  const player = wrap.createDiv({ cls: "mgn-video-bar" });
+  const btn = player.createEl("button", { cls: "mgn-video-play" });
+  const bar = player.createDiv({ cls: "mgn-video-progress" });
+  const fill = bar.createDiv({ cls: "mgn-video-progress-fill" });
+  const time = player.createDiv({ cls: "mgn-video-time" });
+
+  const sync = () => {
+    setIcon(btn, v.paused ? "play" : "pause");
+    const t = v.duration || 0;
+    fill.style.width = t ? `${Math.min(100, (v.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(v.currentTime)} / ${fmtTime(t)}`);
+  };
+  v.onloadedmetadata = v.ontimeupdate = v.onplay = v.onpause = v.onended = sync;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (v.paused) v.play().catch(() => {});
+    else v.pause();
+  });
+  bar.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const t = v.duration || 0;
+    if (!t) return;
+    const r = bar.getBoundingClientRect();
+    v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    sync();
+  });
+  sync();
+}
+
 /** compact play/seek/time player for a record card */
 export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   let audio = recordAudio.get(it.id);
@@ -340,23 +380,26 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "file": {
       const f = view.resolveFile(it.path);
       const ext = f?.extension?.toLowerCase() ?? "";
-      const head = el.createDiv({ cls: "mgn-file-head" });
-      setIcon(
-        head.createSpan({ cls: "mgn-link-ico" }),
-        AUDIO_EXTS.includes(ext) ? "music" : VIDEO_EXTS.includes(ext) ? "video" : "file"
-      );
-      head.createDiv({ cls: "mgn-link-title", text: it.title || f?.name || it.path || "File" });
+      const isVideo = VIDEO_EXTS.includes(ext);
+      // a video card is just its player, like an image card — no default
+      // icon+filename head. Other file kinds (audio/pdf/…) keep the head as
+      // their identity. Either way the head hides once a custom title is on.
+      if (!it.showTitle && !isVideo) {
+        const head = el.createDiv({ cls: "mgn-file-head" });
+        setIcon(
+          head.createSpan({ cls: "mgn-link-ico" }),
+          AUDIO_EXTS.includes(ext) ? "music" : "file"
+        );
+        head.createDiv({ cls: "mgn-link-title", text: f?.name || it.path || "File" });
+      }
       if (!f) markMissing(el);
       if (f && AUDIO_EXTS.includes(ext)) {
         el.createEl("audio", {
           attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;" },
         });
       }
-      if (f && VIDEO_EXTS.includes(ext)) {
-        const v = el.createEl("video", {
-          attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;margin-top:6px;border-radius:4px;" },
-        });
-        v.addEventListener("loadeddata", () => view.drawEdges());
+      if (f && isVideo) {
+        renderVideoPlayer(view, el, view.app.vault.getResourcePath(f));
       }
       break;
     }

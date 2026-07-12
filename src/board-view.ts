@@ -347,7 +347,7 @@ export class BoardView extends TextFileView {
     tool("mic", "Record", { drag: "record" });
     tb.createDiv({ cls: "mgn-tool-sep" });
     // group 2 — flexible tools
-    tool("image", "Image", { drag: "image" });
+    tool("image", "Media", { drag: "image" });
     tool("file", "Vault file", { drag: "file" });
     tool("link", "Link", { drag: "link" });
     tool("pencil", "Draw on the board (D)", { click: () => this.enterDrawMode() });
@@ -358,7 +358,7 @@ export class BoardView extends TextFileView {
 
     this.imgInput = tb.createEl("input", {
       type: "file",
-      attr: { accept: "image/*", multiple: true, style: "display:none" },
+      attr: { accept: "image/*,video/*,audio/*,application/pdf", multiple: true, style: "display:none" },
     });
     this.imgInput.addEventListener("change", async () => {
       const files = Array.from(this.imgInput.files ?? []);
@@ -596,7 +596,7 @@ export class BoardView extends TextFileView {
   onDblClick(e: MouseEvent) {
     if (this.drawMode) return;
     const target = e.target as HTMLElement;
-    if (target.closest("input, textarea, audio, video, iframe, .mgn-connector, .mgn-resize")) return;
+    if (target.closest("input, textarea, audio, iframe, .mgn-connector, .mgn-resize, .mgn-video-bar")) return;
 
     const edgeEl = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label");
     if (edgeEl?.dataset.id) {

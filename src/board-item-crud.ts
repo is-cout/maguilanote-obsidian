@@ -1,7 +1,7 @@
 import { TFile, normalizePath, requestUrl } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal, VaultFilePicker } from "./modals";
-import { Edge, IMAGE_EXTS, Item, newId } from "./types";
+import { Edge, IMAGE_EXTS, Item, newId, VIDEO_EXTS } from "./types";
 
 function placed(view: BoardView, x?: number, y?: number) {
   const c = view.viewCenter();
@@ -138,6 +138,7 @@ export function addVaultFileAt(view: BoardView, f: TFile, x: number, y: number) 
   } else if (f.extension === "board") {
     view.addItem({ type: "board", path: f.path, title: f.basename, w: 220 }, x, y);
   } else {
-    view.addItem({ type: "file", path: f.path, title: f.name, w: 260 }, x, y);
+    const video = VIDEO_EXTS.includes(f.extension.toLowerCase());
+    view.addItem({ type: "file", path: f.path, w: video ? 420 : 260 }, x, y);
   }
 }

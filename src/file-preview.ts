@@ -8,7 +8,6 @@ export function relinkItem(view: BoardView, it: Item) {
   new VaultFilePicker(view.app, (f) => {
     it.path = f.path;
     if (it.type === "board") it.title = f.basename;
-    if (it.type === "file") it.title = f.name;
     view.commit();
   }).open();
 }
@@ -62,6 +61,10 @@ export async function openPreviewFor(view: BoardView, it: Item) {
   } else if (VIDEO_EXTS.includes(ext)) {
     body.createEl("video", {
       attr: { controls: "true", src: view.app.vault.getResourcePath(f), style: "width:100%;" },
+    });
+  } else if (ext === "pdf") {
+    body.createEl("iframe", {
+      attr: { src: view.app.vault.getResourcePath(f), style: "width:100%;height:75vh;border:none;" },
     });
   } else {
     body.createDiv({ text: `No preview available for .${ext} files.` });
