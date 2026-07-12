@@ -497,10 +497,6 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
         }
       }
       view.commit();
-      // the toolbar was opened for the pre-drag selection at mousedown; a card
-      // dropped into/out of a column (parent change above) can change which
-      // groups apply, so resync once the drag has actually settled
-      view.syncCardToolbar();
       break;
     }
     case "rubber": {

@@ -20,6 +20,9 @@ export function addItem(view: BoardView, partial: Partial<Item> & { type: Item["
   view.board.items.push(it);
   view.selection = new Set([it.id]);
   view.commit();
+  // a new card comes out selected, so it must get its contextual toolbar right
+  // away — commit() only re-renders the cards, it doesn't touch the toolbar
+  view.syncCardToolbar();
   return it;
 }
 
