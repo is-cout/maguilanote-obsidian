@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (v0.12.0)
+
+- Renamed the **Image** toolbar tool to **Media** and widened its file picker (`accept="image/*,video/*,audio/*,application/pdf"`, was `image/*`) so it can import video, audio, and PDF files, not just images — the import pipeline already routed non-image files to the `file` card type (which renders audio/video inline), so this only needed the label and accept-filter change. Files: `src/board-view.ts`.
+
 ## 2026-07-12 (v0.11.0)
 
 - Added a **contextual toolbar for all card types**, matching the one already used for draw/sketch. Selecting a single card (of any type) opens it in the same lateral slot as the draw toolbar (dimming the main toolbar), showing card color, the new accent color, "Show/Hide title" (for title-eligible types), and type-specific actions ("Replace reference..." for file/image/board, "Transcribe text" for record) — closes automatically on multi-select, deselect, or entering draw mode (`src/card-toolbar.ts`, new; wired via `BoardView.syncCardToolbar()` called from `refreshSelectionClasses`). The right-click menu is now structural-only: Lock/Unlock, Duplicate, Bring to front, Send to back, Delete — everything else moved to the toolbar (`src/board-context-menu.ts`).
