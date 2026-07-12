@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-11 (v0.10.0)
+
+- Added an **Assets folder** setting (Settings → Board, next to Templates folder; default `"Maguilanote Assets"`). Dropped files/images and Record card recordings previously went into an `assets` subfolder next to whatever board they were added to, which scattered attachments across the vault and had no user control. They now all land in one configurable vault folder, like templates do. Template import still unpacks a bundle's assets alongside the imported board (`unbundleTemplate` keeps a bundle self-contained). Files: `src/main.ts`, `src/settings-ui.ts`, `src/board-drop-import.ts`, `src/record-card.ts`.
+
 ## 2026-07-11 (v0.9.1)
 
 - Record card: replaced the browser's native `<audio controls>` with a compact custom player (play/pause button, clickable seek bar, `current / total` time). Three fixes in one: (1) the native player reloaded its media on every full board `render()`, which flashed the card and briefly showed the player's loading dots — the new player keeps one `HTMLAudioElement` per card alive in a module-level cache across re-renders, so playback survives a board change and nothing reloads; (2) `MediaRecorder` webm files carry no duration metadata (`audio.duration` is `Infinity`, so the native UI showed `0:00`), so the total falls back to `Item.duration` measured while recording; (3) the player is now clickable on an unselected card (an exception to the "select first, then edit" rule, like the to-do checkbox), so play works in one click. Files: `src/render.ts`, `src/board-interaction.ts`, `src/styles/cards.css`, `styles.css`.

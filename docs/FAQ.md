@@ -59,6 +59,10 @@ Users rebind keyboard shortcuts themselves: gear icon next to the breadcrumb tra
 
 `DEFAULT_SETTINGS.templatesFolder` in `src/main.ts` (default: `"Maguilanote Templates"`). Also a user-facing setting.
 
+### Where do dropped files, images and recordings get saved?
+
+Into the **Assets folder** — `DEFAULT_SETTINGS.assetsFolder` in `src/main.ts` (default: `"Maguilanote Assets"`), a user-facing setting next to the templates folder. Read by `importOsFile` (`src/board-drop-import.ts`) and `saveAssetBinary` (`src/record-card.ts`); the folder is created on first use. Assets unpacked from a `.board.template` are the one exception — they land next to the imported board so a bundle stays self-contained (`unbundleTemplate` in `src/template-bundle.ts`).
+
 ### How do I export or import a template?
 
 Zoombar (bottom bar) → the download/upload icons next to Snap to grid. Export ("Save current board as template" as a command too) takes the currently open board, walks it recursively (nested board cards, images, files, recordings), and packs everything into one `<name>.board.template` file in the templates folder — a single portable, self-contained file, unlike a plain `.board` copy which breaks the moment the board references anything outside itself. **Import replaces the board you have open**: it reads a `.board.template` from anywhere (file picker restricted to that extension; defaults to the templates folder on desktop), and after a confirmation modal (cancellable — a template file can bundle files of any type) unpacks it next to your current board, opens the result in its place, and sends the board it replaced to Obsidian's trash. To add a template to your library *without* replacing anything, use the "New board from template" command instead — it picks from `.board.template` files already in the templates folder and opens the unpacked result as a new board next to the active file. Format and logic live in `src/template-bundle.ts` (`TemplateBundle`, `collectBundle`, `unbundleTemplate`); wiring in `MaguilanotePlugin.exportBoardAsTemplate()` / `.importTemplateFile()` / `.openImportTemplateDialog()` in `src/main.ts`.

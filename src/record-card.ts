@@ -3,12 +3,9 @@ import type { BoardView } from "./board-view";
 import { pauseRecordAudio, renderRecordPlayer } from "./render";
 import { Item, newId } from "./types";
 
-/** save a binary blob into the board's assets folder, returning the created file */
+/** save a binary blob into the configured assets folder, returning the created file */
 async function saveAssetBinary(view: BoardView, filename: string, buf: ArrayBuffer): Promise<TFile> {
-  const folder = view.file?.parent?.path && view.file.parent.path !== "/"
-    ? view.file.parent.path + "/assets"
-    : "assets";
-  const base = normalizePath(folder);
+  const base = normalizePath(view.plugin.settings.assetsFolder?.trim() || "Maguilanote Assets");
   if (!view.app.vault.getAbstractFileByPath(base)) {
     await view.app.vault.createFolder(base).catch(() => {});
   }
