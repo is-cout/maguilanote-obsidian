@@ -73,7 +73,7 @@ function buildGroups(view: BoardView, it: Item): CtxGroup[] {
       },
       {
         render: (h) =>
-          renderCardColorControl(view, h, it, "paint-bucket", "Accent color", (t) => t.accentColor, (t, key) => {
+          renderCardColorControl(view, h, it, "flag", "Accent color", (t) => t.accentColor, (t, key) => {
             t.accentColor = key;
           }),
       },
