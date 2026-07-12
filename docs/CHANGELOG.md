@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (1.0.4)
+
+- **Google Fonts no longer load through an injected `<style>` element.** The 1.0.3 fix swapped the `<link>` for a `<style>`, which the Obsidian review also rejects ("Creating and attaching 'style' elements is not allowed"). The css2 stylesheet is now fetched with `requestUrl`, its `@font-face` blocks are parsed, and each face is registered through the FontFace API (`document.fonts.add`) — no DOM element is created. `onunload` removes the registered faces. `tsconfig.json` gains the `DOM.Iterable` lib so `FontFaceSet.add`/`delete` typecheck. Files: `src/fonts.ts`, `tsconfig.json`.
+
 ## 2026-07-12 (1.0.3)
 
 - **Fixed the errors from the Obsidian plugin-directory review.** No behavior change, only compliance:
