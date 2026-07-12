@@ -4,6 +4,10 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 
 **Local-first by design.** Each board is a single `.board` JSON file in your vault. There's no account, no server, and no real-time collaboration; sync your vault however you already do (Obsidian Sync, Git, Syncthing, a shared folder...). Cloud collaboration is out of scope for this project, not a missing feature.
 
+## Demo
+
+![Maguilanote Demo Gif](https://github.com/is-cout/maguilanote-obsidian/blob/main/demo.gif)
+
 ## Features
 
 **Boards**
