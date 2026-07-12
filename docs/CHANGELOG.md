@@ -4,6 +4,10 @@ Living log of significant changes to the project. This is **not** optional bookk
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
+## 2026-07-12 (v1.0.0)
+
+- **First stable release.** Promotes the plugin from the `0.x` unstable line to `1.0.0`, declaring the board file format (`Board`/`Card`/`Edge` in `src/types.ts`) and the plugin API stable. No behavior change over v0.12.0 — this is the version/release marker: from here on, a breaking board-format or interaction change requires a MAJOR bump per [versioning](../.claude/instructions/versioning.instructions.md). Files: `package.json`, `manifest.json`, `versions.json`.
+
 ## 2026-07-12 (v0.12.0)
 
 - Renamed the **Image** toolbar tool to **Media** and widened its file picker (`accept="image/*,video/*,audio/*,application/pdf"`, was `image/*`) so it can import video, audio, and PDF files, not just images — the import pipeline already routed non-image files to the `file` card type (which renders audio/video inline), so this only needed the label and accept-filter change. Files: `src/board-view.ts`.
