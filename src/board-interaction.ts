@@ -401,7 +401,7 @@ export function onPointerMove(view: BoardView, e: PointerEvent) {
     if (e.pointerType !== "touch") return;
     if (!view.rafPending) {
       view.rafPending = true;
-      view.rafId = requestAnimationFrame(() => {
+      view.rafId = window.requestAnimationFrame(() => {
         view.rafId = null;
         view.rafPending = false;
         if (!view.closed && view.drag.kind === "pinch") view.processPointerMove(e);
@@ -416,7 +416,7 @@ export function onPointerMove(view: BoardView, e: PointerEvent) {
   view.lastMoveEvent = e;
   if (view.rafPending) return;
   view.rafPending = true;
-  view.rafId = requestAnimationFrame(() => {
+  view.rafId = window.requestAnimationFrame(() => {
     view.rafId = null;
     view.rafPending = false;
     if (!view.closed && view.lastMoveEvent && view.drag.kind !== "none") {
@@ -802,7 +802,7 @@ export function columnUnder(view: BoardView, e: PointerEvent, draggedIds: string
   const dragged = new Set(draggedIds);
   const els = document.elementsFromPoint(e.clientX, e.clientY);
   for (const el of els) {
-    const card = (el as HTMLElement).closest?.(".mgn-card") as HTMLElement | null;
+    const card = (el as HTMLElement).closest?.<HTMLElement>(".mgn-card");
     if (!card?.dataset.id || dragged.has(card.dataset.id)) continue;
     const it = view.item(card.dataset.id);
     if (it?.type === "column") return it;

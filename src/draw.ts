@@ -2,8 +2,6 @@ import { setIcon } from "obsidian";
 import { getStroke } from "perfect-freehand";
 import { Stroke, DEFAULT_STROKE_COLOR, DEFAULT_STROKE_SIZE } from "./types";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 // perfect-freehand's `size` is the width at mid pressure (max ≈ size*(1+thinning)).
 // We treat the chosen stroke size as the MAX (full-pressure) width, so we feed
 // size/(1+THINNING); light pressure then thins down and the min scales with it.
@@ -189,13 +187,13 @@ export class DrawSession {
     this.svg = cfg.svg;
     this.toCoords = cfg.toCoords;
     this.onChange = cfg.onChange;
-    this.strokeG = this.svg.createSvg("g") as unknown as SVGGElement;
-    this.overlayG = this.svg.createSvg("g") as unknown as SVGGElement;
+    this.strokeG = this.svg.createSvg("g");
+    this.overlayG = this.svg.createSvg("g");
     this.svg.addEventListener("pointerdown", (e) => this.onDown(e));
     this.svg.addEventListener("pointermove", (e) => this.onMove(e));
     this.svg.addEventListener("pointerup", (e) => this.onUp(e));
     this.svg.addEventListener("pointercancel", (e) => this.onCancel(e));
-    this.svg.addEventListener("lostpointercapture", (e) => this.onCancel(e as PointerEvent));
+    this.svg.addEventListener("lostpointercapture", (e) => this.onCancel(e));
     this.render();
   }
 
@@ -279,7 +277,7 @@ export class DrawSession {
       this.render();
     } else {
       if (!e.shiftKey) this.selection.clear();
-      const rect = this.overlayG.createSvg("rect", { cls: "mgn-draw-selrect" }) as unknown as SVGRectElement;
+      const rect = this.overlayG.createSvg("rect", { cls: "mgn-draw-selrect" });
       this.drag = { kind: "rubber", sx: x, sy: y, rect };
       this.render();
     }
@@ -418,7 +416,7 @@ export class DrawSession {
   private renderLive() {
     let path = this.strokeG.querySelector<SVGPathElement>(".mgn-draw-live");
     if (!path) {
-      path = this.strokeG.createSvg("path", { cls: "mgn-draw-live" }) as unknown as SVGPathElement;
+      path = this.strokeG.createSvg("path", { cls: "mgn-draw-live" });
     }
     path.setAttribute("d", strokeToPath({ points: this.live!, color: this.color, size: this.size }));
     path.setAttribute("fill", this.color);

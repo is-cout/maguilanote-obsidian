@@ -135,7 +135,7 @@ function renderSizeControl(view: BoardView, h: HTMLElement, session: DrawSession
 
 /** create the world-space SVG surface + viewBox aligned to the current view */
 function makeSurface(view: BoardView): SVGSVGElement {
-  const surface = view.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" }) as unknown as SVGSVGElement;
+  const surface = view.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" });
   updateSurfaceViewBox(view, surface);
   return surface;
 }
@@ -244,7 +244,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
   const surface = body.createSvg("svg", {
     cls: ["mgn-draw-surface", "mgn-sketch-surface"],
     attr: { viewBox: `0 0 ${W} ${H}` },
-  }) as unknown as SVGSVGElement;
+  });
   surface.style.width = `${W}px`;
   surface.style.height = `${H}px`;
 

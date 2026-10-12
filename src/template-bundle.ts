@@ -1,5 +1,5 @@
 import { App, TFile, normalizePath } from "obsidian";
-import { BoardData, Item } from "./types";
+import { BoardData } from "./types";
 
 /**
  * A .board.template file: the root board plus every board/asset it
@@ -124,7 +124,7 @@ export async function unbundleTemplate(app: App, bundle: TemplateBundle, destFol
       // not valid JSON — write through unchanged, no path rewriting possible
     }
     if (data) {
-      for (const it of data.items as Item[]) {
+      for (const it of data.items) {
         if (it.path && remap.has(it.path)) it.path = remap.get(it.path);
       }
     }

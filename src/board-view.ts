@@ -341,7 +341,7 @@ export class BoardView extends TextFileView {
     }
     const fresh = renderCardFn(this, it, !!it.parent);
     old.replaceWith(fresh);
-    requestAnimationFrame(() => this.drawEdges());
+    window.requestAnimationFrame(() => this.drawEdges());
   }
 
   /** push history snapshot, save + rerender */
@@ -568,7 +568,7 @@ export class BoardView extends TextFileView {
     this.registerDomEvent(this.viewportEl, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(this.viewportEl, "pointerup", (e) => this.onPointerUp(e));
     this.registerDomEvent(this.viewportEl, "pointercancel", (e) => this.onPointerCancel(e));
-    this.registerDomEvent(this.viewportEl, "lostpointercapture", (e) => this.onPointerCancel(e as PointerEvent));
+    this.registerDomEvent(this.viewportEl, "lostpointercapture", (e) => this.onPointerCancel(e));
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPencilTap(e));
     this.registerDomEvent(this.viewportEl, "dblclick", (e) => this.onDblClick(e));
     this.registerDomEvent(this.viewportEl, "wheel", (e) => this.onWheel(e), { passive: false });
@@ -711,7 +711,7 @@ export class BoardView extends TextFileView {
     for (const it of roots) {
       this.worldEl.appendChild(renderCardFn(this, it));
     }
-    requestAnimationFrame(() => this.drawEdges());
+    window.requestAnimationFrame(() => this.drawEdges());
   }
 
   drawEdges() {

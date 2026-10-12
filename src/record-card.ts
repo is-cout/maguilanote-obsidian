@@ -98,7 +98,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const h = Math.max(2, peak * viz.height);
       vizCtx.fillRect(i * barW + 1, (viz.height - h) / 2, barW - 2, h);
     }
-    vizFrame = requestAnimationFrame(drawViz);
+    vizFrame = window.requestAnimationFrame(drawViz);
   };
 
   const populateMics = async () => {

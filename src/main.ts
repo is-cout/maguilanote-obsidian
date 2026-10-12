@@ -346,7 +346,7 @@ export default class MaguilanotePlugin extends Plugin {
         return;
       }
     }
-    const input = document.createElement("input");
+    const input = createEl("input");
     input.type = "file";
     input.accept = ".template";
     input.onchange = async () => {

@@ -1,7 +1,7 @@
 import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
+import { AUDIO_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
 import { strokeToPath, strokesBBox } from "./draw";
 
 function markMissing(el: HTMLElement, label = "Missing reference") {
@@ -95,7 +95,7 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   if (!cached || cached.src !== src) {
     cached?.pause();
     cached?.remove();
-    cached = document.createElement("audio");
+    cached = createEl("audio");
     cached.addClass("mgn-record-audio");
     cached.preload = "metadata";
     cached.src = src;
