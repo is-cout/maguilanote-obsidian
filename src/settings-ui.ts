@@ -141,7 +141,9 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
     .addText((t) => {
       t.inputEl.type = "password";
       t.setPlaceholder("sk-...");
-      if (Platform.isDesktopApp) void loadOpenAiApiKey().then((key) => t.setValue(key));
+      // block body on purpose: Obsidian components have a `.then()`, so returning
+      // `t.setValue()` from a promise callback makes the promise adopt it forever
+      if (Platform.isDesktopApp) void loadOpenAiApiKey().then((key) => { t.setValue(key); });
       else t.setValue(s.openaiApiKey);
       t.onChange(async (v) => {
         const key = v.trim();
