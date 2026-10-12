@@ -938,9 +938,11 @@ body.mgn-todo-grabbing * {
   color: var(--mgn-panel-text);
   cursor: pointer;
 }
-.mgn-tool:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-panel-text-strong);
+@media (hover: hover) {
+  .mgn-tool:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-panel-text-strong);
+  }
 }
 .mgn-tool-dragging {
   background: var(--mgn-accent) !important;
@@ -1012,9 +1014,11 @@ body.mgn-todo-grabbing * {
   border-radius: 6px;
   cursor: pointer;
 }
-.mgn-zoom-100:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-panel-text-strong);
+@media (hover: hover) {
+  .mgn-zoom-100:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-panel-text-strong);
+  }
 }
 .mgn-vsep {
   width: 1px;
@@ -1323,9 +1327,11 @@ img.mgn-preview-media {
 .mgn-context-inline .mgn-ctx-tool {
   color: var(--text-normal);
 }
-.mgn-ctx-tool:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+@media (hover: hover) {
+  .mgn-ctx-tool:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-white);
+  }
 }
 .mgn-ctx-tool svg {
   width: 17px;

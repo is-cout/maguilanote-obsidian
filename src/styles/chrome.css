@@ -26,9 +26,12 @@
   color: var(--mgn-panel-text);
   cursor: pointer;
 }
-.mgn-tool:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-panel-text-strong);
+/* hover only where a real pointer hovers: on touch screens :hover sticks after a tap */
+@media (hover: hover) {
+  .mgn-tool:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-panel-text-strong);
+  }
 }
 .mgn-tool-dragging {
   background: var(--mgn-accent) !important;
@@ -101,9 +104,11 @@
   border-radius: 6px;
   cursor: pointer;
 }
-.mgn-zoom-100:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-panel-text-strong);
+@media (hover: hover) {
+  .mgn-zoom-100:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-panel-text-strong);
+  }
 }
 .mgn-vsep {
   width: 1px;

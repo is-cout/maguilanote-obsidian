@@ -161,6 +161,11 @@ export interface DrawSessionConfig {
   onChange?: () => void;
 }
 
+/** set once any Apple Pencil (pen) input is seen: from then on a finger is
+ * palm/navigation input and never draws. Devices without a pen (phones) never
+ * set it, so there the finger draws. */
+let penSeen = false;
+
 export class DrawSession {
   strokes: Stroke[] = [];
   tool: DrawTool = "pen";
@@ -179,6 +184,8 @@ export class DrawSession {
 
   private live: number[][] | null = null;
   private penPointerId: number | null = null;
+  /** the one finger drawing/erasing/selecting on a pen-less device */
+  private touchPointerId: number | null = null;
   private penReleaseTimer: number | null = null;
   private drag:
     | { kind: "move"; sx: number; sy: number; orig: number[][][] }
@@ -243,10 +250,14 @@ export class DrawSession {
   // ---------------------------------------------------------------- pointers
   private onDown(e: PointerEvent) {
     // iPadOS reports a resting palm as touch while Apple Pencil is pen input.
-    // Touch is navigation/palm input, never ink input; mouse and Pencil remain usable.
-    if (e.pointerType === "touch" && this.penPointerId !== null) return;
-    if (e.pointerType === "touch" || e.button !== 0) return;
+    // Once a Pencil has been used, touch is navigation/palm input, never ink
+    // input; without a pen, one finger at a time works like the mouse.
+    if (e.pointerType === "touch" && (penSeen || this.penPointerId !== null)) return;
+    if (e.pointerType === "touch" && this.touchPointerId !== null) return;
+    if (e.button !== 0) return;
+    if (e.pointerType === "touch") this.touchPointerId = e.pointerId;
     if (e.pointerType === "pen") {
+      penSeen = true;
       if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
       this.penReleaseTimer = null;
       this.penPointerId = e.pointerId;
@@ -286,13 +297,11 @@ export class DrawSession {
   }
 
   private onMove(e: PointerEvent) {
-    if (e.pointerType === "touch" && this.penPointerId !== null) return;
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
     if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
     const { x, y } = this.toCoords(e);
 
     if (this.live) {
-      // Ignore touch moves so a palm cannot corrupt an in-progress Pencil stroke.
-      if (e.pointerType === "touch") return;
       const pressure = e.pointerType === "pen" ? e.pressure || 0.5 : 1;
       this.live.push([x, y, pressure]);
       this.renderLive();
@@ -338,9 +347,10 @@ export class DrawSession {
         this.penReleaseTimer = null;
       }, 300);
     }
-    // Touch never starts a drawing gesture; its up/cancel must not finish a
-    // simultaneous Apple Pencil stroke.
-    if (e.pointerType === "touch") return;
+    // Only the finger that started the gesture may finish it, so a palm can't
+    // finish a simultaneous Apple Pencil stroke.
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
+    this.touchPointerId = null;
     try { this.svg.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     if (this.live) {
       if (this.live.length >= 1) {
@@ -362,6 +372,8 @@ export class DrawSession {
 
   private onCancel(e: PointerEvent) {
     if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
+    this.touchPointerId = null;
     if (e.pointerId === this.penPointerId) {
       this.penPointerId = null;
       if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);

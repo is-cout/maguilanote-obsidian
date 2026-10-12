@@ -29,6 +29,8 @@ Record the device model, iPadOS version, Obsidian version, orientation, and spli
 
 - [ ] Pencil moves, resizes, and connects cards.
 - [ ] Pencil draws with pressure in Draw and Sketch modes.
+- [ ] On a phone (no pen), one finger draws, erases and selects in Draw and Sketch modes; a second finger does not disturb the stroke. On iPad, after using Pencil once, a finger/palm never draws.
+- [ ] Tapping a toolbar button on a touch screen does not leave it highlighted.
 - [ ] A resting palm does not create or modify strokes while Pencil is down.
 - [ ] Pencil double-tap actions still work.
 - [ ] Escape discards an active drawing; explicit Save persists it.
