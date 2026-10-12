@@ -1,7 +1,7 @@
 import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
+import { AUDIO_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
 import { strokeToPath, strokesBBox } from "./draw";
 
 function markMissing(el: HTMLElement, label = "Missing reference") {
@@ -95,7 +95,7 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   if (!cached || cached.src !== src) {
     cached?.pause();
     cached?.remove();
-    cached = document.createElement("audio");
+    cached = createEl("audio");
     cached.addClass("mgn-record-audio");
     cached.preload = "metadata";
     cached.src = src;
@@ -173,9 +173,9 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   e.stopPropagation(); // don't let the board start a card-move drag
   const entry = source.todos[startIdx];
 
-  const ghost = document.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
+  const ghost = view.containerEl.doc.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
   const dropLine = createDiv({ cls: "mgn-todo-drop-line" });
-  document.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
+  view.containerEl.doc.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
 
   let target: TodoDropTarget = null;
   let hlEl: HTMLElement | null = null;
@@ -193,7 +193,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   const onMove = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return;
     positionGhost(ev);
-    const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+    const under = view.containerEl.doc.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
     const cardEl = under?.closest<HTMLElement>(".mgn-card.mgn-todo");
     const overItem = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : null;
     if (cardEl && overItem?.type === "todo") {
@@ -229,7 +229,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     cleanup();
     clearTarget();
     ghost.remove();
-    document.body.removeClass("mgn-todo-grabbing");
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
   };
   const onUp = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return;
@@ -238,7 +238,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     cleanup();
     clearTarget();
     ghost.remove();
-    document.body.removeClass("mgn-todo-grabbing");
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
     applyTodoDrop(view, source, entry, target, ev);
   };
 
@@ -344,7 +344,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "comment": {
       const body = el.createDiv({ cls: "mgn-note-body" });
       if (it.text?.trim()) {
-        MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
+        void MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
       } else {
         body.createDiv({
           cls: "mgn-placeholder",
@@ -492,10 +492,10 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         markMissing(el);
       } else {
         // Compact content preview: "2 boards, 5 cards, 1 file"
-        view.app.vault.cachedRead(bf).then((raw) => {
+        void view.app.vault.cachedRead(bf).then((raw) => {
           try {
-            const d = JSON.parse(raw);
-            const items: Item[] = Array.isArray(d.items) ? d.items : [];
+            const d = JSON.parse(raw) as { items?: unknown } | null;
+            const items = (Array.isArray(d?.items) ? d.items : []) as Item[];
             const boards = items.filter((i) => i.type === "board").length;
             const files = items.filter((i) => i.type === "file" || i.type === "image").length;
             const cards = items.length - boards - files;

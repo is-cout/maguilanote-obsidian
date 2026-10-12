@@ -85,7 +85,7 @@ Without npm (Node 22+ only):
 node build-local.mjs
 ```
 
-Both produce `main.js` at the project root. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details.
+Both produce `main.js` at the project root. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details, and [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## Documentation
 

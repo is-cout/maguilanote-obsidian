@@ -58,9 +58,10 @@
   width: 17px;
   height: 17px;
 }
-.mgn-ctx-active {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+/* beats `.mgn-ctx-tool:hover` (same specificity, declared later) */
+.mgn-root .mgn-ctx-active {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
 }
 .mgn-ctx-sep {
   width: 20px;
@@ -218,10 +219,10 @@
    mic device names would otherwise balloon this past every other dropdown's
    width (e.g. the Font dropdown, which stays narrow only because its longest
    label is short). Cap it back to a normal dropdown width. */
-.mgn-mic-dropdown {
-  width: 170px !important;
-  max-width: 170px !important;
-  flex: 0 0 auto !important;
+.setting-item-control select.mgn-mic-dropdown {
+  width: 170px;
+  max-width: 170px;
+  flex: 0 0 auto;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -277,8 +278,11 @@
 .mgn-drawing {
   padding: 0;
   border: none;
-  background: transparent !important;
   box-shadow: none;
+}
+/* outranks the plain `.mgn-card` background */
+.mgn-card.mgn-drawing {
+  background: transparent;
 }
 .mgn-drawing-svg {
   display: block;

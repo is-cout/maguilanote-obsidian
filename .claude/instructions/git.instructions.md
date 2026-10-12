@@ -32,7 +32,7 @@ one is already open for this task) the `feature/*`/`fix/*`/`chore/*` branch off 
 commit there. This is a standing instruction — it overrides the general "never commit unless
 explicitly asked" default for this project.
 
-**Do not merge the branch into `develop`, delete it, or push anything, unless Lucas explicitly
+**Do not merge the branch into `develop`, delete it, or push anything, unless the user explicitly
 says the feature/fix is done** (e.g. "fecha essa branch", "merge isso", "pode fechar") — same
 rule as releases: a branch may stay open across several commits while he tests it, tries more
 changes, or comes back to it later. Committing is automatic; closing (merge + branch deletion)
@@ -71,7 +71,7 @@ chore: pin esbuild to 0.28.1
 
 ## Release Procedure
 
-Releases are **user-requested**, not automatic. When Lucas asks for a release, use the
+Releases are **user-requested**, not automatic. When the user asks for a release, use the
 `release` skill (`.claude/skills/release/`) instead of doing these steps ad hoc — it
 encodes the full sequence below.
 
@@ -92,4 +92,4 @@ by this point — each `feat`/`fix` bumped it when it shipped (see
 8. Push `main`, `develop`, and the tag: `git push origin main develop <x.y.z>`.
 9. Delete the `release/<x.y.z>` branch.
 
-Pushing the `x.y.z` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder).
+Pushing the `x.y.z` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder). The same workflow also publishes signed build provenance attestations for those three files (`actions/attest-build-provenance`), which the Obsidian plugin scorecard checks for.

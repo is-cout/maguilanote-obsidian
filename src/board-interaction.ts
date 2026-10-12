@@ -287,7 +287,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       (it.type === "file" || it.type === "image" || it.type === "board")
     ) {
       const f = view.resolveFile(it.path);
-      if (f) view.app.workspace.getLeaf("tab").openFile(f);
+      if (f) void view.app.workspace.getLeaf("tab").openFile(f);
       else view.relinkItem(it);
       return;
     }
@@ -404,7 +404,7 @@ export function onPointerMove(view: BoardView, e: PointerEvent) {
     if (e.pointerType !== "touch") return;
     if (!view.rafPending) {
       view.rafPending = true;
-      view.rafId = requestAnimationFrame(() => {
+      view.rafId = window.requestAnimationFrame(() => {
         view.rafId = null;
         view.rafPending = false;
         if (!view.closed && view.drag.kind === "pinch") view.processPointerMove(e);
@@ -419,7 +419,7 @@ export function onPointerMove(view: BoardView, e: PointerEvent) {
   view.lastMoveEvent = e;
   if (view.rafPending) return;
   view.rafPending = true;
-  view.rafId = requestAnimationFrame(() => {
+  view.rafId = window.requestAnimationFrame(() => {
     view.rafId = null;
     view.rafPending = false;
     if (!view.closed && view.lastMoveEvent && view.drag.kind !== "none") {
@@ -840,7 +840,7 @@ export function onPointerCancel(view: BoardView, e: PointerEvent) {
 
 /** id of the topmost card under the pointer, or null over empty canvas */
 export function cardIdUnder(view: BoardView, e: PointerEvent | MouseEvent): string | null {
-  const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+  const under = view.containerEl.doc.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
   return under?.closest<HTMLElement>(".mgn-card")?.dataset.id ?? null;
 }
 
@@ -856,9 +856,9 @@ export function clearCardHighlight(view: BoardView) {
 
 export function columnUnder(view: BoardView, e: PointerEvent, draggedIds: string[]): Item | null {
   const dragged = new Set(draggedIds);
-  const els = document.elementsFromPoint(e.clientX, e.clientY);
+  const els = view.containerEl.doc.elementsFromPoint(e.clientX, e.clientY);
   for (const el of els) {
-    const card = (el as HTMLElement).closest?.(".mgn-card") as HTMLElement | null;
+    const card = (el as HTMLElement).closest?.<HTMLElement>(".mgn-card");
     if (!card?.dataset.id || dragged.has(card.dataset.id)) continue;
     const it = view.item(card.dataset.id);
     if (it?.type === "column") return it;

@@ -2,14 +2,16 @@
  *
  * A plugin may not create <link> or <style> elements to load CSS, so the Google
  * Fonts stylesheet is fetched with `requestUrl`, its @font-face rules are parsed,
- * and each face is registered through the FontFace API (`document.fonts`). */
+ * and each face is registered through the FontFace API (`Document.fonts`) of the
+ * window showing the board, so popout windows get their own copy. */
 
 import { requestUrl } from "obsidian";
 
-const loadedFonts = new Set<string>();
+/** "<family>" requested per document (main window and each popout load separately) */
+const loadedFonts = new Map<Document, Set<string>>();
 
 /** faces this module registered, so `removeGoogleFonts` can undo them on unload */
-const registered: FontFace[] = [];
+const registered: { face: FontFace; doc: Document }[] = [];
 
 /** Google Fonts family names are plain words/spaces; anything else (a CSS
  * `var(...)` reference, a font stack with commas, or empty) isn't a Google Font request. */
@@ -31,29 +33,31 @@ function parseFaces(css: string): { weight: string; url: string }[] {
   return faces;
 }
 
-export function ensureGoogleFont(name: string) {
+export function ensureGoogleFont(name: string, doc: Document) {
   const n = name.trim();
-  if (!isGoogleFontName(n) || loadedFonts.has(n)) return;
-  loadedFonts.add(n);
+  const loaded = loadedFonts.get(doc) ?? new Set<string>();
+  if (!isGoogleFontName(n) || loaded.has(n)) return;
+  loaded.add(n);
+  loadedFonts.set(doc, loaded);
   const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(n).replace(/%20/g, "+")}:wght@400;600;700&display=swap`;
   void requestUrl({ url })
     .then(async (res) => {
       for (const f of parseFaces(res.text)) {
         const face = new FontFace(n, `url(${f.url})`, { weight: f.weight, display: "swap" });
         await face.load();
-        document.fonts.add(face);
-        registered.push(face);
+        doc.fonts.add(face);
+        registered.push({ face, doc });
       }
     })
     .catch(() => {
       // offline, unknown family, or a face that failed to load: the font stack
       // falls back to sans-serif
-      loadedFonts.delete(n); // allow a retry on the next render
+      loaded.delete(n); // allow a retry on the next render
     });
 }
 
 export function removeGoogleFonts() {
-  for (const face of registered) document.fonts.delete(face);
+  for (const { face, doc } of registered) doc.fonts.delete(face);
   registered.length = 0;
   loadedFonts.clear();
 }

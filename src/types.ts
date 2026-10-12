@@ -251,7 +251,7 @@ export function matchesBinding(e: KeyboardEvent, b: KeyBinding | null | undefine
 export function parseBoard(raw: string): BoardData {
   if (!raw || !raw.trim()) return structuredClone(DEFAULT_BOARD);
   try {
-    const d = JSON.parse(raw);
+    const d = JSON.parse(raw) as Partial<BoardData> | null;
     if (!d || typeof d !== "object" || Array.isArray(d)) return structuredClone(DEFAULT_BOARD);
     if (!Array.isArray(d.items)) d.items = [];
     if (!Array.isArray(d.edges)) d.edges = [];

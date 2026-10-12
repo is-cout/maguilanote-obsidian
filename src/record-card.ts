@@ -1,4 +1,4 @@
-import { Notice, TFile, normalizePath } from "obsidian";
+import { Notice, TFile, normalizePath, requestUrl } from "obsidian";
 import type { BoardView } from "./board-view";
 import { pauseRecordAudio, renderRecordPlayer } from "./render";
 import { Item, newId } from "./types";
@@ -74,7 +74,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const stopViz = () => {
     if (vizFrame) cancelAnimationFrame(vizFrame);
     vizFrame = undefined;
-    audioCtx?.close();
+    void audioCtx?.close();
     audioCtx = null;
     analyser = null;
     vizCtx?.clearRect(0, 0, viz.width, viz.height);
@@ -98,7 +98,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const h = Math.max(2, peak * viz.height);
       vizCtx.fillRect(i * barW + 1, (viz.height - h) / 2, barW - 2, h);
     }
-    vizFrame = requestAnimationFrame(drawViz);
+    vizFrame = window.requestAnimationFrame(drawViz);
   };
 
   const populateMics = async () => {
@@ -120,8 +120,8 @@ export function openRecordPopup(view: BoardView, it: Item) {
     stopTimer();
     stopViz();
     stopStream();
-    document.removeEventListener("keydown", keyHandler, true);
-    document.removeEventListener("visibilitychange", visibilityHandler);
+    view.containerEl.doc.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("visibilitychange", visibilityHandler);
     const closers = openRecordClosers.get(view);
     closers?.delete(closeForView);
     if (closers?.size === 0) openRecordClosers.delete(view);
@@ -148,7 +148,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   };
   const closeForView = () => cancelRecording();
   const visibilityHandler = () => {
-    if (document.visibilityState === "hidden") cancelRecording();
+    if (view.containerEl.doc.visibilityState === "hidden") cancelRecording();
   };
   const closers = openRecordClosers.get(view) ?? new Set<() => void>();
   closers.add(closeForView);
@@ -156,11 +156,11 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const keyHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelRecording(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
-  document.addEventListener("visibilitychange", visibilityHandler);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("visibilitychange", visibilityHandler);
   ov.addEventListener("pointerdown", (e) => { if (e.target === ov) cancelRecording(); });
 
-  recordBtn.addEventListener("click", async () => {
+  recordBtn.addEventListener("click", () => void (async () => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: micSelect.value ? { deviceId: { exact: micSelect.value } } : true,
@@ -234,7 +234,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const s = Math.floor((Date.now() - startedAt) / 1000);
       timer.setText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`);
     }, 250);
-  });
+  })());
 
   stopBtn.addEventListener("click", () => {
     stopAndSaveRecording();
@@ -246,7 +246,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
 /** transcribe a record card's audio via the OpenAI Whisper API, dropping the
  * result into a new note card connected back to the recording */
 export async function transcribeRecord(view: BoardView, it: Item) {
-  const apiKey = view.plugin.getOpenAiApiKey();
+  const apiKey = await view.plugin.getOpenAiApiKey();
   if (!apiKey) {
     new Notice("Set an OpenAI API key in Settings → Recording first");
     return;
@@ -264,13 +264,18 @@ export async function transcribeRecord(view: BoardView, it: Item) {
     const mime = /\.m4a$/i.test(f.name) ? "audio/mp4" : /\.ogg$/i.test(f.name) ? "audio/ogg" : "audio/webm";
     form.append("file", new Blob([buf], { type: mime }), f.name);
     form.append("model", "whisper-1");
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    // requestUrl takes a raw body, so let Response encode the multipart form (and its boundary).
+    const encoded = new Response(form);
+    const res = await requestUrl({
+      url: "https://api.openai.com/v1/audio/transcriptions",
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
+      contentType: encoded.headers.get("content-type") ?? undefined,
+      body: await encoded.arrayBuffer(),
+      throw: false,
     });
-    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-    const data = await res.json();
+    if (res.status >= 400) throw new Error(`${res.status} ${res.text}`);
+    const data = res.json as { text?: string };
     text = (data.text ?? "").trim();
   } catch (err) {
     new Notice(`Transcription failed: ${err instanceof Error ? err.message : err}`);

@@ -274,7 +274,7 @@ export class BoardView extends TextFileView {
           if (f instanceof TFile) {
             this.crumbs = this.crumbs.slice(0, i);
             this.pendingNav = f.path;
-            this.leaf.openFile(f);
+            void this.leaf.openFile(f);
           }
         });
         this.crumbsEl.createSpan({ cls: "mgn-crumb-sep", text: "›" });
@@ -285,8 +285,8 @@ export class BoardView extends TextFileView {
   /** apply the user's font / theme / color settings to this board's DOM */
   applyAppearance() {
     const s = this.plugin.settings;
-    ensureGoogleFont(s.fontFamily);
-    ensureGoogleFont(s.headingFontFamily);
+    ensureGoogleFont(s.fontFamily, this.containerEl.doc);
+    ensureGoogleFont(s.headingFontFamily, this.containerEl.doc);
     this.contentEl.style.setProperty("--mgn-font-family", fontFamilyValue(s.fontFamily));
     this.contentEl.style.setProperty(
       "--mgn-font-family-heading",
@@ -342,7 +342,7 @@ export class BoardView extends TextFileView {
     }
     const fresh = renderCardFn(this, it, !!it.parent);
     old.replaceWith(fresh);
-    requestAnimationFrame(() => this.drawEdges());
+    window.requestAnimationFrame(() => this.drawEdges());
   }
 
   /** push history snapshot, save + rerender */
@@ -425,7 +425,7 @@ export class BoardView extends TextFileView {
       type: "file",
       attr: { accept: "image/*,video/*,audio/*,application/pdf", multiple: true, style: "display:none" },
     });
-    this.imgInput.addEventListener("change", async () => {
+    this.imgInput.addEventListener("change", () => void (async () => {
       const files = Array.from(this.imgInput.files ?? []);
       const base = this.pendingPos ?? this.viewCenter();
       this.pendingPos = null;
@@ -435,7 +435,7 @@ export class BoardView extends TextFileView {
         off += 30;
       }
       this.imgInput.value = "";
-    });
+    })());
 
     // viewport + world
     this.viewportEl = root.createDiv({ cls: "mgn-viewport" });
@@ -505,10 +505,10 @@ export class BoardView extends TextFileView {
 
     // bottom bar: zoom + snap
     const zb = root.createDiv({ cls: "mgn-zoombar" });
-    const zbtn = (icon: string, label: string, cb: () => void) => {
+    const zbtn = (icon: string, label: string, cb: () => void | Promise<void>) => {
       const b = zb.createDiv({ cls: "mgn-tool", attr: { "aria-label": label } });
       setIcon(b, icon);
-      b.addEventListener("click", cb);
+      b.addEventListener("click", () => void cb());
       return b;
     };
     zbtn("zoom-out", "Zoom out", () => this.setZoom(this.zoom / 1.2));
@@ -579,7 +579,7 @@ export class BoardView extends TextFileView {
     this.registerDomEvent(this.viewportEl, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(this.viewportEl, "pointerup", (e) => this.onPointerUp(e));
     this.registerDomEvent(this.viewportEl, "pointercancel", (e) => this.onPointerCancel(e));
-    this.registerDomEvent(this.viewportEl, "lostpointercapture", (e) => this.onPointerCancel(e as PointerEvent));
+    this.registerDomEvent(this.viewportEl, "lostpointercapture", (e) => this.onPointerCancel(e));
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPencilTap(e));
     this.registerDomEvent(this.viewportEl, "dblclick", (e) => this.onDblClick(e));
     this.registerDomEvent(this.viewportEl, "wheel", (e) => this.onWheel(e), { passive: false });
@@ -629,7 +629,7 @@ export class BoardView extends TextFileView {
     this.rafPending = false;
     this.lastMoveEvent = null;
     clearRecordAudio(this.board.items.filter((it) => it.type === "record").map((it) => it.id));
-    document.body.removeClass("mgn-todo-grabbing");
+    this.containerEl.doc.body.removeClass("mgn-todo-grabbing");
     this.contentEl.empty();
   }
 
@@ -655,7 +655,7 @@ export class BoardView extends TextFileView {
       if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 8) {
         moved = true;
         btn.addClass("mgn-tool-dragging");
-        ghost = document.body.createDiv({ cls: "mgn-tool-drag-ghost" });
+        ghost = btn.doc.body.createDiv({ cls: "mgn-tool-drag-ghost" });
         const icon = btn.querySelector("svg");
         if (icon) ghost.appendChild(icon.cloneNode(true));
         ghost.createSpan({ text: label });
@@ -669,7 +669,7 @@ export class BoardView extends TextFileView {
       if (ev.pointerId !== pointerId) return;
       ev.preventDefault();
       if (moved) this.toolDragEndedAt = performance.now();
-      if (moved && this.viewportEl.contains(document.elementFromPoint(ev.clientX, ev.clientY))) {
+      if (moved && this.viewportEl.contains(this.viewportEl.doc.elementFromPoint(ev.clientX, ev.clientY))) {
         const w = this.screenToWorld(ev.clientX, ev.clientY);
         this.createFromTool(key, w.x, w.y);
       }
@@ -713,7 +713,7 @@ export class BoardView extends TextFileView {
     for (const it of roots) {
       this.worldEl.appendChild(renderCardFn(this, it));
     }
-    requestAnimationFrame(() => this.drawEdges());
+    window.requestAnimationFrame(() => this.drawEdges());
   }
 
   drawEdges() {
@@ -823,13 +823,13 @@ export class BoardView extends TextFileView {
       }
       case "board": {
         const f = this.resolveFile(it.path);
-        if (f) this.navigateTo(f);
+        if (f) void this.navigateTo(f);
         else this.relinkItem(it); // broken reference: pick the file again
         return;
       }
       case "image":
       case "file":
-        this.openPreviewFor(it);
+        void this.openPreviewFor(it);
         return;
       case "link":
         if (it.url) window.open(it.url, "_blank");
