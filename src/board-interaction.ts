@@ -284,7 +284,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       (it.type === "file" || it.type === "image" || it.type === "board")
     ) {
       const f = view.resolveFile(it.path);
-      if (f) view.app.workspace.getLeaf("tab").openFile(f);
+      if (f) void view.app.workspace.getLeaf("tab").openFile(f);
       else view.relinkItem(it);
       return;
     }

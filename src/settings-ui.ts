@@ -119,7 +119,7 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
       d.selectEl.addClass("mgn-mic-dropdown");
       d.addOption("", "System default");
       d.setValue(s.defaultMicId);
-      navigator.mediaDevices?.enumerateDevices().then((devices) => {
+      void navigator.mediaDevices?.enumerateDevices().then((devices) => {
         for (const dev of devices.filter((x) => x.kind === "audioinput")) {
           d.addOption(dev.deviceId, dev.label || "Microphone");
         }
@@ -260,7 +260,7 @@ function recordBinding(
   save: () => Promise<void>
 ) {
   btn.setText("Press a key…");
-  const onKey = async (e: KeyboardEvent) => {
+  const onKey = (e: KeyboardEvent) => void (async () => {
     e.preventDefault();
     e.stopPropagation();
     if (e.key === "Escape") {
@@ -279,6 +279,6 @@ function recordBinding(
       render();
     }
     window.removeEventListener("keydown", onKey, true);
-  };
+  })();
   window.addEventListener("keydown", onKey, true);
 }

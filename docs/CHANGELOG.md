@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **Promises are now explicitly fire-and-forget (`void`) instead of silently floating.** Async callbacks passed where a `void` return is expected (modal callbacks, zoombar/toolbar buttons, DOM listeners, the template picker's `onChooseItem`, the shortcut recorder) are wrapped or typed as `void | Promise<void>` and invoked with `void`. Clears the scorecard's `no-floating-promises`/`no-misused-promises` warnings. No behavior change. Files: `src/board-interaction.ts`, `src/board-view.ts`, `src/draw.ts`, `src/file-preview.ts`, `src/main.ts`, `src/modals.ts`, `src/record-card.ts`, `src/render.ts`, `src/settings-ui.ts`.
+
 - **Fixed the mechanical lint warnings from the Obsidian scorecard.** `requestAnimationFrame` → `window.requestAnimationFrame` and `document.createElement` → `createEl` (popout-window compatibility), removed unnecessary type assertions and unused `SVG_NS`/`IMAGE_EXTS`/`Item` symbols. No behavior change. Files: `src/board-interaction.ts`, `src/board-item-crud.ts`, `src/board-view.ts`, `src/draw.ts`, `src/drawing-toolbar.ts`, `src/main.ts`, `src/record-card.ts`, `src/render.ts`, `src/template-bundle.ts`.
 
 - **Added ESLint with Obsidian's official rules (`npm run lint`).** Reproduces the TypeScript warnings from the Obsidian plugin scorecard locally so they can be fixed and kept fixed. New pinned dev deps: `eslint` 9.39.5, `@eslint/js` 9.39.5, `@eslint/json` 0.14.0, `typescript-eslint` 8.70.1, `eslint-plugin-obsidianmd` 0.4.2; `obsidian` types bumped 1.4.0 → 1.8.7 (required peer). Dev tooling only, no version bump. Files: `eslint.config.mjs`, `package.json`, `package-lock.json`, `docs/DEPENDENCIES.md`, `docs/DEVELOPMENT.md`.

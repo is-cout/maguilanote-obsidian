@@ -7,7 +7,7 @@ export class TextPromptModal extends Modal {
     app: App,
     private promptTitle: string,
     private initial: string,
-    private cb: (v: string) => void
+    private cb: (v: string) => void | Promise<void>
   ) {
     super(app);
   }
@@ -21,7 +21,7 @@ export class TextPromptModal extends Modal {
         if (e.key === "Enter") {
           e.preventDefault();
           this.close();
-          this.cb(value.trim());
+          void this.cb(value.trim());
         }
       });
       window.setTimeout(() => t.inputEl.focus(), 10);
@@ -30,7 +30,7 @@ export class TextPromptModal extends Modal {
       .addButton((b) =>
         b.setButtonText("OK").setCta().onClick(() => {
           this.close();
-          this.cb(value.trim());
+          void this.cb(value.trim());
         })
       )
       .addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()));
@@ -84,7 +84,7 @@ export class ColorPromptModal extends Modal {
 }
 
 export class ImportTemplateConfirmModal extends Modal {
-  constructor(app: App, private name: string, private onConfirm: () => void) {
+  constructor(app: App, private name: string, private onConfirm: () => void | Promise<void>) {
     super(app);
   }
   onOpen() {
@@ -103,7 +103,7 @@ export class ImportTemplateConfirmModal extends Modal {
           .setCta()
           .onClick(() => {
             this.close();
-            this.onConfirm();
+            void this.onConfirm();
           })
       );
   }

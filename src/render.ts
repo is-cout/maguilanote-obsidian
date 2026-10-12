@@ -344,7 +344,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "comment": {
       const body = el.createDiv({ cls: "mgn-note-body" });
       if (it.text?.trim()) {
-        MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
+        void MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
       } else {
         body.createDiv({
           cls: "mgn-placeholder",
@@ -492,7 +492,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         markMissing(el);
       } else {
         // Compact content preview: "2 boards, 5 cards, 1 file"
-        view.app.vault.cachedRead(bf).then((raw) => {
+        void view.app.vault.cachedRead(bf).then((raw) => {
           try {
             const d = JSON.parse(raw);
             const items: Item[] = Array.isArray(d.items) ? d.items : [];

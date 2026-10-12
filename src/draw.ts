@@ -100,7 +100,7 @@ export interface CtxItem {
   id?: string;
   icon?: string;
   label?: string;
-  onClick?: () => void;
+  onClick?: () => void | Promise<void>;
   /** custom control (e.g. color / size picker) rendered into its own slot */
   render?: (host: HTMLElement) => void;
 }
@@ -132,7 +132,8 @@ export class ContextToolbar {
         }
         const b = this.el.createDiv({ cls: "mgn-ctx-tool", attr: { "aria-label": it.label ?? "" } });
         if (it.icon) setIcon(b, it.icon);
-        if (it.onClick) b.addEventListener("click", it.onClick);
+        const onClick = it.onClick;
+        if (onClick) b.addEventListener("click", () => void onClick());
         if (it.id) this.btns.set(it.id, b);
       }
     });

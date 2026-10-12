@@ -101,7 +101,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view) return false;
-        if (!checking) this.exportMarkdown(view);
+        if (!checking) void this.exportMarkdown(view);
         return true;
       },
     });
@@ -136,7 +136,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view || !view.file) return false;
-        if (!checking) this.exportBoardAsTemplate(view);
+        if (!checking) void this.exportBoardAsTemplate(view);
         return true;
       },
     });
@@ -648,7 +648,10 @@ class TemplatePicker extends FuzzySuggestModal<TFile> {
   getItemText(f: TFile): string {
     return f.name.replace(/\.board\.template$/i, "");
   }
-  async onChooseItem(f: TFile) {
+  onChooseItem(f: TFile) {
+    void this.createFromTemplate(f);
+  }
+  private async createFromTemplate(f: TFile) {
     const raw = await this.app.vault.read(f);
     let bundle: TemplateBundle;
     try {

@@ -74,7 +74,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const stopViz = () => {
     if (vizFrame) cancelAnimationFrame(vizFrame);
     vizFrame = undefined;
-    audioCtx?.close();
+    void audioCtx?.close();
     audioCtx = null;
     analyser = null;
     vizCtx?.clearRect(0, 0, viz.width, viz.height);
@@ -160,7 +160,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   document.addEventListener("visibilitychange", visibilityHandler);
   ov.addEventListener("pointerdown", (e) => { if (e.target === ov) cancelRecording(); });
 
-  recordBtn.addEventListener("click", async () => {
+  recordBtn.addEventListener("click", () => void (async () => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: micSelect.value ? { deviceId: { exact: micSelect.value } } : true,
@@ -233,7 +233,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const s = Math.floor((Date.now() - startedAt) / 1000);
       timer.setText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`);
     }, 250);
-  });
+  })());
 
   stopBtn.addEventListener("click", () => {
     stopAndSaveRecording();

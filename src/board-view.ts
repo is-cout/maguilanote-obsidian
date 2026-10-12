@@ -273,7 +273,7 @@ export class BoardView extends TextFileView {
           if (f instanceof TFile) {
             this.crumbs = this.crumbs.slice(0, i);
             this.pendingNav = f.path;
-            this.leaf.openFile(f);
+            void this.leaf.openFile(f);
           }
         });
         this.crumbsEl.createSpan({ cls: "mgn-crumb-sep", text: "›" });
@@ -419,7 +419,7 @@ export class BoardView extends TextFileView {
       type: "file",
       attr: { accept: "image/*,video/*,audio/*,application/pdf", multiple: true, style: "display:none" },
     });
-    this.imgInput.addEventListener("change", async () => {
+    this.imgInput.addEventListener("change", () => void (async () => {
       const files = Array.from(this.imgInput.files ?? []);
       const base = this.pendingPos ?? this.viewCenter();
       this.pendingPos = null;
@@ -429,7 +429,7 @@ export class BoardView extends TextFileView {
         off += 30;
       }
       this.imgInput.value = "";
-    });
+    })());
 
     // viewport + world
     this.viewportEl = root.createDiv({ cls: "mgn-viewport" });
@@ -499,10 +499,10 @@ export class BoardView extends TextFileView {
 
     // bottom bar: zoom + snap
     const zb = root.createDiv({ cls: "mgn-zoombar" });
-    const zbtn = (icon: string, label: string, cb: () => void) => {
+    const zbtn = (icon: string, label: string, cb: () => void | Promise<void>) => {
       const b = zb.createDiv({ cls: "mgn-tool", attr: { "aria-label": label } });
       setIcon(b, icon);
-      b.addEventListener("click", cb);
+      b.addEventListener("click", () => void cb());
       return b;
     };
     zbtn("zoom-out", "Zoom out", () => this.setZoom(this.zoom / 1.2));
@@ -821,13 +821,13 @@ export class BoardView extends TextFileView {
       }
       case "board": {
         const f = this.resolveFile(it.path);
-        if (f) this.navigateTo(f);
+        if (f) void this.navigateTo(f);
         else this.relinkItem(it); // broken reference: pick the file again
         return;
       }
       case "image":
       case "file":
-        this.openPreviewFor(it);
+        void this.openPreviewFor(it);
         return;
       case "link":
         if (it.url) window.open(it.url, "_blank");
