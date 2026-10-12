@@ -1,14 +1,18 @@
 # Changelog
 
-## 2026-08-26 (1.1.0 beta)
+Living log of significant changes to the project. This is **not** optional bookkeeping — every significant change (new feature, format change, dependency change, removed feature, policy change) gets an entry here at the time it's made. See the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
+
+Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
+
+## 2026-10-12 (1.1.0)
+
+- **Follow-up fixes to the iPad input contribution (PR #2), before 1.1.0 ships.** `parseBoard` no longer drops items it can't fully validate (unknown card types, odd values) — whatever it dropped was erased from disk on the next save, including cards written by a newer plugin version on another synced device; it now only drops `null`/non-object entries. Pinch / two-finger pan no longer drifts away: each frame is recomputed from the gesture's start camera instead of re-adding the total midpoint delta. Record card audio is reused across re-renders again (moved into the new card instead of recreated), so playback no longer stops whenever a card moves. Files: `src/types.ts`, `src/board-interaction.ts`, `src/render.ts`, `test/types.test.ts`.
+
+## 2026-08-26 (1.1.0)
 
 - Improved iPad interaction: finger drags pan the canvas, Apple Pencil keeps precise object manipulation, swatch cards open their color editor on double-tap, toolbar media dragging works with Pencil and touch, record playback uses an attached audio element for iPad reliability, drawing rejects palm touches during Pencil input, and pinch/two-finger navigation, safe-area offsets, pointer-cancellation recovery, and device-compatible recording codecs are supported. Files: `src/board-view.ts`, `src/board-interaction.ts`, `src/draw.ts`, `src/render.ts`, `src/record-card.ts`, `src/styles/chrome.css`, `src/styles/cards.css`, `src/main.ts` (including basic JSON Canvas import/export), and `test/` (interaction-adjacent unit coverage).
 
 - Added `docs/IPAD-TEST-MATRIX.md`, a repeatable real-device checklist for iPad/iPadOS, Pencil, touch, media, cancellation, resizing, JSON Canvas import/export, and desktop regression verification. Files: `docs/IPAD-TEST-MATRIX.md`, `README.md`, `docs/DEVELOPMENT.md`, `manifest.json`.
-
-Living log of significant changes to the project. This is **not** optional bookkeeping — every significant change (new feature, format change, dependency change, removed feature, policy change) gets an entry here at the time it's made. See the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
-
-Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-08-25 (1.1.0)
 
