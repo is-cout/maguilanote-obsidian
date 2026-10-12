@@ -784,7 +784,7 @@ export function onPointerCancel(view: BoardView, e: PointerEvent) {
 
 /** id of the topmost card under the pointer, or null over empty canvas */
 export function cardIdUnder(view: BoardView, e: PointerEvent | MouseEvent): string | null {
-  const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+  const under = view.containerEl.doc.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
   return under?.closest<HTMLElement>(".mgn-card")?.dataset.id ?? null;
 }
 
@@ -800,7 +800,7 @@ export function clearCardHighlight(view: BoardView) {
 
 export function columnUnder(view: BoardView, e: PointerEvent, draggedIds: string[]): Item | null {
   const dragged = new Set(draggedIds);
-  const els = document.elementsFromPoint(e.clientX, e.clientY);
+  const els = view.containerEl.doc.elementsFromPoint(e.clientX, e.clientY);
   for (const el of els) {
     const card = (el as HTMLElement).closest?.<HTMLElement>(".mgn-card");
     if (!card?.dataset.id || dragged.has(card.dataset.id)) continue;

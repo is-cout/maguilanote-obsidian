@@ -173,9 +173,9 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   e.stopPropagation(); // don't let the board start a card-move drag
   const entry = source.todos[startIdx];
 
-  const ghost = document.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
+  const ghost = view.containerEl.doc.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
   const dropLine = createDiv({ cls: "mgn-todo-drop-line" });
-  document.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
+  view.containerEl.doc.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
 
   let target: TodoDropTarget = null;
   let hlEl: HTMLElement | null = null;
@@ -193,7 +193,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   const onMove = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return;
     positionGhost(ev);
-    const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+    const under = view.containerEl.doc.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
     const cardEl = under?.closest<HTMLElement>(".mgn-card.mgn-todo");
     const overItem = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : null;
     if (cardEl && overItem?.type === "todo") {
@@ -229,7 +229,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     cleanup();
     clearTarget();
     ghost.remove();
-    document.body.removeClass("mgn-todo-grabbing");
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
   };
   const onUp = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return;
@@ -238,7 +238,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     cleanup();
     clearTarget();
     ghost.remove();
-    document.body.removeClass("mgn-todo-grabbing");
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
     applyTodoDrop(view, source, entry, target, ev);
   };
 

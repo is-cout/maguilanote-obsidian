@@ -120,8 +120,8 @@ export function openRecordPopup(view: BoardView, it: Item) {
     stopTimer();
     stopViz();
     stopStream();
-    document.removeEventListener("keydown", keyHandler, true);
-    document.removeEventListener("visibilitychange", visibilityHandler);
+    view.containerEl.doc.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("visibilitychange", visibilityHandler);
     const closers = openRecordClosers.get(view);
     closers?.delete(closeForView);
     if (closers?.size === 0) openRecordClosers.delete(view);
@@ -148,7 +148,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   };
   const closeForView = () => cancelRecording();
   const visibilityHandler = () => {
-    if (document.visibilityState === "hidden") cancelRecording();
+    if (view.containerEl.doc.visibilityState === "hidden") cancelRecording();
   };
   const closers = openRecordClosers.get(view) ?? new Set<() => void>();
   closers.add(closeForView);
@@ -156,8 +156,8 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const keyHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelRecording(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
-  document.addEventListener("visibilitychange", visibilityHandler);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("visibilitychange", visibilityHandler);
   ov.addEventListener("pointerdown", (e) => { if (e.target === ov) cancelRecording(); });
 
   recordBtn.addEventListener("click", () => void (async () => {

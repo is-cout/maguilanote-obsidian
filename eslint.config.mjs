@@ -14,6 +14,8 @@ export default defineConfig([
       },
     },
     rules: {
+      // Off in the recommended preset, but the scorecard reports it.
+      "obsidianmd/prefer-active-doc": "warn",
       // getSettingDefinitions() is an Obsidian 1.13 API, far above minAppVersion and absent from the pinned types.
       "obsidianmd/settings-tab/prefer-setting-definitions": "off",
       // Product names, UI paths and terms the plugin intentionally capitalizes.

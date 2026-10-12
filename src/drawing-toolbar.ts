@@ -63,9 +63,9 @@ export function makePopover(view: BoardView, anchor: HTMLElement): HTMLElement {
     const t = e.target as Node;
     if (anchor.contains(t) || pop.contains(t)) return; // keep open for clicks inside
     pop.remove();
-    document.removeEventListener("pointerdown", close, true);
+    anchor.doc.removeEventListener("pointerdown", close, true);
   };
-  window.setTimeout(() => document.addEventListener("pointerdown", close, true), 0);
+  window.setTimeout(() => anchor.doc.addEventListener("pointerdown", close, true), 0);
   return pop;
 }
 
@@ -185,7 +185,7 @@ export function enterDrawMode(view: BoardView, editItem?: Item) {
     else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
     else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
 
   view.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null, keyHandler };
   if (editItem) view.render(); // hide the item being edited (shown live on the surface)
@@ -194,7 +194,7 @@ export function enterDrawMode(view: BoardView, editItem?: Item) {
 export function exitDrawMode(view: BoardView, save: boolean) {
   const dm = view.drawMode;
   if (!dm) return;
-  document.removeEventListener("keydown", dm.keyHandler, true);
+  view.containerEl.doc.removeEventListener("keydown", dm.keyHandler, true);
   dm.toolbar.close();
   dm.surface.remove();
   dm.scrim.remove();
@@ -265,7 +265,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
       view.commit(false);
       view.rerenderItem(it);
     }
-    document.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("keydown", keyHandler, true);
     toolbar.close();
     ov.remove();
   };
@@ -275,7 +275,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
     else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
     else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
   // clicking outside the sketch is often accidental, so save instead of discarding;
   // Escape remains the explicit way to discard
   ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(true); });

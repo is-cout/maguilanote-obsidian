@@ -284,8 +284,8 @@ export class BoardView extends TextFileView {
   /** apply the user's font / theme / color settings to this board's DOM */
   applyAppearance() {
     const s = this.plugin.settings;
-    ensureGoogleFont(s.fontFamily);
-    ensureGoogleFont(s.headingFontFamily);
+    ensureGoogleFont(s.fontFamily, this.containerEl.doc);
+    ensureGoogleFont(s.headingFontFamily, this.containerEl.doc);
     this.contentEl.style.setProperty("--mgn-font-family", fontFamilyValue(s.fontFamily));
     this.contentEl.style.setProperty(
       "--mgn-font-family-heading",
@@ -615,7 +615,7 @@ export class BoardView extends TextFileView {
     this.rafPending = false;
     this.lastMoveEvent = null;
     clearRecordAudio(this.board.items.filter((it) => it.type === "record").map((it) => it.id));
-    document.body.removeClass("mgn-todo-grabbing");
+    this.containerEl.doc.body.removeClass("mgn-todo-grabbing");
     this.contentEl.empty();
   }
 
@@ -641,7 +641,7 @@ export class BoardView extends TextFileView {
       if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 8) {
         moved = true;
         btn.addClass("mgn-tool-dragging");
-        ghost = document.body.createDiv({ cls: "mgn-tool-drag-ghost" });
+        ghost = btn.doc.body.createDiv({ cls: "mgn-tool-drag-ghost" });
         const icon = btn.querySelector("svg");
         if (icon) ghost.appendChild(icon.cloneNode(true));
         ghost.createSpan({ text: label });
@@ -654,7 +654,7 @@ export class BoardView extends TextFileView {
     const up = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       ev.preventDefault();
-      if (moved && this.viewportEl.contains(document.elementFromPoint(ev.clientX, ev.clientY))) {
+      if (moved && this.viewportEl.contains(this.viewportEl.doc.elementFromPoint(ev.clientX, ev.clientY))) {
         const w = this.screenToWorld(ev.clientX, ev.clientY);
         this.createFromTool(key, w.x, w.y);
       }
