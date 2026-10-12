@@ -1,4 +1,4 @@
-import { Notice, TFile, normalizePath } from "obsidian";
+import { Notice, TFile, normalizePath, requestUrl } from "obsidian";
 import type { BoardView } from "./board-view";
 import { pauseRecordAudio, renderRecordPlayer } from "./render";
 import { Item, newId } from "./types";
@@ -263,13 +263,18 @@ export async function transcribeRecord(view: BoardView, it: Item) {
     const mime = /\.m4a$/i.test(f.name) ? "audio/mp4" : /\.ogg$/i.test(f.name) ? "audio/ogg" : "audio/webm";
     form.append("file", new Blob([buf], { type: mime }), f.name);
     form.append("model", "whisper-1");
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    // requestUrl takes a raw body, so let Response encode the multipart form (and its boundary).
+    const encoded = new Response(form);
+    const res = await requestUrl({
+      url: "https://api.openai.com/v1/audio/transcriptions",
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
+      contentType: encoded.headers.get("content-type") ?? undefined,
+      body: await encoded.arrayBuffer(),
+      throw: false,
     });
-    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-    const data = await res.json();
+    if (res.status >= 400) throw new Error(`${res.status} ${res.text}`);
+    const data = res.json as { text?: string };
     text = (data.text ?? "").trim();
   } catch (err) {
     new Notice(`Transcription failed: ${err instanceof Error ? err.message : err}`);

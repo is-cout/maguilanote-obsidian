@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **"Transcribe text" calls the Whisper API through Obsidian's `requestUrl` instead of `fetch`.** The multipart form is encoded with `new Response(form)` (which also produces the boundary `Content-Type`) and sent as an `ArrayBuffer`. Flagged by the scorecard; `requestUrl` also isn't subject to browser CORS. Files: `src/record-card.ts`.
+
 - **Desktop API-key storage loads Node modules lazily, and `builtin-modules` is removed.** `src/secrets.ts` (key kept in `~/.maguilanote/secrets.json`, outside the vault) now loads `fs`/`os`/`path` via `import()` behind a `Platform.isDesktop` guard instead of bare `require()`, so `loadOpenAiApiKey`/`saveOpenAiApiKey`/`getOpenAiApiKey` are async. esbuild lowers `import()` to `require()` so the builtins still resolve in Obsidian. `esbuild.config.mjs` uses Node's own `builtinModules` instead of the `builtin-modules` package (flagged by the scorecard). Storage location and behavior unchanged. Files: `src/secrets.ts`, `src/main.ts`, `src/record-card.ts`, `src/settings-ui.ts`, `esbuild.config.mjs`, `package.json`, `package-lock.json`, `docs/ARCHITECTURE.md`, `docs/DEPENDENCIES.md`.
 
 - **"Import template" now always uses the standard file picker.** The desktop-only Electron native dialog (which defaulted to the templates folder) is gone: it needed `require("electron")`, `fs` and `path` plus untyped `any` access, all flagged by the Obsidian scorecard, and relied on Electron's `remote` module. The picker no longer opens in the templates folder by default. Files: `src/main.ts`, `docs/FAQ.md`.
