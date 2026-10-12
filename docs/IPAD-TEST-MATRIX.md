@@ -61,6 +61,6 @@ git diff --check
 
 ## Compatibility gate
 
-The plugin declares `minAppVersion: 1.4.0` in `manifest.json`. Run this matrix on the oldest supported Obsidian desktop/mobile versions before changing that declaration.
+The plugin declares `minAppVersion: 1.6.6` in `manifest.json`. Run this matrix on the oldest supported Obsidian desktop/mobile versions before changing that declaration.
 
 Date: __________  Tester: __________  Result/notes: ______________________________

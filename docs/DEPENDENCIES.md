@@ -22,7 +22,7 @@ All dependency versions in `package.json` are **pinned exactly** (no `^`, no `~`
 |---|---|---|
 | `typescript` | `5.4.2` | No known CVEs against the `typescript` package itself. |
 | `esbuild` | `0.28.1` | See CVE note below. |
-| `obsidian` (types) | `1.8.7` | Type definitions only. Bumped from `1.4.0` because `eslint-plugin-obsidianmd` requires exactly `1.8.7` as a peer. `minAppVersion` stays `1.4.0`, so the types now expose APIs newer than the minimum supported app — check an API's `@since` before using it. Its `moment` dependency has a moderate advisory (GHSA-4p3w-j4w9-5jqw); types only, never bundled. |
+| `obsidian` (types) | `1.8.7` | Type definitions only. Bumped from `1.4.0` because `eslint-plugin-obsidianmd` requires exactly `1.8.7` as a peer. `minAppVersion` is `1.6.6`, so the types expose APIs newer than the minimum supported app — check an API's `@since` (or that it exists in the `1.6.6` types) before using it. Its `moment` dependency has a moderate advisory (GHSA-4p3w-j4w9-5jqw); types only, never bundled. |
 | `@types/node` | `20.11.0` | Type definitions only, no known CVEs. |
 | `builtin-modules` | `3.3.0` | No known CVEs. |
 | `eslint` | `9.39.5` | Linter. 9.x because the Obsidian plugin peers on `@eslint/js` `^9`; npm marks it deprecated (9.x out of support) — move to 10.x once the plugin supports it. |

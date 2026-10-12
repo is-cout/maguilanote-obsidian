@@ -404,7 +404,7 @@ export default class MaguilanotePlugin extends Plugin {
         const rootFile = await unbundleTemplate(this.app, bundle, destFolder);
         await view.leaf.openFile(rootFile);
         if (oldFile && oldFile.path !== rootFile.path) {
-          await this.app.vault.trash(oldFile, false); // Obsidian's trash, not the OS trash
+          await this.app.fileManager.trashFile(oldFile); // follows the user's "Deleted files" preference
         }
         new Notice(`Imported template "${displayName}"`);
       } catch (e) {
