@@ -173,6 +173,7 @@ export class BoardView extends TextFileView {
   penReleaseTimer: number | null = null;
   resizeObserver: ResizeObserver | null = null;
   private toolDragCancel: (() => void) | null = null;
+  private toolDragEndedAt = 0;
 
   constructor(leaf: WorkspaceLeaf, plugin: MaguilanotePlugin) {
     super(leaf);
@@ -365,9 +366,9 @@ export class BoardView extends TextFileView {
     // toolbar
     const tb = root.createDiv({ cls: "mgn-toolbar" });
     this.tbEl = tb;
-    // A tool is either drag-only (has `drag`, no `click`) or click-only
-    // (`click`, optionally also draggable). Clicking a drag-only tool can't
-    // create anything, so it shakes and shows a hint instead.
+    // A tool either creates a card (`drag`) or runs an action (`click`).
+    // Card tools can be dragged onto the board to create the card where it is
+    // dropped, or tapped/clicked to create it at the center of the view.
     const tool = (
       icon: string,
       label: string,
@@ -378,7 +379,12 @@ export class BoardView extends TextFileView {
       if (opts.click) {
         b.addEventListener("click", opts.click);
       } else if (opts.drag) {
-        b.addEventListener("click", () => this.dragHint(b, "Drag onto the board"));
+        b.addEventListener("click", () => {
+          // a touch drag that barely left the button can still end in a click
+          if (performance.now() - this.toolDragEndedAt < 500) return;
+          const c = this.viewCenter();
+          this.createFromTool(opts.drag!, c.x, c.y);
+        });
       }
       if (opts.drag) {
         b.draggable = true;
@@ -564,6 +570,11 @@ export class BoardView extends TextFileView {
       e.preventDefault();
       e.stopPropagation();
     }, { passive: false, capture: true });
+    // The toolbars sit outside the viewport: keep their touches (a tool dragged
+    // sideways, a bar scrolled) from reaching Obsidian's sidebar swipe too.
+    // No preventDefault here, so taps and the bars' own scrolling still work.
+    for (const type of ["touchstart", "touchmove"] as const)
+      this.registerDomEvent(root, type, (e) => e.stopPropagation());
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPointerDown(e));
     this.registerDomEvent(this.viewportEl, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(this.viewportEl, "pointerup", (e) => this.onPointerUp(e));
@@ -583,6 +594,9 @@ export class BoardView extends TextFileView {
 
     this.applyTransform();
     this.resizeObserver = new ResizeObserver(() => {
+      // on short screens (phones) the toolbar overflows: let it scroll vertically
+      // (a sideways drag still pulls a tool out onto the board)
+      tb.toggleClass("mgn-toolbar-scrolls", tb.scrollHeight > tb.clientHeight);
       this.applyTransform();
       this.drawEdges();
       if (this.drawMode) updateSurfaceViewBox(this, this.drawMode.surface);
@@ -654,6 +668,7 @@ export class BoardView extends TextFileView {
     const up = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       ev.preventDefault();
+      if (moved) this.toolDragEndedAt = performance.now();
       if (moved && this.viewportEl.contains(document.elementFromPoint(ev.clientX, ev.clientY))) {
         const w = this.screenToWorld(ev.clientX, ev.clientY);
         this.createFromTool(key, w.x, w.y);
@@ -668,19 +683,6 @@ export class BoardView extends TextFileView {
     window.addEventListener("pointerup", up, true);
     window.addEventListener("pointercancel", cancel, true);
     window.addEventListener("lostpointercapture", cancel, true);
-  }
-
-  /** visual nudge for a drag-only tool clicked instead of dragged */
-  private dragHint(btn: HTMLElement, label: string) {
-    btn.removeClass("mgn-tool-shake");
-    void btn.offsetWidth; // restart the CSS animation
-    btn.addClass("mgn-tool-shake");
-    btn.addEventListener("animationend", () => btn.removeClass("mgn-tool-shake"), { once: true });
-
-    this.tbEl.querySelector(".mgn-drag-hint")?.remove();
-    const hint = this.tbEl.createDiv({ cls: "mgn-drag-hint", text: label });
-    hint.style.top = `${btn.offsetTop}px`;
-    window.setTimeout(() => hint.remove(), 1600);
   }
 
   // ------------------------------------------------------------- transforms

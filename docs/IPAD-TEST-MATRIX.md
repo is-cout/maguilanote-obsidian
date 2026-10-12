@@ -16,6 +16,8 @@ Record the device model, iPadOS version, Obsidian version, orientation, and spli
 ## Navigation and gestures
 
 - [ ] One-finger drag on empty canvas pans without selecting cards.
+- [ ] One-finger tap selects a card/line, tap on empty canvas clears the selection; double-tap opens the card (empty canvas: new note).
+- [ ] One-finger drag on a selected card moves it; on an unselected card it pans. The selected card shows its resize and arrow handles, and both work with a finger.
 - [ ] One-finger drag on a card opens the long-press menu only after a stationary hold; movement pans normally.
 - [ ] Two-finger pan moves the camera.
 - [ ] Pinch zooms around the gesture midpoint.
@@ -27,6 +29,8 @@ Record the device model, iPadOS version, Obsidian version, orientation, and spli
 
 - [ ] Pencil moves, resizes, and connects cards.
 - [ ] Pencil draws with pressure in Draw and Sketch modes.
+- [ ] On a phone (no pen), one finger draws, erases and selects in Draw and Sketch modes; a second finger does not disturb the stroke. On iPad, after using Pencil once, a finger/palm never draws.
+- [ ] Tapping a toolbar button on a touch screen does not leave it highlighted.
 - [ ] A resting palm does not create or modify strokes while Pencil is down.
 - [ ] Pencil double-tap actions still work.
 - [ ] Escape discards an active drawing; explicit Save persists it.
@@ -35,7 +39,9 @@ Record the device model, iPadOS version, Obsidian version, orientation, and spli
 ## Toolbar and media
 
 - [ ] Touch/Pencil toolbar drag creates the selected card at the release point.
-- [ ] A stationary toolbar tap shows the drag hint and creates nothing.
+- [ ] A stationary toolbar tap creates the card at the center of the view (exactly one card, also after a short drag that ends on the toolbar).
+- [ ] On a phone (or iPad in a short window), when the toolbar overflows it scrolls vertically, and a sideways drag still pulls a tool onto the board.
+- [ ] On a phone, the left toolbar sits between the breadcrumb and the zoom bar, the zoom bar sits above Obsidian's floating navbar and scrolls sideways, and dragging a tool or scrolling a bar never opens an Obsidian sidebar.
 - [ ] Recording with permission granted saves a playable file.
 - [ ] Escape, outside tap, view switching, and app interruption cancel recording without saving.
 - [ ] Stop intentionally saves exactly one recording.

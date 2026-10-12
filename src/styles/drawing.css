@@ -48,9 +48,11 @@
 .mgn-context-inline .mgn-ctx-tool {
   color: var(--text-normal);
 }
-.mgn-ctx-tool:hover {
-  background: var(--mgn-panel-hover-bg);
-  color: var(--mgn-white);
+@media (hover: hover) {
+  .mgn-ctx-tool:hover {
+    background: var(--mgn-panel-hover-bg);
+    color: var(--mgn-white);
+  }
 }
 .mgn-ctx-tool svg {
   width: 17px;

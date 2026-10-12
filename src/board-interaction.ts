@@ -6,7 +6,7 @@ import { showCardMenu } from "./board-context-menu";
 
 export type DragMode =
   | { kind: "none" }
-  | { kind: "pan"; startX: number; startY: number; panX: number; panY: number; moved: boolean }
+  | { kind: "pan"; startX: number; startY: number; panX: number; panY: number; moved: boolean; tapTarget?: HTMLElement }
   | { kind: "pinch"; startDist: number; startZoom: number; startMidX: number; startMidY: number; startPanX: number; startPanY: number }
   | {
       kind: "move";
@@ -156,16 +156,19 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
 
   if (interactive) return;
 
-  // Finger is reserved for navigating the canvas, not moving individual cards.
-  // Pencil keeps the precise object-selection and drag behavior below.
+  // Finger: a tap selects (see touchTap) and dragging something already selected
+  // (a card, its handles, a line) moves it like Pencil/mouse do below. Any other
+  // finger drag pans the canvas, so a resting palm can't move an unselected card.
   if (e.pointerType === "touch") {
-    view.drag = { kind: "pan", startX: e.clientX, startY: e.clientY, panX: view.panX, panY: view.panY, moved: false };
+    view.longPressStartX = e.clientX;
+    view.longPressStartY = e.clientY;
+  }
+  if (e.pointerType === "touch" && !grabsSelection(view, target)) {
+    view.drag = { kind: "pan", startX: e.clientX, startY: e.clientY, panX: view.panX, panY: view.panY, moved: false, tapTarget: target };
     view.gesturePointerId = e.pointerId;
     const cardEl = target.closest<HTMLElement>(".mgn-card");
     const card = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : undefined;
     if (card) {
-      view.longPressStartX = e.clientX;
-      view.longPressStartY = e.clientY;
       view.longPressTimer = window.setTimeout(() => {
         view.longPressTimer = null;
         if (view.drag.kind === "pan" && view.gesturePointerId === e.pointerId) {
@@ -465,7 +468,7 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
       const w = view.screenToWorld(e.clientX, e.clientY);
       let dx = w.x - d.startWX;
       let dy = w.y - d.startWY;
-      const tapSlop = e.pointerType === "pen" ? 12 : 3;
+      const tapSlop = e.pointerType === "mouse" ? 3 : 12;
       if (!d.moved && Math.abs(dx) + Math.abs(dy) > tapSlop) {
         if (view.longPressTimer !== null) window.clearTimeout(view.longPressTimer);
         view.longPressTimer = null;
@@ -719,6 +722,10 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
       d.el.remove();
       break;
     }
+    case "pan": {
+      if (!d.moved && d.tapTarget) touchTap(view, d.tapTarget, e);
+      break;
+    }
     case "resize": {
       view.commit();
       break;
@@ -758,6 +765,55 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
       if (d.moved) view.commit();
       break;
     }
+  }
+}
+
+/** is `target` part of the current selection: a selected (unlocked) card or its
+ * handles, a selected line, or a line endpoint handle */
+function grabsSelection(view: BoardView, target: HTMLElement): boolean {
+  if (target.closest(".mgn-edge-handle")) return true;
+  const edgeId = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label")?.dataset.id;
+  if (edgeId) return view.selectedEdges.has(edgeId);
+  const cardId = target.closest<HTMLElement>(".mgn-card")?.dataset.id;
+  return !!cardId && view.selection.has(cardId) && !view.item(cardId)?.locked;
+}
+
+/** finger tap that didn't pan: select the card/line under it (or clear the
+ * selection on empty canvas); a double tap opens it, or creates a note on empty
+ * canvas — the touch version of click/double-click */
+function touchTap(view: BoardView, target: HTMLElement, e: PointerEvent) {
+  const edgeId = target.closest<HTMLElement>(".mgn-edge-hit, .mgn-edge-label")?.dataset.id;
+  const cardId = edgeId ? undefined : target.closest<HTMLElement>(".mgn-card")?.dataset.id;
+  const tapId = edgeId ?? cardId ?? "canvas";
+  const now = Date.now();
+  const closeEnough = Math.hypot(e.clientX - view.lastClickX, e.clientY - view.lastClickY) < 24;
+  const isDouble = view.lastClickId === tapId && closeEnough && now - view.lastClickAt < 450;
+  view.lastClickId = isDouble ? null : tapId; // avoid triple-tap re-trigger
+  view.lastClickAt = now;
+  view.lastClickX = e.clientX;
+  view.lastClickY = e.clientY;
+
+  view.selection.clear();
+  view.selectedEdges.clear();
+  if (edgeId) view.selectedEdges.add(edgeId);
+  if (cardId) view.selection.add(cardId);
+  view.refreshSelectionClasses();
+  view.drawEdges();
+  if (!isDouble) return;
+
+  if (edgeId) {
+    const edge = view.board.edges.find((x) => x.id === edgeId);
+    if (edge)
+      new TextPromptModal(view.app, "Arrow label", edge.label ?? "", (v) => {
+        edge.label = v || undefined;
+        view.commit();
+      }).open();
+  } else if (cardId) {
+    const it = view.item(cardId);
+    if (it) view.openCard(it);
+  } else {
+    const w = view.screenToWorld(e.clientX, e.clientY);
+    view.addNote(w.x, w.y, true);
   }
 }
 

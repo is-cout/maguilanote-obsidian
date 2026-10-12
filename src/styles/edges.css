@@ -31,6 +31,24 @@
 .mgn-card:hover .mgn-resize {
   opacity: 0.8;
 }
+/* touch has no hover: show the handles on the selected card instead, with a
+   bigger (invisible) hit area for fingers */
+@media (hover: none) {
+  .mgn-card.mgn-selected .mgn-connector {
+    opacity: 1;
+  }
+  .mgn-card.mgn-selected .mgn-resize {
+    opacity: 0.8;
+  }
+}
+@media (pointer: coarse) {
+  .mgn-connector::after,
+  .mgn-resize::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+}
 .mgn-lock-badge {
   position: absolute;
   top: 4px;
