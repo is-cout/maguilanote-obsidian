@@ -13,5 +13,16 @@ export default defineConfig([
         },
       },
     },
+    rules: {
+      // Product names, UI paths and terms the plugin intentionally capitalizes.
+      "obsidianmd/ui/sentence-case": [
+        "warn",
+        {
+          brands: ["Obsidian", "Markdown", "Maguilanote", "JSON Canvas", "Google Font", "Google Fonts", "Inter", "OpenAI", "Record"],
+          ignoreWords: ["Ctrl", "Settings", "Recording"],
+          ignoreRegex: ["^sk-", "^or a Google Font name$"],
+        },
+      ],
+    },
   },
 ]);
