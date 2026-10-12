@@ -1,5 +1,8 @@
+/* outranks Obsidian's `body:not(.is-mobile) .workspace-leaf-content .view-content` padding */
+.workspace-leaf .workspace-leaf-content .mgn-root.view-content {
+  padding: 0;
+}
 .mgn-root {
-  padding: 0 !important;
   overflow: hidden;
   position: relative;
   height: 100%;
@@ -17,6 +20,7 @@
   background-image: radial-gradient(var(--mgn-canvas-dot) 1.2px, transparent 1.2px);
   background-size: 24px 24px;
   touch-action: none;
+  overscroll-behavior: none;
 }
 
 .mgn-world {

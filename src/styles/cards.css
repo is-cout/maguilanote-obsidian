@@ -10,6 +10,7 @@
   font-size: 14px;
   line-height: 1.45;
   user-select: none;
+  -webkit-touch-callout: none;
   cursor: grab;
   overflow: visible; /* content is never clipped; cards grow vertically */
 }
@@ -42,15 +43,15 @@
 
 /* UNSELECTED cards are inert: first click selects/moves, only a selected card
    exposes its inputs for editing */
-.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
-  pointer-events: none !important;
+.mgn-root .mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
+  pointer-events: none;
 }
 /* exception: a to-do's checkbox/drag-grip, a record card's player, and a video
    card's control bar stay live even when the card isn't selected, so they work
    without a select-first step. The video *picture* stays inert so the card is
    still draggable by its image area — only the bar is interactive. */
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
-  pointer-events: auto !important;
+.mgn-root .mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
+  pointer-events: auto;
 }
 
 /* broken references */
@@ -117,39 +118,39 @@
 .mgn-note-body-editing {
   pointer-events: auto;
 }
-.mgn-note-body,
-.mgn-note-body p,
-.mgn-note-body li,
-.mgn-note-body h4,
-.mgn-note-body h5,
-.mgn-note-body h6,
-.mgn-note-body strong,
-.mgn-note-body em,
-.mgn-note-body span,
-.mgn-note-body td,
-.mgn-note-body th,
-.mgn-note-body blockquote {
-  color: inherit !important;
-  background: transparent !important;
-  font-size: 1em !important; /* Obsidian's markdown-rendered CSS sets its own absolute
+.mgn-root .mgn-note-body,
+.mgn-root .mgn-note-body p,
+.mgn-root .mgn-note-body li,
+.mgn-root .mgn-note-body h4,
+.mgn-root .mgn-note-body h5,
+.mgn-root .mgn-note-body h6,
+.mgn-root .mgn-note-body strong,
+.mgn-root .mgn-note-body em,
+.mgn-root .mgn-note-body span,
+.mgn-root .mgn-note-body td,
+.mgn-root .mgn-note-body th,
+.mgn-root .mgn-note-body blockquote {
+  color: inherit;
+  background: transparent;
+  font-size: 1em; /* Obsidian's markdown-rendered CSS sets its own absolute
     size here; force it back to the card's font-size */
 }
-.mgn-note-body h1,
-.mgn-note-body h2,
-.mgn-note-body h3 {
-  color: inherit !important;
-  background: transparent !important;
-  font-size: 1.5em !important; /* relative to the card's font-size, for consistent heading hierarchy */
+.mgn-root .mgn-note-body h1,
+.mgn-root .mgn-note-body h2,
+.mgn-root .mgn-note-body h3 {
+  color: inherit;
+  background: transparent;
+  font-size: 1.5em; /* relative to the card's font-size, for consistent heading hierarchy */
 }
-.mgn-note-body h2 { font-size: 1.3em !important; }
-.mgn-note-body h3 { font-size: 1.15em !important; }
-.mgn-note-body a {
-  color: var(--mgn-link) !important;
+.mgn-root .mgn-note-body h2 { font-size: 1.3em; }
+.mgn-root .mgn-note-body h3 { font-size: 1.15em; }
+.mgn-root .mgn-note-body a {
+  color: var(--mgn-link);
 }
-.mgn-note-body pre,
-.mgn-note-body code {
-  background: color-mix(in srgb, currentColor 10%, transparent) !important;
-  color: inherit !important;
+.mgn-root .mgn-note-body pre,
+.mgn-root .mgn-note-body code {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
 }
 .mgn-note-body p:first-child {
   margin-top: 0;
@@ -173,13 +174,13 @@
   padding-left: 0.7em;
   opacity: 0.85;
 }
-.mgn-note-body pre {
+.mgn-root .mgn-note-body pre {
   padding: 6px 8px;
   border-radius: 4px;
-  font-size: 0.85em !important;
+  font-size: 0.85em;
 }
-.mgn-note-body code {
-  font-size: 0.9em !important;
+.mgn-root .mgn-note-body code {
+  font-size: 0.9em;
 }
 .mgn-note-body a {
   pointer-events: auto;
@@ -190,30 +191,30 @@
   opacity: 0.55;
   font-style: italic;
 }
-.mgn-note-edit {
-  width: 100% !important;
+.mgn-root .mgn-note-edit {
+  width: 100%;
   min-height: 22px; /* match the rendered note body, so opening the editor doesn't grow the card */
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border: none;
+  outline: none;
+  box-shadow: none;
   resize: none;
-  background: transparent !important;
-  color: inherit !important;
-  font: inherit !important;
-  padding: 0 !important;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
   pointer-events: auto;
 }
-.mgn-card input[type="text"] {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: inherit !important;
+.mgn-root .mgn-card input[type="text"] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: inherit;
 }
 /* kill the browser/Obsidian focus glow on card fields — it reads as a blurry ring */
-.mgn-card input:focus,
-.mgn-card textarea:focus {
-  outline: none !important;
-  box-shadow: none !important;
+.mgn-root .mgn-card input:focus,
+.mgn-root .mgn-card textarea:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 /* universal optional card title — centered, no icon, styled exactly like a
@@ -233,10 +234,10 @@
   outline: none;
   padding: 0;
 }
-.mgn-card-title-text::placeholder {
+.mgn-root .mgn-card-title-text::placeholder {
   /* full opacity so a card showing its default-name placeholder looks identical
      to one with a typed title (standardized regardless of saved data) */
-  color: inherit !important;
+  color: inherit;
   opacity: 1;
 }
 
@@ -288,6 +289,12 @@
   flex-direction: column;
   justify-content: center; /* keep the player vertically centered in the card */
 }
+.mgn-record-audio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
+}
 .mgn-record-player {
   display: flex;
   align-items: center;
@@ -296,6 +303,8 @@
 }
 .mgn-card button.mgn-record-play {
   flex: 0 0 auto;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,6 +335,10 @@
   border-radius: 3px;
   background: currentColor;
   pointer-events: none;
+}
+.mgn-media-error {
+  color: var(--mgn-text-muted);
+  font-size: 12px;
 }
 .mgn-record-time {
   flex: 0 0 auto;
@@ -494,9 +507,9 @@
   flex-direction: column;
   gap: 2px;
 }
-.mgn-todo-text::placeholder {
-  color: inherit !important; /* form-control placeholders don't inherit color by
-    default (Obsidian sets its own), so this needs !important to actually win */
+.mgn-root .mgn-todo-text::placeholder {
+  color: inherit; /* form-control placeholders don't inherit color by default
+    (Obsidian sets its own); the .mgn-root prefix outranks Obsidian's rule */
   opacity: 0.5;
   font-style: italic;
 }
@@ -506,23 +519,23 @@
   gap: 3px;
   padding: 0 4px; /* small horizontal breathing room; no vertical padding bloating the card */
 }
-/* high-specificity + !important so Obsidian's own input[type=checkbox] theme
-   rules (which otherwise win and hide our styling) can't override this */
-.mgn-card input.mgn-todo-check {
-  appearance: none !important;
-  -webkit-appearance: none !important;
+/* .mgn-root-prefixed so it outranks Obsidian's own input[type=checkbox] theme
+   rules (which otherwise win and hide our styling) */
+.mgn-root .mgn-card input.mgn-todo-check {
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
-  width: 16px !important;
-  height: 16px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 5px !important;
-  color: inherit !important; /* form controls don't inherit `color` by default,
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border-radius: 5px;
+  color: inherit; /* form controls don't inherit `color` by default,
     so currentColor below would otherwise resolve to Obsidian's own default */
-  border: 2px solid currentColor !important; /* full text color, clearly visible */
-  opacity: 1 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  border: 2px solid currentColor; /* full text color, clearly visible */
+  opacity: 1;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
   flex-shrink: 0;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
@@ -530,9 +543,9 @@
 .mgn-card input.mgn-todo-check:active {
   transform: scale(0.88);
 }
-.mgn-card input.mgn-todo-check:checked {
-  background: var(--mgn-success) !important;
-  border-color: var(--mgn-success) !important;
+.mgn-root .mgn-card input.mgn-todo-check:checked {
+  background: var(--mgn-success);
+  border-color: var(--mgn-success);
 }
 .mgn-todo-check::after {
   content: "";
@@ -581,14 +594,18 @@
 .mgn-todo-row:hover .mgn-todo-grip {
   opacity: 0.45;
 }
-.mgn-todo-grip:hover {
-  opacity: 0.9 !important;
+/* outranks `.mgn-todo-row:hover .mgn-todo-grip` above */
+.mgn-todo-row .mgn-todo-grip:hover {
+  opacity: 0.9;
 }
 
 /* force the four-way move cursor everywhere while a to-do item is being dragged */
-body.mgn-todo-grabbing,
-body.mgn-todo-grabbing * {
-  cursor: move !important;
+/* :root (and the .mgn-root variant) raise specificity above per-element cursor
+   rules, e.g. the to-do checkbox */
+:root body.mgn-todo-grabbing,
+:root body.mgn-todo-grabbing *,
+:root body.mgn-todo-grabbing .mgn-root * {
+  cursor: move;
 }
 /* floating preview of the dragged item */
 .mgn-todo-ghost {
@@ -669,12 +686,12 @@ body.mgn-todo-grabbing * {
   gap: var(--mgn-space-sm);
   min-height: 40px;
 }
-.mgn-col-body .mgn-card {
+.mgn-root .mgn-col-body .mgn-card {
   position: relative;
-  width: 100% !important;
-  left: auto !important;
-  top: auto !important;
-  min-height: unset !important;
+  width: 100%;
+  left: auto;
+  top: auto;
+  min-height: unset;
 }
 .mgn-col-empty {
   min-height: 34px;

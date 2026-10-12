@@ -16,7 +16,7 @@ export function addItem(view: BoardView, partial: Partial<Item> & { type: Item["
     y: p.y,
     w: view.plugin.settings.defaultNoteWidth,
     ...partial,
-  } as Item;
+  };
   view.board.items.push(it);
   view.selection = new Set([it.id]);
   view.commit();

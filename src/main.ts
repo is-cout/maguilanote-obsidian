@@ -5,6 +5,7 @@ import {
   Platform,
   Plugin,
   PluginSettingTab,
+  TAbstractFile,
   TFile,
   TFolder,
   normalizePath,
@@ -13,7 +14,7 @@ import { BoardView, VIEW_TYPE_BOARD } from "./board-view";
 import { renderSettingsUI } from "./settings-ui";
 import { loadOpenAiApiKey } from "./secrets";
 import { removeGoogleFonts } from "./fonts";
-import { ImportTemplateConfirmModal } from "./modals";
+import { ImportTemplateConfirmModal, TextPromptModal } from "./modals";
 import { TemplateBundle, collectBundle, unbundleTemplate } from "./template-bundle";
 import {
   BoardData,
@@ -22,6 +23,7 @@ import {
   DEFAULT_THEME_COLORS,
   Item,
   KeyBinding,
+  newId,
   ShortcutActionId,
   ThemeColors,
 } from "./types";
@@ -67,14 +69,23 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   openaiApiKey: "",
 };
 
+/** A JSON Canvas node/edge as read from disk: every field is untrusted until checked. */
+interface CanvasNode {
+  id?: unknown; type?: unknown; x?: unknown; y?: unknown; width?: unknown; height?: unknown;
+  text?: unknown; file?: unknown; url?: unknown; label?: unknown; children?: unknown;
+}
+interface CanvasEdge { fromNode?: unknown; toNode?: unknown; label?: unknown }
+
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
 export default class MaguilanotePlugin extends Plugin {
   settings: MaguilanoteSettings = DEFAULT_SETTINGS;
   /** internal clipboard shared across boards */
   clipboard: { items: Item[]; edges: BoardData["edges"] } | null = null;
 
   /** desktop: key lives outside the vault (src/secrets.ts); mobile: settings fallback */
-  getOpenAiApiKey(): string {
-    return Platform.isDesktopApp ? loadOpenAiApiKey() : this.settings.openaiApiKey;
+  async getOpenAiApiKey(): Promise<string> {
+    return Platform.isDesktopApp ? await loadOpenAiApiKey() : this.settings.openaiApiKey;
   }
 
   async onload() {
@@ -99,7 +110,31 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view) return false;
-        if (!checking) this.exportMarkdown(view);
+        if (!checking) void this.exportMarkdown(view);
+        return true;
+      },
+    });
+
+    this.addCommand({
+      id: "export-board-json-canvas",
+      name: "Export current board to JSON Canvas",
+      checkCallback: (checking) => {
+        const view = this.activeBoard();
+        if (!view || !view.file) return false;
+        if (!checking) void this.exportJsonCanvas(view).catch((error) => {
+          new Notice(`JSON Canvas export failed: ${error instanceof Error ? error.message : "unknown error"}`);
+        });
+        return true;
+      },
+    });
+
+    this.addCommand({
+      id: "import-json-canvas",
+      name: "Import JSON Canvas into current board",
+      checkCallback: (checking) => {
+        const view = this.activeBoard();
+        if (!view) return false;
+        if (!checking) new JsonCanvasPicker(this.app, this).open();
         return true;
       },
     });
@@ -110,7 +145,7 @@ export default class MaguilanotePlugin extends Plugin {
       checkCallback: (checking) => {
         const view = this.activeBoard();
         if (!view || !view.file) return false;
-        if (!checking) this.exportBoardAsTemplate(view);
+        if (!checking) void this.exportBoardAsTemplate(view);
         return true;
       },
     });
@@ -147,6 +182,15 @@ export default class MaguilanotePlugin extends Plugin {
         }
       })
     );
+
+    // a board renamed anywhere (our breadcrumb right-click or Obsidian's file
+    // explorer) leaves stale paths in other .board files and breadcrumb trails —
+    // Obsidian's link updater only knows about links, not these JSON references
+    this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) =>
+        this.repairBoardRefs(file, oldPath)
+      )
+    );
   }
 
   activeBoard(): BoardView | null {
@@ -172,6 +216,108 @@ export default class MaguilanotePlugin extends Plugin {
     return file;
   }
 
+  /** Rename the current board in place (same folder). `fileManager.renameFile`
+   * updates every markdown link to the board; references stored inside other
+   * .board files and open breadcrumb trails are fixed by the vault "rename"
+   * listener (repairBoardRefs), since Obsidian can't see those JSON paths. */
+  renameBoard(view: BoardView) {
+    const file = view.file;
+    if (!file) return;
+    new TextPromptModal(this.app, "Rename board", file.basename, async (name) => {
+      if (!name || name === file.basename) return;
+      const prefix = file.parent && file.parent.path !== "/" ? file.parent.path + "/" : "";
+      const newPath = normalizePath(`${prefix}${name}.board`);
+      if (this.app.vault.getAbstractFileByPath(newPath)) {
+        new Notice(`"${name}.board" already exists in that folder`);
+        return;
+      }
+      try {
+        await this.app.fileManager.renameFile(file, newPath);
+      } catch (e) {
+        new Notice(`Rename failed: ${e instanceof Error ? e.message : e}`);
+      }
+    }).open();
+  }
+
+  /**
+   * After a .board file is renamed by any means, repair the references Obsidian
+   * can't reach: nested board cards (`type: "board"`, stored as plain JSON paths)
+   * inside other .board files, and the breadcrumb trails of open board views.
+   * Titles are refreshed only when they still match the old basename, so a card
+   * the user has given a custom title keeps it.
+   */
+  private async repairBoardRefs(file: TAbstractFile, oldPath: string) {
+    if (!(file instanceof TFile) || file.extension !== "board") return;
+
+    const views = this.app.workspace
+      .getLeavesOfType(VIEW_TYPE_BOARD)
+      .map((leaf) => leaf.view)
+      .filter((v): v is BoardView => v instanceof BoardView);
+    for (const view of views) {
+      let touched = false;
+      for (const c of view.crumbs) {
+        if (c.path === oldPath) {
+          c.path = file.path;
+          c.name = file.basename;
+          touched = true;
+        }
+      }
+      if (touched || view.file?.path === file.path) view.renderCrumbs();
+    }
+
+    const oldBasename = oldPath.split("/").pop()?.replace(/\.board$/i, "") ?? oldPath;
+    const open = new Map<string, BoardView>(
+      views
+        .filter((v) => !!v.file)
+        .map((v) => [v.file!.path, v])
+    );
+
+    for (const f of this.app.vault.getFiles()) {
+      if (f.extension !== "board") continue;
+      let raw: string;
+      try {
+        raw = await this.app.vault.read(f);
+      } catch {
+        continue;
+      }
+      if (!raw.includes(oldPath)) continue;
+      let data: BoardData;
+      try {
+        data = JSON.parse(raw) as BoardData;
+      } catch {
+        continue; // corrupt file — never rewrite it
+      }
+      if (!Array.isArray(data.items)) continue;
+      const openView = open.get(f.path);
+      if (openView) {
+        let dirty = false;
+        for (const it of openView.board.items) {
+          if (it.type === "board" && it.path === oldPath) {
+            it.path = file.path;
+            if (it.title === oldBasename) it.title = file.basename;
+            dirty = true;
+          }
+        }
+        if (dirty) openView.commit(); // saves through the view's own pipeline
+        continue;
+      }
+      let dirty = false;
+      for (const it of data.items) {
+        if (it.type === "board" && it.path === oldPath) {
+          it.path = file.path;
+          if (it.title === oldBasename) it.title = file.basename;
+          dirty = true;
+        }
+      }
+      if (!dirty) continue;
+      try {
+        await this.app.vault.modify(f, JSON.stringify(data, null, 2));
+      } catch {
+        // leave this board alone; the next rename will retry
+      }
+    }
+  }
+
   /** Bundles `view`'s board and everything it references (nested boards, images, files, recordings) into a single `.board.template` in the templates folder. */
   async exportBoardAsTemplate(view: BoardView) {
     await view.save(); // flush the debounced autosave — collectBundle reads the file from disk
@@ -192,24 +338,12 @@ export default class MaguilanotePlugin extends Plugin {
   }
 
   /**
-   * Opens a file picker restricted to `.board.template` files (native dialog on
-   * desktop, defaulting to the templates folder; browser file input otherwise).
+   * Opens a file picker restricted to `.board.template` files.
    * Importing replaces `view`'s board: the picked template is unpacked next to
    * it, opened in its place, and the board it replaces is trashed.
    */
-  async openImportTemplateDialog(view: BoardView) {
-    if (Platform.isDesktopApp) {
-      const picked = this.pickTemplateFileDesktop();
-      if (picked !== undefined) {
-        if (picked === null) return; // user cancelled the native dialog
-        const fs = require("fs");
-        const path = require("path");
-        const raw: string = fs.readFileSync(picked, "utf8");
-        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""), view);
-        return;
-      }
-    }
-    const input = document.createElement("input");
+  openImportTemplateDialog(view: BoardView) {
+    const input = createEl("input");
     input.type = "file";
     input.accept = ".template";
     input.onchange = async () => {
@@ -221,31 +355,6 @@ export default class MaguilanotePlugin extends Plugin {
     input.click();
   }
 
-  /** Native Electron open-dialog, defaulting to the templates folder on disk. Returns `undefined` if Electron's dialog isn't available (caller should fall back), `null` if the user cancelled, or the chosen absolute path. */
-  private pickTemplateFileDesktop(): string | null | undefined {
-    try {
-      const electron = (window as any).require("electron");
-      const dialog = electron.remote?.dialog ?? electron.dialog;
-      if (!dialog?.showOpenDialogSync) return undefined;
-      const adapter = this.app.vault.adapter as any;
-      let defaultPath: string | undefined;
-      if (adapter?.basePath) {
-        const path = require("path");
-        const folder = this.settings.templatesFolder?.trim();
-        defaultPath = folder ? path.join(adapter.basePath, folder) : adapter.basePath;
-      }
-      const result = dialog.showOpenDialogSync({
-        title: "Import Maguilanote template",
-        defaultPath,
-        filters: [{ name: "Maguilanote template", extensions: ["template"] }],
-        properties: ["openFile"],
-      });
-      return result?.[0] ?? null;
-    } catch {
-      return undefined;
-    }
-  }
-
   /**
    * Validates `raw` as a template bundle, warns the user before writing anything
    * (it replaces `view`'s current board), then unpacks it next to `view`'s file,
@@ -254,7 +363,7 @@ export default class MaguilanotePlugin extends Plugin {
   async importTemplateFile(raw: string, displayName: string, view: BoardView) {
     let bundle: TemplateBundle;
     try {
-      bundle = JSON.parse(raw);
+      bundle = JSON.parse(raw) as TemplateBundle;
       if (bundle.format !== "maguilanote-template") throw new Error("not a template");
     } catch {
       new Notice("Not a valid Maguilanote template file");
@@ -267,7 +376,7 @@ export default class MaguilanotePlugin extends Plugin {
         const rootFile = await unbundleTemplate(this.app, bundle, destFolder);
         await view.leaf.openFile(rootFile);
         if (oldFile && oldFile.path !== rootFile.path) {
-          await this.app.vault.trash(oldFile, false); // Obsidian's trash, not the OS trash
+          await this.app.fileManager.trashFile(oldFile); // follows the user's "Deleted files" preference
         }
         new Notice(`Imported template "${displayName}"`);
       } catch (e) {
@@ -275,6 +384,118 @@ export default class MaguilanotePlugin extends Plugin {
         new Notice(`Failed to import template: ${e instanceof Error ? e.message : e}`);
       }
     }).open();
+  }
+
+  async importJsonCanvas(file: TFile, view: BoardView) {
+    try {
+      const data = JSON.parse(await this.app.vault.read(file)) as { nodes?: unknown; edges?: unknown } | null;
+      if (!data || !Array.isArray(data.nodes)) throw new Error("invalid JSON Canvas");
+      const nodes = data.nodes as (CanvasNode | null)[];
+      const canvasEdges = (Array.isArray(data.edges) ? data.edges : []) as (CanvasEdge | null)[];
+      const ids = new Map<string, string>();
+      const seenNodeIds = new Set<string>();
+      const groups = new Map<string, Item>();
+      const imported: Item[] = [];
+      for (const node of nodes) {
+        if (!node || typeof node !== "object" || typeof node.id !== "string" || seenNodeIds.has(node.id) || !isFiniteNumber(node.x) || !isFiniteNumber(node.y) || typeof node.type !== "string" || !["text", "file", "link", "group"].includes(node.type)) continue;
+        seenNodeIds.add(node.id);
+        const id = newId();
+        const item: Item = {
+          id, type: node.type === "group" ? "column" : node.type === "file" ? "file" : node.type === "link" ? "link" : "note",
+          x: node.x, y: node.y, w: isFiniteNumber(node.width) ? Math.max(120, node.width) : 260,
+          h: isFiniteNumber(node.height) ? Math.max(48, node.height) : undefined,
+        };
+        if (item.type === "note") item.text = typeof node.text === "string" ? node.text : "";
+        if (item.type === "file") {
+          if (typeof node.file !== "string" || !node.file.trim()) continue;
+          item.path = node.file;
+        }
+        if (item.type === "link") {
+          if (typeof node.url !== "string" || !/^https?:\/\//i.test(node.url)) continue;
+          item.url = node.url;
+        }
+        if (node.type === "group") { item.title = typeof node.label === "string" ? node.label : "Column"; groups.set(node.id, item); }
+        if (item.type === "file" && !this.resolveImportedPath(item.path)) continue;
+        ids.set(node.id, id);
+        imported.push(item);
+      }
+      for (const node of nodes) {
+        if (node?.type !== "group" || typeof node.id !== "string" || !Array.isArray(node.children)) continue;
+        const parent = groups.get(node.id);
+        if (!parent) continue;
+        for (const childId of node.children as unknown[]) {
+          const child = typeof childId === "string" ? imported.find((it) => it.id === ids.get(childId)) : undefined;
+          if (child && child.id !== parent.id) child.parent = parent.id;
+        }
+      }
+      const edges = canvasEdges.flatMap((edge) => {
+        if (!edge || typeof edge.fromNode !== "string" || typeof edge.toNode !== "string") return [];
+        const from = ids.get(edge.fromNode), to = ids.get(edge.toNode);
+        return from && to ? [{ id: newId(), from, to, arrow: true, mode: "free" as const, label: typeof edge.label === "string" ? edge.label : undefined }] : [];
+      });
+      if (!imported.length) throw new Error("no compatible nodes");
+      view.board.items.push(...imported);
+      view.board.edges.push(...edges);
+      view.selection = new Set(imported.map((it) => it.id));
+      view.commit();
+      new Notice(`Imported ${imported.length} JSON Canvas nodes`);
+    } catch (error) {
+      new Notice(`JSON Canvas import failed: ${error instanceof Error ? error.message : "invalid file"}`);
+    }
+  }
+
+  private resolveImportedPath(path?: string): string | undefined {
+    const normalized = path?.trim();
+    return normalized && !normalized.startsWith("/") && !normalized.includes("..") ? normalized : undefined;
+  }
+
+  async exportJsonCanvas(view: BoardView) {
+    const nodes: Record<string, unknown>[] = [];
+    const groups = new Map<string, Record<string, unknown>>();
+    const nodeIds = new Set<string>();
+    for (const it of view.board.items) {
+      if (nodeIds.has(it.id)) continue;
+      nodeIds.add(it.id);
+      if (it.type === "column") {
+        const group = { id: it.id, type: "group", x: it.x, y: it.y, width: it.w, height: it.h ?? 300, label: it.title || "Column", children: [] as string[] };
+        groups.set(it.id, group);
+        nodes.push(group);
+        continue;
+      }
+      const base = { id: it.id, x: it.x, y: it.y, width: it.w, height: it.h ?? 120 };
+      if (it.type === "note" || it.type === "comment" || it.type === "todo")
+        nodes.push({ ...base, type: "text", text: it.text || (it.todos ?? []).map((t) => `- [${t.done ? "x" : " "}] ${t.text}`).join("\n") });
+      else if (it.path) nodes.push({ ...base, type: "file", file: it.path });
+      else if (it.url) nodes.push({ ...base, type: "link", url: it.url });
+      else nodes.push({ ...base, type: "text", text: it.title || it.type });
+    }
+    for (const it of view.board.items) {
+      if (it.parent && groups.has(it.parent)) {
+        const group = groups.get(it.parent)!;
+        (group.children as string[]).push(it.id);
+      }
+    }
+    const edges = view.board.edges
+      .filter((e) => e.from && e.to)
+      .map((e) => ({
+        id: e.id,
+        fromNode: e.from,
+        toNode: e.to,
+        fromSide: "right",
+        toSide: "left",
+        label: e.label,
+      }));
+    const base = view.file?.parent?.path ? `${view.file.parent.path}/` : "";
+    let path = normalizePath(`${base}${view.file?.basename ?? "board"} (export).canvas`);
+    let i = 1;
+    while (this.app.vault.getAbstractFileByPath(path)) {
+      path = normalizePath(
+        `${base}${view.file?.basename ?? "board"} (export ${i++}).canvas`
+      );
+    }
+    const file = await this.app.vault.create(path, JSON.stringify({ nodes, edges }, null, 2));
+    await this.app.workspace.getLeaf("tab").openFile(file);
+    new Notice("Board exported to JSON Canvas");
   }
 
   async exportMarkdown(view: BoardView) {
@@ -343,7 +564,7 @@ export default class MaguilanotePlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<MaguilanoteSettings> | null);
     this.settings.keybindings = Object.assign(
       {},
       DEFAULT_KEYBINDINGS,
@@ -353,6 +574,8 @@ export default class MaguilanotePlugin extends Plugin {
       light: Object.assign({}, DEFAULT_THEME_COLORS.light, this.settings.colors?.light),
       dark: Object.assign({}, DEFAULT_THEME_COLORS.dark, this.settings.colors?.dark),
     };
+    this.settings.gridSize = Number.isFinite(this.settings.gridSize) && this.settings.gridSize > 0 ? this.settings.gridSize : DEFAULT_SETTINGS.gridSize;
+    this.settings.defaultNoteWidth = Number.isFinite(this.settings.defaultNoteWidth) && this.settings.defaultNoteWidth > 0 ? this.settings.defaultNoteWidth : DEFAULT_SETTINGS.defaultNoteWidth;
   }
 
   /** re-apply appearance (theme/font) to every open board and refresh keyboard shortcuts */
@@ -367,7 +590,20 @@ export default class MaguilanotePlugin extends Plugin {
   }
 
   onunload() {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_BOARD)) {
+      if (leaf.view instanceof BoardView) void leaf.view.onClose();
+    }
     removeGoogleFonts(); // drop the <style> elements injected into document.head
+  }
+}
+
+class JsonCanvasPicker extends FuzzySuggestModal<TFile> {
+  constructor(app: App, private plugin: MaguilanotePlugin) { super(app); this.setPlaceholder("Choose a .canvas file..."); }
+  getItems() { return this.app.vault.getFiles().filter((f) => f.extension.toLowerCase() === "canvas"); }
+  getItemText(f: TFile) { return f.path; }
+  onChooseItem(f: TFile) {
+    const view = this.plugin.activeBoard();
+    if (view) void this.plugin.importJsonCanvas(f, view);
   }
 }
 
@@ -385,11 +621,14 @@ class TemplatePicker extends FuzzySuggestModal<TFile> {
   getItemText(f: TFile): string {
     return f.name.replace(/\.board\.template$/i, "");
   }
-  async onChooseItem(f: TFile) {
+  onChooseItem(f: TFile) {
+    void this.createFromTemplate(f);
+  }
+  private async createFromTemplate(f: TFile) {
     const raw = await this.app.vault.read(f);
     let bundle: TemplateBundle;
     try {
-      bundle = JSON.parse(raw);
+      bundle = JSON.parse(raw) as TemplateBundle;
     } catch {
       new Notice("Invalid template file");
       return;

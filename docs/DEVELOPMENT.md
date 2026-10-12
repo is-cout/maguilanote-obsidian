@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 22+ (used regardless of which build path below you take).
-- An Obsidian vault to test in (desktop).
+- An Obsidian vault to test in (desktop; iPadOS device strongly recommended for touch/Pencil changes).
 
 ## Install dependencies
 
@@ -22,6 +22,14 @@ npm run build
 Runs `tsc -noEmit -skipLibCheck` (type-check only, no emit), then `esbuild.config.mjs production` — which bundles `src/main.ts` into `main.js` **and** bundles `src/styles/index.css` (which `@import`s the partials under `src/styles/`) into the root `styles.css` — then `scripts/copy-to-vault.mjs`. The root `styles.css` is generated; edit the partials under `src/styles/` instead of the root file.
 
 The copy step is optional and local-only: if a `.env.local` file exists at the project root with an `OBSIDIAN_PLUGIN_DIR=<path>` line, `main.js`, `manifest.json` and `styles.css` are copied there automatically after a successful build. `.env.local` is gitignored, so each contributor points it at their own vault; without it, the copy step is a no-op.
+
+## Lint
+
+```
+npm run lint
+```
+
+Runs ESLint with `eslint-plugin-obsidianmd`'s recommended config (`eslint.config.mjs`) over `src/` — the same TypeScript checks the [Obsidian plugin scorecard](https://community.obsidian.md/plugins/maguilanote#scorecard) reports as warnings. The scorecard also flags CSS issues (e.g. `!important`) that this config does not cover.
 
 For a watch-style rebuild during development:
 
@@ -45,9 +53,13 @@ Copy `main.js`, `manifest.json` and `styles.css` into `YOUR_VAULT/.obsidian/plug
 
 ## Verifying a change
 
-There is no automated test suite yet. Before considering a change done:
+The automated suite currently covers board-boundary parsing and geometry helpers. Before considering a change done:
 
-1. `npm run build` (or `node build-local.mjs`) completes with no type errors.
+1. `npm test` and `npm run build` (or `node build-local.mjs`) complete successfully, and `npm run lint` reports no new problems.
 2. Reload the plugin in a real vault and manually exercise the affected card type/interaction.
 3. Check the developer console (Ctrl+Shift+I in Obsidian) for runtime errors.
 4. If the change is user-visible or changes a file format, update the relevant doc — see the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md) and add an entry to [CHANGELOG.md](CHANGELOG.md).
+
+### iPad interaction matrix
+
+For touch or Pencil changes, run every applicable item in [IPAD-TEST-MATRIX.md](IPAD-TEST-MATRIX.md) in Obsidian on iPadOS in portrait and landscape, with and without an Apple Pencil. Record the device, iPadOS version, Obsidian version, layout, and result in the issue or change; a successful build is not a substitute for this device pass.

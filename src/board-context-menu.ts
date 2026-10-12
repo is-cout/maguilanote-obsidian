@@ -1,5 +1,6 @@
 import { Menu } from "obsidian";
 import type { BoardView } from "./board-view";
+import type { Item } from "./types";
 
 export function onContextMenu(view: BoardView, e: MouseEvent) {
   if (view.drawMode) { e.preventDefault(); return; }
@@ -16,6 +17,14 @@ export function onContextMenu(view: BoardView, e: MouseEvent) {
   e.preventDefault();
   const it = view.item(cardEl.dataset.id);
   if (!it) return;
+  if (!view.selection.has(it.id)) {
+    view.selection = new Set([it.id]);
+    view.refreshSelectionClasses();
+  }
+  showCardMenu(view, it, e.clientX, e.clientY);
+}
+
+export function showCardMenu(view: BoardView, it: Item, x: number, y: number) {
   if (!view.selection.has(it.id)) {
     view.selection = new Set([it.id]);
     view.refreshSelectionClasses();
@@ -40,5 +49,5 @@ export function onContextMenu(view: BoardView, e: MouseEvent) {
   }));
   menu.addSeparator();
   menu.addItem((i) => i.setTitle("Delete").setIcon("trash").onClick(() => view.deleteSelection()));
-  menu.showAtMouseEvent(e);
+  menu.showAtPosition({ x, y });
 }

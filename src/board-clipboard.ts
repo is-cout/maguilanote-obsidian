@@ -1,5 +1,6 @@
 import { Notice } from "obsidian";
 import type { BoardView } from "./board-view";
+import { clearRecordAudio } from "./render";
 import { Item, newId } from "./types";
 
 export function copySelection(view: BoardView, cut: boolean) {
@@ -64,6 +65,7 @@ export function deleteSelection(view: BoardView) {
     if (it.parent && ids.has(it.parent)) ids.add(it.id);
   }
   const edgeIds = new Set(view.selectedEdges);
+  clearRecordAudio(ids);
   view.board.items = view.board.items.filter((i) => !ids.has(i.id));
   view.board.edges = view.board.edges.filter(
     (e) => !edgeIds.has(e.id) && !(e.from && ids.has(e.from)) && !(e.to && ids.has(e.to))

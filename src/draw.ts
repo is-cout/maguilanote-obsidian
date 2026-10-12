@@ -2,8 +2,6 @@ import { setIcon } from "obsidian";
 import { getStroke } from "perfect-freehand";
 import { Stroke, DEFAULT_STROKE_COLOR, DEFAULT_STROKE_SIZE } from "./types";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 // perfect-freehand's `size` is the width at mid pressure (max ≈ size*(1+thinning)).
 // We treat the chosen stroke size as the MAX (full-pressure) width, so we feed
 // size/(1+THINNING); light pressure then thins down and the min scales with it.
@@ -102,7 +100,7 @@ export interface CtxItem {
   id?: string;
   icon?: string;
   label?: string;
-  onClick?: () => void;
+  onClick?: () => void | Promise<void>;
   /** custom control (e.g. color / size picker) rendered into its own slot */
   render?: (host: HTMLElement) => void;
 }
@@ -134,7 +132,8 @@ export class ContextToolbar {
         }
         const b = this.el.createDiv({ cls: "mgn-ctx-tool", attr: { "aria-label": it.label ?? "" } });
         if (it.icon) setIcon(b, it.icon);
-        if (it.onClick) b.addEventListener("click", it.onClick);
+        const onClick = it.onClick;
+        if (onClick) b.addEventListener("click", () => void onClick());
         if (it.id) this.btns.set(it.id, b);
       }
     });
@@ -161,6 +160,11 @@ export interface DrawSessionConfig {
   onChange?: () => void;
 }
 
+/** set once any Apple Pencil (pen) input is seen: from then on a finger is
+ * palm/navigation input and never draws. Devices without a pen (phones) never
+ * set it, so there the finger draws. */
+let penSeen = false;
+
 export class DrawSession {
   strokes: Stroke[] = [];
   tool: DrawTool = "pen";
@@ -178,6 +182,10 @@ export class DrawSession {
   private redoStack: string[] = [];
 
   private live: number[][] | null = null;
+  private penPointerId: number | null = null;
+  /** the one finger drawing/erasing/selecting on a pen-less device */
+  private touchPointerId: number | null = null;
+  private penReleaseTimer: number | null = null;
   private drag:
     | { kind: "move"; sx: number; sy: number; orig: number[][][] }
     | { kind: "rubber"; sx: number; sy: number; rect: SVGRectElement }
@@ -187,11 +195,13 @@ export class DrawSession {
     this.svg = cfg.svg;
     this.toCoords = cfg.toCoords;
     this.onChange = cfg.onChange;
-    this.strokeG = this.svg.createSvg("g") as unknown as SVGGElement;
-    this.overlayG = this.svg.createSvg("g") as unknown as SVGGElement;
+    this.strokeG = this.svg.createSvg("g");
+    this.overlayG = this.svg.createSvg("g");
     this.svg.addEventListener("pointerdown", (e) => this.onDown(e));
     this.svg.addEventListener("pointermove", (e) => this.onMove(e));
     this.svg.addEventListener("pointerup", (e) => this.onUp(e));
+    this.svg.addEventListener("pointercancel", (e) => this.onCancel(e));
+    this.svg.addEventListener("lostpointercapture", (e) => this.onCancel(e));
     this.render();
   }
 
@@ -211,7 +221,7 @@ export class DrawSession {
   undo() {
     if (!this.undoStack.length) return;
     this.redoStack.push(JSON.stringify(this.strokes));
-    this.strokes = JSON.parse(this.undoStack.pop()!);
+    this.strokes = JSON.parse(this.undoStack.pop()!) as Stroke[];
     this.selection.clear();
     this.render();
     this.onChange?.();
@@ -220,7 +230,7 @@ export class DrawSession {
   redo() {
     if (!this.redoStack.length) return;
     this.undoStack.push(JSON.stringify(this.strokes));
-    this.strokes = JSON.parse(this.redoStack.pop()!);
+    this.strokes = JSON.parse(this.redoStack.pop()!) as Stroke[];
     this.selection.clear();
     this.render();
     this.onChange?.();
@@ -238,12 +248,24 @@ export class DrawSession {
 
   // ---------------------------------------------------------------- pointers
   private onDown(e: PointerEvent) {
+    // iPadOS reports a resting palm as touch while Apple Pencil is pen input.
+    // Once a Pencil has been used, touch is navigation/palm input, never ink
+    // input; without a pen, one finger at a time works like the mouse.
+    if (e.pointerType === "touch" && (penSeen || this.penPointerId !== null)) return;
+    if (e.pointerType === "touch" && this.touchPointerId !== null) return;
     if (e.button !== 0) return;
+    if (e.pointerType === "touch") this.touchPointerId = e.pointerId;
+    if (e.pointerType === "pen") {
+      penSeen = true;
+      if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+      this.penReleaseTimer = null;
+      this.penPointerId = e.pointerId;
+    }
     e.preventDefault();
     this.svg.setPointerCapture(e.pointerId);
     const { x, y } = this.toCoords(e);
-    // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
-    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
+    // Pencil uses real pressure; mouse has none -> draw at the chosen (max) size.
+    const pressure = e.pointerType === "pen" ? e.pressure || 0.5 : 1;
 
     if (this.tool === "pen") {
       this.snapshot();
@@ -267,18 +289,19 @@ export class DrawSession {
       this.render();
     } else {
       if (!e.shiftKey) this.selection.clear();
-      const rect = this.overlayG.createSvg("rect", { cls: "mgn-draw-selrect" }) as unknown as SVGRectElement;
+      const rect = this.overlayG.createSvg("rect", { cls: "mgn-draw-selrect" });
       this.drag = { kind: "rubber", sx: x, sy: y, rect };
       this.render();
     }
   }
 
   private onMove(e: PointerEvent) {
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
     const { x, y } = this.toCoords(e);
 
     if (this.live) {
-      // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
-    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
+      const pressure = e.pointerType === "pen" ? e.pressure || 0.5 : 1;
       this.live.push([x, y, pressure]);
       this.renderLive();
       return;
@@ -316,6 +339,17 @@ export class DrawSession {
   }
 
   private onUp(e: PointerEvent) {
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
+    if (e.pointerId === this.penPointerId) {
+      this.penReleaseTimer = window.setTimeout(() => {
+        this.penPointerId = null;
+        this.penReleaseTimer = null;
+      }, 300);
+    }
+    // Only the finger that started the gesture may finish it, so a palm can't
+    // finish a simultaneous Apple Pencil stroke.
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
+    this.touchPointerId = null;
     try { this.svg.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     if (this.live) {
       if (this.live.length >= 1) {
@@ -333,6 +367,33 @@ export class DrawSession {
       if (!wasRubber) this.onChange?.();
       this.render();
     }
+  }
+
+  private onCancel(e: PointerEvent) {
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
+    if (e.pointerType === "touch" && e.pointerId !== this.touchPointerId) return;
+    this.touchPointerId = null;
+    if (e.pointerId === this.penPointerId) {
+      this.penPointerId = null;
+      if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+      this.penReleaseTimer = null;
+    }
+    if (this.live) {
+      this.live = null;
+      this.render();
+    }
+    if (this.drag) {
+      if (this.drag.kind === "move") {
+        const sel = [...this.selection];
+        sel.forEach((idx, k) => {
+          const orig = this.drag?.kind === "move" ? this.drag.orig[k] : null;
+          if (orig) this.strokes[idx].points = orig.map((p) => [...p]);
+        });
+      } else if (this.drag.kind === "rubber") this.drag.rect.remove();
+      this.drag = null;
+      this.render();
+    }
+    try { this.svg.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
   }
 
   // ------------------------------------------------------------------ helpers
@@ -368,7 +429,7 @@ export class DrawSession {
   private renderLive() {
     let path = this.strokeG.querySelector<SVGPathElement>(".mgn-draw-live");
     if (!path) {
-      path = this.strokeG.createSvg("path", { cls: "mgn-draw-live" }) as unknown as SVGPathElement;
+      path = this.strokeG.createSvg("path", { cls: "mgn-draw-live" });
     }
     path.setAttribute("d", strokeToPath({ points: this.live!, color: this.color, size: this.size }));
     path.setAttribute("fill", this.color);

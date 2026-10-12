@@ -1,7 +1,7 @@
 import { MarkdownRenderer, setIcon } from "obsidian";
 import type { BoardView } from "./board-view";
 import { TextPromptModal } from "./modals";
-import { AUDIO_EXTS, IMAGE_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
+import { AUDIO_EXTS, Item, TITLE_LABELS, TodoEntry, VIDEO_EXTS, colorOf, contrastColor, newId } from "./types";
 import { strokeToPath, strokesBBox } from "./draw";
 
 function markMissing(el: HTMLElement, label = "Missing reference") {
@@ -32,6 +32,16 @@ export function pauseRecordAudio(id: string) {
   recordAudio.get(id)?.pause();
 }
 
+export function clearRecordAudio(ids?: Iterable<string>) {
+  const keys = ids ?? recordAudio.keys();
+  for (const id of keys) {
+    const audio = recordAudio.get(id);
+    audio?.pause();
+    audio?.remove();
+    recordAudio.delete(id);
+  }
+}
+
 /** video card player: the picture stays a plain drag surface (like an image
  * card) and a custom control bar overlays the bottom, so play/seek work by
  * clicking the bar without first selecting the card — native <video controls>
@@ -44,10 +54,14 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
   v.addEventListener("loadeddata", () => view.drawEdges());
 
   const player = wrap.createDiv({ cls: "mgn-video-bar" });
-  const btn = player.createEl("button", { cls: "mgn-video-play" });
+  const btn = player.createEl("button", { cls: "mgn-video-play", attr: { "aria-label": "Play video" } });
   const bar = player.createDiv({ cls: "mgn-video-progress" });
   const fill = bar.createDiv({ cls: "mgn-video-progress-fill" });
   const time = player.createDiv({ cls: "mgn-video-time" });
+  v.addEventListener("error", () => {
+    wrap.addClass("mgn-media-error");
+    time.setText("Unable to play media");
+  });
 
   const sync = () => {
     setIcon(btn, v.paused ? "play" : "pause");
@@ -58,7 +72,10 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
   v.onloadedmetadata = v.ontimeupdate = v.onplay = v.onpause = v.onended = sync;
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (v.paused) v.play().catch(() => {});
+    if (v.paused) v.play().catch(() => {
+      time.setText("Unable to play media");
+      wrap.addClass("mgn-media-error");
+    });
     else v.pause();
   });
   bar.addEventListener("click", (e) => {
@@ -74,13 +91,24 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
 
 /** compact play/seek/time player for a record card */
 export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
-  let audio = recordAudio.get(it.id);
-  if (!audio || audio.src !== src) {
-    audio?.pause();
-    audio = new Audio(src);
-    audio.preload = "metadata";
-    recordAudio.set(it.id, audio);
+  let cached = recordAudio.get(it.id);
+  if (!cached || cached.src !== src) {
+    cached?.pause();
+    cached?.remove();
+    cached = createEl("audio");
+    cached.addClass("mgn-record-audio");
+    cached.preload = "metadata";
+    cached.src = src;
+    cached.controls = true;
+    recordAudio.set(it.id, cached);
   }
+  const audio = cached;
+  // Keep the media element attached, but outside the drag-control row so the
+  // card can still be grabbed anywhere around its visible player. Moving the
+  // same element into the new card (rather than recreating it) keeps playback
+  // going across a full render: it is back in the document before the browser
+  // would pause a removed media element.
+  el.appendChild(audio);
   const player = el.createDiv({ cls: "mgn-record-player" });
   const btn = player.createEl("button", { cls: "mgn-record-play" });
   const bar = player.createDiv({ cls: "mgn-record-bar" });
@@ -90,26 +118,34 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   // MediaRecorder webm files carry no duration metadata (audio.duration is
   // Infinity), so fall back to the length measured while recording
   const total = () =>
-    Number.isFinite(audio!.duration) && audio!.duration > 0 ? audio!.duration : it.duration ?? 0;
+    Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : it.duration ?? 0;
   const sync = () => {
-    setIcon(btn, audio!.paused ? "play" : "pause");
+    setIcon(btn, audio.paused ? "play" : "pause");
+    btn.setAttribute("aria-label", audio.paused ? "Play recording" : "Pause recording");
     const t = total();
-    fill.style.width = t ? `${Math.min(100, (audio!.currentTime / t) * 100)}%` : "0%";
-    time.setText(`${fmtTime(audio!.currentTime)} / ${fmtTime(t)}`);
+    fill.style.width = t ? `${Math.min(100, (audio.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(audio.currentTime)} / ${fmtTime(t)}`);
   };
   // assigned (not addEventListener) so re-renders replace the handlers of the reused element
   audio.onloadedmetadata = audio.ontimeupdate = audio.onplay = audio.onpause = audio.onended = sync;
+  audio.onerror = () => {
+    player.addClass("mgn-media-error");
+    time.setText("Unable to play recording");
+  };
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (audio!.paused) audio!.play().catch(() => {});
-    else audio!.pause();
+    if (audio.paused) audio.play().catch(() => {
+      time.setText("Unable to play recording");
+      player.addClass("mgn-media-error");
+    });
+    else audio.pause();
   });
   bar.addEventListener("click", (e) => {
     e.stopPropagation();
     const t = total();
     if (!t) return;
     const r = bar.getBoundingClientRect();
-    audio!.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    audio.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
     sync();
   });
   sync();
@@ -125,6 +161,11 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
  * empty by a move, it's deleted. Listens on `window` so nothing kills the drag.
  */
 type TodoDropTarget = { card: Item; index: number } | null;
+const todoDragClosers = new Map<BoardView, Set<() => void>>();
+
+export function cancelTodoDrags(view: BoardView) {
+  [...(todoDragClosers.get(view) ?? [])].forEach((close) => close());
+}
 
 function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: PointerEvent) {
   if (!source.todos || source.todos.length === 0) return;
@@ -132,9 +173,9 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   e.stopPropagation(); // don't let the board start a card-move drag
   const entry = source.todos[startIdx];
 
-  const ghost = document.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
+  const ghost = view.containerEl.doc.body.createDiv({ cls: "mgn-todo-ghost", text: entry.text || "Empty item" });
   const dropLine = createDiv({ cls: "mgn-todo-drop-line" });
-  document.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
+  view.containerEl.doc.body.addClass("mgn-todo-grabbing"); // force the move cursor board-wide
 
   let target: TodoDropTarget = null;
   let hlEl: HTMLElement | null = null;
@@ -150,8 +191,9 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   };
 
   const onMove = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
     positionGhost(ev);
-    const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+    const under = view.containerEl.doc.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
     const cardEl = under?.closest<HTMLElement>(".mgn-card.mgn-todo");
     const overItem = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : null;
     if (cardEl && overItem?.type === "todo") {
@@ -174,17 +216,42 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     }
   };
 
-  const onUp = (ev: PointerEvent) => {
+  const cleanup = () => {
     window.removeEventListener("pointermove", onMove, true);
     window.removeEventListener("pointerup", onUp, true);
+    window.removeEventListener("pointercancel", onCancel, true);
+    window.removeEventListener("lostpointercapture", onCancel, true);
+  };
+  const onCancel = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
+    viewClosers.delete(closeForView);
+    if (!viewClosers.size) todoDragClosers.delete(view);
+    cleanup();
     clearTarget();
     ghost.remove();
-    document.body.removeClass("mgn-todo-grabbing");
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
+  };
+  const onUp = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
+    viewClosers.delete(closeForView);
+    if (!viewClosers.size) todoDragClosers.delete(view);
+    cleanup();
+    clearTarget();
+    ghost.remove();
+    view.containerEl.doc.body.removeClass("mgn-todo-grabbing");
     applyTodoDrop(view, source, entry, target, ev);
   };
 
+  const closeForView = () => onCancel(e);
+  const viewClosers = todoDragClosers.get(view) ?? new Set<() => void>();
+  viewClosers.add(closeForView);
+  todoDragClosers.set(view, viewClosers);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
+  window.addEventListener("pointercancel", onCancel, true);
+  window.addEventListener("lostpointercapture", onCancel, true);
+  window.addEventListener("pointercancel", onCancel, true);
+  window.addEventListener("lostpointercapture", onCancel, true);
   onMove(e); // seed the preview immediately (grip pointerdown already located us)
 }
 
@@ -277,7 +344,7 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
     case "comment": {
       const body = el.createDiv({ cls: "mgn-note-body" });
       if (it.text?.trim()) {
-        MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
+        void MarkdownRenderer.render(view.app, it.text, body, view.file?.path ?? "", view);
       } else {
         body.createDiv({
           cls: "mgn-placeholder",
@@ -425,10 +492,10 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         markMissing(el);
       } else {
         // Compact content preview: "2 boards, 5 cards, 1 file"
-        view.app.vault.cachedRead(bf).then((raw) => {
+        void view.app.vault.cachedRead(bf).then((raw) => {
           try {
-            const d = JSON.parse(raw);
-            const items: Item[] = Array.isArray(d.items) ? d.items : [];
+            const d = JSON.parse(raw) as { items?: unknown } | null;
+            const items = (Array.isArray(d?.items) ? d.items : []) as Item[];
             const boards = items.filter((i) => i.type === "board").length;
             const files = items.filter((i) => i.type === "file" || i.type === "image").length;
             const cards = items.length - boards - files;

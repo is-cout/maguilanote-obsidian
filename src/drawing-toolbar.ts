@@ -55,15 +55,17 @@ export function makePopover(view: BoardView, anchor: HTMLElement): HTMLElement {
   const pop = view.contentEl.createDiv({ cls: "mgn-ctx-popover" });
   const cr = view.contentEl.getBoundingClientRect();
   const ar = anchor.getBoundingClientRect();
-  pop.style.left = `${ar.right - cr.left + 8}px`;
-  pop.style.top = `${ar.top - cr.top}px`;
+  const left = Math.min(Math.max(8, ar.right - cr.left + 8), cr.width - 220);
+  const top = Math.min(Math.max(8, ar.top - cr.top), cr.height - 180);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
   const close = (e: PointerEvent) => {
     const t = e.target as Node;
     if (anchor.contains(t) || pop.contains(t)) return; // keep open for clicks inside
     pop.remove();
-    document.removeEventListener("pointerdown", close, true);
+    anchor.doc.removeEventListener("pointerdown", close, true);
   };
-  window.setTimeout(() => document.addEventListener("pointerdown", close, true), 0);
+  window.setTimeout(() => anchor.doc.addEventListener("pointerdown", close, true), 0);
   return pop;
 }
 
@@ -133,11 +135,15 @@ function renderSizeControl(view: BoardView, h: HTMLElement, session: DrawSession
 
 /** create the world-space SVG surface + viewBox aligned to the current view */
 function makeSurface(view: BoardView): SVGSVGElement {
-  const surface = view.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" }) as unknown as SVGSVGElement;
+  const surface = view.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" });
+  updateSurfaceViewBox(view, surface);
+  return surface;
+}
+
+export function updateSurfaceViewBox(view: BoardView, surface: SVGSVGElement) {
   const vr = view.viewportEl.getBoundingClientRect();
   const tl = view.screenToWorld(vr.left, vr.top);
   surface.setAttribute("viewBox", `${tl.x} ${tl.y} ${vr.width / view.zoom} ${vr.height / view.zoom}`);
-  return surface;
 }
 
 export function enterDrawMode(view: BoardView, editItem?: Item) {
@@ -179,7 +185,7 @@ export function enterDrawMode(view: BoardView, editItem?: Item) {
     else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
     else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
 
   view.drawMode = { session, toolbar, scrim, surface, editId: editItem?.id ?? null, keyHandler };
   if (editItem) view.render(); // hide the item being edited (shown live on the surface)
@@ -188,7 +194,7 @@ export function enterDrawMode(view: BoardView, editItem?: Item) {
 export function exitDrawMode(view: BoardView, save: boolean) {
   const dm = view.drawMode;
   if (!dm) return;
-  document.removeEventListener("keydown", dm.keyHandler, true);
+  view.containerEl.doc.removeEventListener("keydown", dm.keyHandler, true);
   dm.toolbar.close();
   dm.surface.remove();
   dm.scrim.remove();
@@ -238,7 +244,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
   const surface = body.createSvg("svg", {
     cls: ["mgn-draw-surface", "mgn-sketch-surface"],
     attr: { viewBox: `0 0 ${W} ${H}` },
-  }) as unknown as SVGSVGElement;
+  });
   surface.style.width = `${W}px`;
   surface.style.height = `${H}px`;
 
@@ -259,7 +265,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
       view.commit(false);
       view.rerenderItem(it);
     }
-    document.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("keydown", keyHandler, true);
     toolbar.close();
     ov.remove();
   };
@@ -269,7 +275,7 @@ export function openSketchPopup(view: BoardView, it: Item) {
     else if (m && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); session.undo(); }
     else if ((m && e.key.toLowerCase() === "z" && e.shiftKey) || (m && e.key.toLowerCase() === "y")) { e.preventDefault(); e.stopPropagation(); session.redo(); }
   };
-  document.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
   // clicking outside the sketch is often accidental, so save instead of discarding;
   // Escape remains the explicit way to discard
   ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(true); });

@@ -251,9 +251,15 @@ export function matchesBinding(e: KeyboardEvent, b: KeyBinding | null | undefine
 export function parseBoard(raw: string): BoardData {
   if (!raw || !raw.trim()) return structuredClone(DEFAULT_BOARD);
   try {
-    const d = JSON.parse(raw);
+    const d = JSON.parse(raw) as Partial<BoardData> | null;
+    if (!d || typeof d !== "object" || Array.isArray(d)) return structuredClone(DEFAULT_BOARD);
     if (!Array.isArray(d.items)) d.items = [];
     if (!Array.isArray(d.edges)) d.edges = [];
+    // drop only entries that carry no data (null/primitives). Never drop a real
+    // item: the next save would erase it for good (e.g. a card type written by a
+    // newer plugin version on another synced device).
+    d.items = d.items.filter((it: unknown) => !!it && typeof it === "object");
+    d.edges = d.edges.filter((edge: unknown) => !!edge && typeof edge === "object");
     d.version = d.version ?? 1;
     return d as BoardData;
   } catch {

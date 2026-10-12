@@ -10,7 +10,7 @@
 }
 .mgn-preview-panel {
   width: min(760px, 88%);
-  max-height: 86%;
+  max-height: min(86%, calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px));
   display: flex;
   flex-direction: column;
   background: var(--background-primary);
@@ -52,7 +52,7 @@
   flex-shrink: 0;
 }
 .mgn-preview-body {
-  padding: 16px 20px;
+  padding: 16px max(20px, env(safe-area-inset-left)) 16px max(20px, env(safe-area-inset-right));
   overflow-y: auto;
 }
 /* the embedded PDF viewer needs an explicit height to render */

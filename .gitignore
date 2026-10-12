@@ -26,3 +26,6 @@ Thumbs.db
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Local audit notes — never commit or sync
+.tmp/

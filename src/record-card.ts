@@ -1,7 +1,15 @@
-import { Notice, TFile, normalizePath } from "obsidian";
+import { Notice, TFile, normalizePath, requestUrl } from "obsidian";
 import type { BoardView } from "./board-view";
 import { pauseRecordAudio, renderRecordPlayer } from "./render";
 import { Item, newId } from "./types";
+
+const openRecordClosers = new Map<BoardView, Set<() => void>>();
+
+export function closeRecordPopups(view: BoardView) {
+  const closers = openRecordClosers.get(view);
+  if (!closers) return;
+  [...closers].forEach((close) => close());
+}
 
 /** save a binary blob into the configured assets folder, returning the created file */
 async function saveAssetBinary(view: BoardView, filename: string, buf: ArrayBuffer): Promise<TFile> {
@@ -40,7 +48,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
   const timer = body.createDiv({ cls: "mgn-record-timer", text: "00:00" });
   if (it.path) {
     const f = view.resolveFile(it.path);
-    if (f) renderRecordPlayer(body, it, view.app.vault.getResourcePath(f as TFile));
+    if (f) renderRecordPlayer(body, it, view.app.vault.getResourcePath(f));
   }
 
   const btnRow = body.createDiv({ cls: "mgn-record-btn-row" });
@@ -57,13 +65,16 @@ export function openRecordPopup(view: BoardView, it: Item) {
   let audioCtx: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
   let vizFrame: number | undefined;
+  let saveRecording = false;
+  let finished = false;
+  let stopping = false;
 
   const stopTimer = () => { if (timerHandle) window.clearInterval(timerHandle); timerHandle = undefined; };
   const stopStream = () => { stream?.getTracks().forEach((t) => t.stop()); stream = null; };
   const stopViz = () => {
     if (vizFrame) cancelAnimationFrame(vizFrame);
     vizFrame = undefined;
-    audioCtx?.close();
+    void audioCtx?.close();
     audioCtx = null;
     analyser = null;
     vizCtx?.clearRect(0, 0, viz.width, viz.height);
@@ -87,7 +98,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const h = Math.max(2, peak * viz.height);
       vizCtx.fillRect(i * barW + 1, (viz.height - h) / 2, barW - 2, h);
     }
-    vizFrame = requestAnimationFrame(drawViz);
+    vizFrame = window.requestAnimationFrame(drawViz);
   };
 
   const populateMics = async () => {
@@ -102,23 +113,54 @@ export function openRecordPopup(view: BoardView, it: Item) {
   };
   populateMics().catch(() => { status.setText("Could not list microphones"); });
 
-  const finish = () => {
+  const closePopup = () => {
+    if (finished) return;
+    finished = true;
     pauseRecordAudio(it.id);
     stopTimer();
     stopViz();
     stopStream();
-    recorder?.stop();
-    recorder = null;
-    document.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("keydown", keyHandler, true);
+    view.containerEl.doc.removeEventListener("visibilitychange", visibilityHandler);
+    const closers = openRecordClosers.get(view);
+    closers?.delete(closeForView);
+    if (closers?.size === 0) openRecordClosers.delete(view);
     ov.remove();
   };
-  const keyHandler = (e: KeyboardEvent) => {
-    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(); }
+  const cancelRecording = () => {
+    if (finished) return;
+    saveRecording = false;
+    if (recorder && recorder.state !== "inactive" && !stopping) {
+      stopping = true;
+      recorder.stop();
+    } else if (!recorder || recorder.state === "inactive") closePopup();
   };
-  document.addEventListener("keydown", keyHandler, true);
-  ov.addEventListener("pointerdown", (e) => { if (e.target === ov) finish(); });
+  const stopAndSaveRecording = () => {
+    if (finished) return;
+    saveRecording = true;
+    stopTimer();
+    stopViz();
+    stopStream();
+    if (recorder && recorder.state !== "inactive" && !stopping) {
+      stopping = true;
+      recorder.stop();
+    } else if (!recorder || recorder.state === "inactive") closePopup();
+  };
+  const closeForView = () => cancelRecording();
+  const visibilityHandler = () => {
+    if (view.containerEl.doc.visibilityState === "hidden") cancelRecording();
+  };
+  const closers = openRecordClosers.get(view) ?? new Set<() => void>();
+  closers.add(closeForView);
+  openRecordClosers.set(view, closers);
+  const keyHandler = (e: KeyboardEvent) => {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelRecording(); }
+  };
+  view.containerEl.doc.addEventListener("keydown", keyHandler, true);
+  view.containerEl.doc.addEventListener("visibilitychange", visibilityHandler);
+  ov.addEventListener("pointerdown", (e) => { if (e.target === ov) cancelRecording(); });
 
-  recordBtn.addEventListener("click", async () => {
+  recordBtn.addEventListener("click", () => void (async () => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: micSelect.value ? { deviceId: { exact: micSelect.value } } : true,
@@ -127,23 +169,57 @@ export function openRecordPopup(view: BoardView, it: Item) {
       status.setText("Microphone access denied");
       return;
     }
+    if (finished || (recorder && recorder.state !== "inactive")) {
+      stopStream();
+      return;
+    }
     chunks = [];
-    recorder = new MediaRecorder(stream);
+    if (typeof MediaRecorder === "undefined") {
+      stopStream();
+      status.setText("Audio recording is not supported on this device");
+      return;
+    }
+    const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+    const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+    if (!mimeType) {
+      stopStream();
+      status.setText("Audio recording is not supported on this device");
+      return;
+    }
+    try { recorder = new MediaRecorder(stream, { mimeType }); }
+    catch {
+      stopStream();
+      status.setText("Could not start audio recording");
+      return;
+    }
+    const activeRecorder = recorder;
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = async () => {
-      newBlob = new Blob(chunks, { type: "audio/webm" });
-      const buf = await newBlob.arrayBuffer();
-      const tf = await saveAssetBinary(view, "recording.webm", buf);
-      it.path = tf.path;
-      it.duration = Math.round((Date.now() - startedAt) / 1000);
-      // drop the empty-state height so the card shrinks to the compact player
-      delete it.h;
-      view.commit(false);
-      view.rerenderItem(it);
-      status.setText("Saved");
-      finish();
+      recorder = null;
+      const actualType = activeRecorder.mimeType || mimeType;
+      if (!saveRecording || finished) { closePopup(); return; }
+      try {
+        newBlob = new Blob(chunks, { type: actualType });
+        const buf = await newBlob.arrayBuffer();
+        const extension = actualType.includes("mp4") ? "m4a" : actualType.includes("ogg") ? "ogg" : "webm";
+        const tf = await saveAssetBinary(view, `recording.${extension}`, buf);
+        it.path = tf.path;
+        it.duration = Math.round((Date.now() - startedAt) / 1000);
+        delete it.h;
+        view.commit(false);
+        view.rerenderItem(it);
+        view.syncCardToolbar(); // the card now has a recording: show "Transcribe text"
+        status.setText("Saved");
+      } catch { status.setText("Could not save recording"); }
+      closePopup();
     };
-    recorder.start();
+    try { recorder.start(); }
+    catch {
+      recorder = null;
+      stopStream();
+      status.setText("Could not start audio recording");
+      return;
+    }
     startedAt = Date.now();
     status.setText("Recording…");
     recordBtn.disabled = true;
@@ -158,14 +234,11 @@ export function openRecordPopup(view: BoardView, it: Item) {
       const s = Math.floor((Date.now() - startedAt) / 1000);
       timer.setText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`);
     }, 250);
-  });
+  })());
 
   stopBtn.addEventListener("click", () => {
-    stopTimer();
-    stopViz();
-    stopStream();
-    recorder?.stop();
-    recordBtn.disabled = false;
+    stopAndSaveRecording();
+    recordBtn.disabled = true;
     stopBtn.disabled = true;
   });
 }
@@ -173,7 +246,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
 /** transcribe a record card's audio via the OpenAI Whisper API, dropping the
  * result into a new note card connected back to the recording */
 export async function transcribeRecord(view: BoardView, it: Item) {
-  const apiKey = view.plugin.getOpenAiApiKey();
+  const apiKey = await view.plugin.getOpenAiApiKey();
   if (!apiKey) {
     new Notice("Set an OpenAI API key in Settings → Recording first");
     return;
@@ -188,15 +261,21 @@ export async function transcribeRecord(view: BoardView, it: Item) {
   try {
     const buf = await view.app.vault.readBinary(f);
     const form = new FormData();
-    form.append("file", new Blob([buf], { type: "audio/webm" }), f.name);
+    const mime = /\.m4a$/i.test(f.name) ? "audio/mp4" : /\.ogg$/i.test(f.name) ? "audio/ogg" : "audio/webm";
+    form.append("file", new Blob([buf], { type: mime }), f.name);
     form.append("model", "whisper-1");
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    // requestUrl takes a raw body, so let Response encode the multipart form (and its boundary).
+    const encoded = new Response(form);
+    const res = await requestUrl({
+      url: "https://api.openai.com/v1/audio/transcriptions",
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
+      contentType: encoded.headers.get("content-type") ?? undefined,
+      body: await encoded.arrayBuffer(),
+      throw: false,
     });
-    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-    const data = await res.json();
+    if (res.status >= 400) throw new Error(`${res.status} ${res.text}`);
+    const data = res.json as { text?: string };
     text = (data.text ?? "").trim();
   } catch (err) {
     new Notice(`Transcription failed: ${err instanceof Error ? err.message : err}`);

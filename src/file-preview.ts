@@ -16,7 +16,7 @@ export function relinkItem(view: BoardView, it: Item) {
 export async function openPreviewFor(view: BoardView, it: Item) {
   if (it.type === "board") {
     const bf = view.resolveFile(it.path);
-    if (bf) view.navigateTo(bf);
+    if (bf) void view.navigateTo(bf);
     else view.relinkItem(it);
     return;
   }
@@ -38,7 +38,7 @@ export async function openPreviewFor(view: BoardView, it: Item) {
   const openBtn = actions.createEl("button", { text: "Open in Obsidian" });
   openBtn.addEventListener("click", () => {
     view.closePreview();
-    view.app.workspace.getLeaf("tab").openFile(f);
+    void view.app.workspace.getLeaf("tab").openFile(f);
   });
   const closeBtn = actions.createEl("button", { cls: "mgn-preview-close", text: "✕" });
   closeBtn.addEventListener("click", () => view.closePreview());

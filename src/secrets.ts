@@ -14,40 +14,42 @@ interface SecretsFile {
   openaiApiKey?: string;
 }
 
-function secretsPath(): string {
-  const os = require("os");
-  const path = require("path");
-  return path.join(os.homedir(), ".maguilanote", "secrets.json");
+// Node modules are loaded lazily behind a desktop guard: they don't exist on mobile.
+async function nodeModules() {
+  if (!Platform.isDesktop) return null;
+  const [fs, os, path] = await Promise.all([import("fs"), import("os"), import("path")]);
+  return { fs, path, file: path.join(os.homedir(), ".maguilanote", "secrets.json") };
 }
 
-function readSecretsFile(): SecretsFile {
-  const fs = require("fs");
+async function readSecretsFile(): Promise<SecretsFile> {
+  const node = await nodeModules();
+  if (!node) return {};
   try {
-    return JSON.parse(fs.readFileSync(secretsPath(), "utf8"));
+    return JSON.parse(node.fs.readFileSync(node.file, "utf8")) as SecretsFile;
   } catch {
     return {};
   }
 }
 
-function writeSecretsFile(data: SecretsFile) {
-  const fs = require("fs");
-  const path = require("path");
-  const dir = path.dirname(secretsPath());
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(secretsPath(), JSON.stringify(data, null, 2), "utf8");
+async function writeSecretsFile(data: SecretsFile) {
+  const node = await nodeModules();
+  if (!node) return;
+  const { fs, path, file } = node;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
   try {
-    fs.chmodSync(secretsPath(), 0o600); // best-effort; no-op on Windows
+    fs.chmodSync(file, 0o600); // best-effort; no-op on Windows
   } catch {
     // ignore — not all filesystems support POSIX permissions
   }
 }
 
-export function loadOpenAiApiKey(): string {
+export async function loadOpenAiApiKey(): Promise<string> {
   if (!Platform.isDesktopApp) return "";
-  return readSecretsFile().openaiApiKey ?? "";
+  return (await readSecretsFile()).openaiApiKey ?? "";
 }
 
-export function saveOpenAiApiKey(key: string) {
+export async function saveOpenAiApiKey(key: string) {
   if (!Platform.isDesktopApp) return;
-  writeSecretsFile({ ...readSecretsFile(), openaiApiKey: key });
+  await writeSecretsFile({ ...(await readSecretsFile()), openaiApiKey: key });
 }
