@@ -208,6 +208,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
         delete it.h;
         view.commit(false);
         view.rerenderItem(it);
+        view.syncCardToolbar(); // the card now has a recording: show "Transcribe text"
         status.setText("Saved");
       } catch { status.setText("Could not save recording"); }
       closePopup();

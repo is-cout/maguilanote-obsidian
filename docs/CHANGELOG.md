@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **The card toolbar now shows "Transcribe text" right after a recording finishes.** The toolbar was only rebuilt on selection changes, so a freshly recorded card kept its pre-recording toolbar until it was deselected and selected again. Saving a recording now re-syncs the toolbar. Files: `src/record-card.ts`.
+
 - **Follow-up fixes to the iPad input contribution (PR #2), before 1.1.0 ships.** `parseBoard` no longer drops items it can't fully validate (unknown card types, odd values) — whatever it dropped was erased from disk on the next save, including cards written by a newer plugin version on another synced device; it now only drops `null`/non-object entries. Pinch / two-finger pan no longer drifts away: each frame is recomputed from the gesture's start camera instead of re-adding the total midpoint delta. Record card audio is reused across re-renders again (moved into the new card instead of recreated), so playback no longer stops whenever a card moves. Files: `src/types.ts`, `src/board-interaction.ts`, `src/render.ts`, `test/types.test.ts`.
 
 ## 2026-08-26 (1.1.0)
