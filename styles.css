@@ -816,6 +816,22 @@ body.mgn-todo-grabbing * {
 .mgn-card:hover .mgn-resize {
   opacity: 0.8;
 }
+@media (hover: none) {
+  .mgn-card.mgn-selected .mgn-connector {
+    opacity: 1;
+  }
+  .mgn-card.mgn-selected .mgn-resize {
+    opacity: 0.8;
+  }
+}
+@media (pointer: coarse) {
+  .mgn-connector::after,
+  .mgn-resize::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+}
 .mgn-lock-badge {
   position: absolute;
   top: 4px;
@@ -1146,6 +1162,45 @@ body.mgn-todo-grabbing * {
     max-width: calc(100% - 12px);
     overflow-x: auto;
   }
+}
+.is-phone .mgn-root {
+  --mgn-bottom-inset: max(14px, env(safe-area-inset-bottom));
+}
+.is-phone.is-floating-nav .mgn-root,
+.is-phone.auto-full-screen .mgn-root {
+  --mgn-bottom-inset: calc(var(--view-bottom-spacing) + 8px);
+}
+.is-phone .mgn-tool,
+.is-phone .mgn-zoom-100 {
+  min-width: 34px;
+  min-height: 34px;
+  height: 34px;
+}
+.is-phone .mgn-tool {
+  width: 34px;
+}
+.is-phone .mgn-toolbar,
+.is-phone .mgn-zoombar {
+  max-width: calc(100% - 12px);
+}
+.is-phone .mgn-toolbar > *,
+.is-phone .mgn-zoombar > * {
+  flex-shrink: 0;
+}
+.is-phone .mgn-toolbar {
+  left: max(6px, env(safe-area-inset-left));
+  transform: none;
+  top: calc(max(10px, env(safe-area-inset-top)) + 40px);
+  bottom: calc(var(--mgn-bottom-inset) + 52px);
+  max-height: none;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+.is-phone .mgn-zoombar {
+  right: max(6px, env(safe-area-inset-right));
+  bottom: var(--mgn-bottom-inset);
+  overflow-x: auto;
+  touch-action: pan-x;
 }
 .mgn-shortcut-key {
   font-family: var(--font-monospace);

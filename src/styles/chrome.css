@@ -69,7 +69,6 @@
   background: var(--mgn-panel-border);
   margin: 4px 2px;
 }
-/* drag-only tool clicked instead of dragged: shake + hint */
 /* ------------ bottom bar (zoom + snap) ------------ */
 .mgn-zoombar {
   position: absolute;
@@ -259,6 +258,50 @@
     max-width: calc(100% - 12px);
     overflow-x: auto;
   }
+}
+
+/* phones: smaller buttons, and both bars kept clear of the breadcrumb and of
+   Obsidian's floating navbar, scrolling when they don't fit */
+.is-phone .mgn-root {
+  --mgn-bottom-inset: max(14px, env(safe-area-inset-bottom));
+}
+.is-phone.is-floating-nav .mgn-root,
+.is-phone.auto-full-screen .mgn-root {
+  /* Obsidian's own spacing for its floating navbar (only a length here) */
+  --mgn-bottom-inset: calc(var(--view-bottom-spacing) + 8px);
+}
+.is-phone .mgn-tool,
+.is-phone .mgn-zoom-100 {
+  min-width: 34px;
+  min-height: 34px;
+  height: 34px;
+}
+.is-phone .mgn-tool {
+  width: 34px;
+}
+.is-phone .mgn-toolbar,
+.is-phone .mgn-zoombar {
+  max-width: calc(100% - 12px);
+}
+.is-phone .mgn-toolbar > *,
+.is-phone .mgn-zoombar > * {
+  flex-shrink: 0;
+}
+.is-phone .mgn-toolbar {
+  left: max(6px, env(safe-area-inset-left));
+  transform: none;
+  /* below the breadcrumb, above the zoom bar */
+  top: calc(max(10px, env(safe-area-inset-top)) + 40px);
+  bottom: calc(var(--mgn-bottom-inset) + 52px);
+  max-height: none;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+.is-phone .mgn-zoombar {
+  right: max(6px, env(safe-area-inset-right));
+  bottom: var(--mgn-bottom-inset);
+  overflow-x: auto;
+  touch-action: pan-x;
 }
 
 .mgn-shortcut-key {

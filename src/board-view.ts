@@ -570,6 +570,11 @@ export class BoardView extends TextFileView {
       e.preventDefault();
       e.stopPropagation();
     }, { passive: false, capture: true });
+    // The toolbars sit outside the viewport: keep their touches (a tool dragged
+    // sideways, a bar scrolled) from reaching Obsidian's sidebar swipe too.
+    // No preventDefault here, so taps and the bars' own scrolling still work.
+    for (const type of ["touchstart", "touchmove"] as const)
+      this.registerDomEvent(root, type, (e) => e.stopPropagation());
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPointerDown(e));
     this.registerDomEvent(this.viewportEl, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(this.viewportEl, "pointerup", (e) => this.onPointerUp(e));
