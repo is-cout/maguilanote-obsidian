@@ -30,9 +30,10 @@
   background: var(--mgn-panel-hover-bg);
   color: var(--mgn-panel-text-strong);
 }
-.mgn-tool-dragging {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+/* beats `.mgn-tool:hover` (same specificity, declared later) */
+.mgn-root .mgn-tool-dragging {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
   opacity: 0.7;
 }
 .mgn-tool-drag-ghost {
@@ -56,9 +57,9 @@
   width: 17px;
   height: 17px;
 }
-.mgn-tool-active {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+.mgn-root .mgn-tool-active {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
 }
 .mgn-tool svg {
   width: 17px;

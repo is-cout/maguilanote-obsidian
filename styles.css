@@ -84,8 +84,10 @@
 }
 
 /* src/styles/layout.css */
+.workspace-leaf .workspace-leaf-content .mgn-root.view-content {
+  padding: 0;
+}
 .mgn-root {
-  padding: 0 !important;
   overflow: hidden;
   position: relative;
   height: 100%;
@@ -170,11 +172,11 @@
 .mgn-card.mgn-hit {
   outline: 2px solid var(--mgn-hit);
 }
-.mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
-  pointer-events: none !important;
+.mgn-root .mgn-card:not(.mgn-selected) :is(input, textarea, audio, video, iframe, a, button, .mgn-swatch-input) {
+  pointer-events: none;
 }
-.mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
-  pointer-events: auto !important;
+.mgn-root .mgn-card:not(.mgn-selected) :is(.mgn-todo-check, .mgn-todo-grip, .mgn-record-player, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, .mgn-video-play, .mgn-video-progress) {
+  pointer-events: auto;
 }
 .mgn-card.mgn-missing {
   outline: 2px dashed var(--mgn-danger);
@@ -232,42 +234,42 @@
 .mgn-note-body-editing {
   pointer-events: auto;
 }
-.mgn-note-body,
-.mgn-note-body p,
-.mgn-note-body li,
-.mgn-note-body h4,
-.mgn-note-body h5,
-.mgn-note-body h6,
-.mgn-note-body strong,
-.mgn-note-body em,
-.mgn-note-body span,
-.mgn-note-body td,
-.mgn-note-body th,
-.mgn-note-body blockquote {
-  color: inherit !important;
-  background: transparent !important;
-  font-size: 1em !important;
+.mgn-root .mgn-note-body,
+.mgn-root .mgn-note-body p,
+.mgn-root .mgn-note-body li,
+.mgn-root .mgn-note-body h4,
+.mgn-root .mgn-note-body h5,
+.mgn-root .mgn-note-body h6,
+.mgn-root .mgn-note-body strong,
+.mgn-root .mgn-note-body em,
+.mgn-root .mgn-note-body span,
+.mgn-root .mgn-note-body td,
+.mgn-root .mgn-note-body th,
+.mgn-root .mgn-note-body blockquote {
+  color: inherit;
+  background: transparent;
+  font-size: 1em;
 }
-.mgn-note-body h1,
-.mgn-note-body h2,
-.mgn-note-body h3 {
-  color: inherit !important;
-  background: transparent !important;
-  font-size: 1.5em !important;
+.mgn-root .mgn-note-body h1,
+.mgn-root .mgn-note-body h2,
+.mgn-root .mgn-note-body h3 {
+  color: inherit;
+  background: transparent;
+  font-size: 1.5em;
 }
-.mgn-note-body h2 {
-  font-size: 1.3em !important;
+.mgn-root .mgn-note-body h2 {
+  font-size: 1.3em;
 }
-.mgn-note-body h3 {
-  font-size: 1.15em !important;
+.mgn-root .mgn-note-body h3 {
+  font-size: 1.15em;
 }
-.mgn-note-body a {
-  color: var(--mgn-link) !important;
+.mgn-root .mgn-note-body a {
+  color: var(--mgn-link);
 }
-.mgn-note-body pre,
-.mgn-note-body code {
-  background: color-mix(in srgb, currentColor 10%, transparent) !important;
-  color: inherit !important;
+.mgn-root .mgn-note-body pre,
+.mgn-root .mgn-note-body code {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
 }
 .mgn-note-body p:first-child {
   margin-top: 0;
@@ -291,13 +293,13 @@
   padding-left: 0.7em;
   opacity: 0.85;
 }
-.mgn-note-body pre {
+.mgn-root .mgn-note-body pre {
   padding: 6px 8px;
   border-radius: 4px;
-  font-size: 0.85em !important;
+  font-size: 0.85em;
 }
-.mgn-note-body code {
-  font-size: 0.9em !important;
+.mgn-root .mgn-note-body code {
+  font-size: 0.9em;
 }
 .mgn-note-body a {
   pointer-events: auto;
@@ -307,29 +309,29 @@
   opacity: 0.55;
   font-style: italic;
 }
-.mgn-note-edit {
-  width: 100% !important;
+.mgn-root .mgn-note-edit {
+  width: 100%;
   min-height: 22px;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border: none;
+  outline: none;
+  box-shadow: none;
   resize: none;
-  background: transparent !important;
-  color: inherit !important;
-  font: inherit !important;
-  padding: 0 !important;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
   pointer-events: auto;
 }
-.mgn-card input[type=text] {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: inherit !important;
+.mgn-root .mgn-card input[type=text] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: inherit;
 }
-.mgn-card input:focus,
-.mgn-card textarea:focus {
-  outline: none !important;
-  box-shadow: none !important;
+.mgn-root .mgn-card input:focus,
+.mgn-root .mgn-card textarea:focus {
+  outline: none;
+  box-shadow: none;
 }
 .mgn-card-title {
   margin-bottom: var(--mgn-space-sm);
@@ -346,8 +348,8 @@
   outline: none;
   padding: 0;
 }
-.mgn-card-title-text::placeholder {
-  color: inherit !important;
+.mgn-root .mgn-card-title-text::placeholder {
+  color: inherit;
   opacity: 1;
 }
 .mgn-image img {
@@ -605,8 +607,8 @@
   flex-direction: column;
   gap: 2px;
 }
-.mgn-todo-text::placeholder {
-  color: inherit !important;
+.mgn-root .mgn-todo-text::placeholder {
+  color: inherit;
   opacity: 0.5;
   font-style: italic;
 }
@@ -616,20 +618,20 @@
   gap: 3px;
   padding: 0 4px;
 }
-.mgn-card input.mgn-todo-check {
-  appearance: none !important;
-  -webkit-appearance: none !important;
+.mgn-root .mgn-card input.mgn-todo-check {
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
-  width: 16px !important;
-  height: 16px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 5px !important;
-  color: inherit !important;
-  border: 2px solid currentColor !important;
-  opacity: 1 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border-radius: 5px;
+  color: inherit;
+  border: 2px solid currentColor;
+  opacity: 1;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -640,9 +642,9 @@
 .mgn-card input.mgn-todo-check:active {
   transform: scale(0.88);
 }
-.mgn-card input.mgn-todo-check:checked {
-  background: var(--mgn-success) !important;
-  border-color: var(--mgn-success) !important;
+.mgn-root .mgn-card input.mgn-todo-check:checked {
+  background: var(--mgn-success);
+  border-color: var(--mgn-success);
 }
 .mgn-todo-check::after {
   content: "";
@@ -690,12 +692,13 @@
 .mgn-todo-row:hover .mgn-todo-grip {
   opacity: 0.45;
 }
-.mgn-todo-grip:hover {
-  opacity: 0.9 !important;
+.mgn-todo-row .mgn-todo-grip:hover {
+  opacity: 0.9;
 }
-body.mgn-todo-grabbing,
-body.mgn-todo-grabbing * {
-  cursor: move !important;
+:root body.mgn-todo-grabbing,
+:root body.mgn-todo-grabbing *,
+:root body.mgn-todo-grabbing .mgn-root * {
+  cursor: move;
 }
 .mgn-todo-ghost {
   position: fixed;
@@ -770,12 +773,12 @@ body.mgn-todo-grabbing * {
   gap: var(--mgn-space-sm);
   min-height: 40px;
 }
-.mgn-col-body .mgn-card {
+.mgn-root .mgn-col-body .mgn-card {
   position: relative;
-  width: 100% !important;
-  left: auto !important;
-  top: auto !important;
-  min-height: unset !important;
+  width: 100%;
+  left: auto;
+  top: auto;
+  min-height: unset;
 }
 .mgn-col-empty {
   min-height: 34px;
@@ -926,9 +929,9 @@ body.mgn-todo-grabbing * {
   background: var(--mgn-panel-hover-bg);
   color: var(--mgn-panel-text-strong);
 }
-.mgn-tool-dragging {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+.mgn-root .mgn-tool-dragging {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
   opacity: 0.7;
 }
 .mgn-tool-drag-ghost {
@@ -952,9 +955,9 @@ body.mgn-todo-grabbing * {
   width: 17px;
   height: 17px;
 }
-.mgn-tool-active {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+.mgn-root .mgn-tool-active {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
 }
 .mgn-tool svg {
   width: 17px;
@@ -1301,9 +1304,9 @@ img.mgn-preview-media {
   width: 17px;
   height: 17px;
 }
-.mgn-ctx-active {
-  background: var(--mgn-accent) !important;
-  color: var(--mgn-white) !important;
+.mgn-root .mgn-ctx-active {
+  background: var(--mgn-accent);
+  color: var(--mgn-white);
 }
 .mgn-ctx-sep {
   width: 20px;
@@ -1444,10 +1447,10 @@ img.mgn-preview-media {
   cursor: crosshair;
   touch-action: none;
 }
-.mgn-mic-dropdown {
-  width: 170px !important;
-  max-width: 170px !important;
-  flex: 0 0 auto !important;
+.setting-item-control select.mgn-mic-dropdown {
+  width: 170px;
+  max-width: 170px;
+  flex: 0 0 auto;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1498,8 +1501,10 @@ img.mgn-preview-media {
 .mgn-drawing {
   padding: 0;
   border: none;
-  background: transparent !important;
   box-shadow: none;
+}
+.mgn-card.mgn-drawing {
+  background: transparent;
 }
 .mgn-drawing-svg {
   display: block;
