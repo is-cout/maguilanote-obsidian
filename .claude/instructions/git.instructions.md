@@ -92,4 +92,4 @@ by this point — each `feat`/`fix` bumped it when it shipped (see
 8. Push `main`, `develop`, and the tag: `git push origin main develop <x.y.z>`.
 9. Delete the `release/<x.y.z>` branch.
 
-Pushing the `x.y.z` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder).
+Pushing the `x.y.z` tag triggers the `.github/workflows/release.yml` GitHub Action, which builds the plugin and publishes a GitHub Release containing only `main.js`, `manifest.json`, and `styles.css` (the files a user drops into their vault's plugin folder). The same workflow also publishes signed build provenance attestations for those three files (`actions/attest-build-provenance`), which the Obsidian plugin scorecard checks for.
