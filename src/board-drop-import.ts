@@ -14,13 +14,14 @@ export async function onDrop(view: BoardView, e: DragEvent) {
   }
 
   // drag from Obsidian's file explorer (internal drag manager)
-  const dm = (view.app as any).dragManager;
+  // dragManager is internal (not in the public API), so only rely on the fields we check
+  const dm = (view.app as unknown as { dragManager?: { draggable?: { type?: string; file?: unknown; files?: unknown } | null } }).dragManager;
   const draggable = dm?.draggable;
   if (draggable) {
     const files: TFile[] = [];
     if (draggable.type === "file" && draggable.file instanceof TFile) files.push(draggable.file);
     if (draggable.type === "files" && Array.isArray(draggable.files)) {
-      for (const f of draggable.files) if (f instanceof TFile) files.push(f);
+      for (const f of draggable.files as unknown[]) if (f instanceof TFile) files.push(f);
     }
     if (files.length) {
       let off = 0;

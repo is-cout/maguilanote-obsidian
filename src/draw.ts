@@ -214,7 +214,7 @@ export class DrawSession {
   undo() {
     if (!this.undoStack.length) return;
     this.redoStack.push(JSON.stringify(this.strokes));
-    this.strokes = JSON.parse(this.undoStack.pop()!);
+    this.strokes = JSON.parse(this.undoStack.pop()!) as Stroke[];
     this.selection.clear();
     this.render();
     this.onChange?.();
@@ -223,7 +223,7 @@ export class DrawSession {
   redo() {
     if (!this.redoStack.length) return;
     this.undoStack.push(JSON.stringify(this.strokes));
-    this.strokes = JSON.parse(this.redoStack.pop()!);
+    this.strokes = JSON.parse(this.redoStack.pop()!) as Stroke[];
     this.selection.clear();
     this.render();
     this.onChange?.();

@@ -1,4 +1,5 @@
 import type { BoardView } from "./board-view";
+import type { BoardData } from "./types";
 
 /** push history snapshot, save + rerender */
 export function commit(view: BoardView, rerender = true) {
@@ -13,7 +14,7 @@ export function commit(view: BoardView, rerender = true) {
 export function undo(view: BoardView) {
   if (view.histIdx <= 0) return;
   view.histIdx--;
-  view.board = JSON.parse(view.history[view.histIdx]);
+  view.board = JSON.parse(view.history[view.histIdx]) as BoardData;
   view.selection.clear();
   view.requestSave();
   view.render();
@@ -22,7 +23,7 @@ export function undo(view: BoardView) {
 export function redo(view: BoardView) {
   if (view.histIdx >= view.history.length - 1) return;
   view.histIdx++;
-  view.board = JSON.parse(view.history[view.histIdx]);
+  view.board = JSON.parse(view.history[view.histIdx]) as BoardData;
   view.selection.clear();
   view.requestSave();
   view.render();

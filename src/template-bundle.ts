@@ -46,7 +46,7 @@ export async function collectBundle(app: App, rootFile: TFile): Promise<Template
     boards[file.path] = raw;
     let data: BoardData;
     try {
-      data = JSON.parse(raw);
+      data = JSON.parse(raw) as BoardData;
     } catch {
       return;
     }
@@ -119,7 +119,7 @@ export async function unbundleTemplate(app: App, bundle: TemplateBundle, destFol
   for (const [orig, raw] of Object.entries(bundle.boards)) {
     let data: BoardData | null = null;
     try {
-      data = JSON.parse(raw);
+      data = JSON.parse(raw) as BoardData;
     } catch {
       // not valid JSON — write through unchanged, no path rewriting possible
     }

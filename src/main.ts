@@ -69,6 +69,15 @@ const DEFAULT_SETTINGS: MaguilanoteSettings = {
   openaiApiKey: "",
 };
 
+/** A JSON Canvas node/edge as read from disk: every field is untrusted until checked. */
+interface CanvasNode {
+  id?: unknown; type?: unknown; x?: unknown; y?: unknown; width?: unknown; height?: unknown;
+  text?: unknown; file?: unknown; url?: unknown; label?: unknown; children?: unknown;
+}
+interface CanvasEdge { fromNode?: unknown; toNode?: unknown; label?: unknown }
+
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
 export default class MaguilanotePlugin extends Plugin {
   settings: MaguilanoteSettings = DEFAULT_SETTINGS;
   /** internal clipboard shared across boards */
@@ -274,7 +283,7 @@ export default class MaguilanotePlugin extends Plugin {
       if (!raw.includes(oldPath)) continue;
       let data: BoardData;
       try {
-        data = JSON.parse(raw);
+        data = JSON.parse(raw) as BoardData;
       } catch {
         continue; // corrupt file — never rewrite it
       }
@@ -354,7 +363,7 @@ export default class MaguilanotePlugin extends Plugin {
   async importTemplateFile(raw: string, displayName: string, view: BoardView) {
     let bundle: TemplateBundle;
     try {
-      bundle = JSON.parse(raw);
+      bundle = JSON.parse(raw) as TemplateBundle;
       if (bundle.format !== "maguilanote-template") throw new Error("not a template");
     } catch {
       new Notice("Not a valid Maguilanote template file");
@@ -379,21 +388,22 @@ export default class MaguilanotePlugin extends Plugin {
 
   async importJsonCanvas(file: TFile, view: BoardView) {
     try {
-      const data = JSON.parse(await this.app.vault.read(file));
+      const data = JSON.parse(await this.app.vault.read(file)) as { nodes?: unknown; edges?: unknown } | null;
       if (!data || !Array.isArray(data.nodes)) throw new Error("invalid JSON Canvas");
-      const canvasEdges = Array.isArray(data.edges) ? data.edges : [];
+      const nodes = data.nodes as (CanvasNode | null)[];
+      const canvasEdges = (Array.isArray(data.edges) ? data.edges : []) as (CanvasEdge | null)[];
       const ids = new Map<string, string>();
       const seenNodeIds = new Set<string>();
       const groups = new Map<string, Item>();
       const imported: Item[] = [];
-      for (const node of data.nodes) {
-        if (!node || typeof node !== "object" || typeof node.id !== "string" || seenNodeIds.has(node.id) || !Number.isFinite(node.x) || !Number.isFinite(node.y) || !["text", "file", "link", "group"].includes(node.type)) continue;
+      for (const node of nodes) {
+        if (!node || typeof node !== "object" || typeof node.id !== "string" || seenNodeIds.has(node.id) || !isFiniteNumber(node.x) || !isFiniteNumber(node.y) || typeof node.type !== "string" || !["text", "file", "link", "group"].includes(node.type)) continue;
         seenNodeIds.add(node.id);
         const id = newId();
         const item: Item = {
           id, type: node.type === "group" ? "column" : node.type === "file" ? "file" : node.type === "link" ? "link" : "note",
-          x: node.x, y: node.y, w: Number.isFinite(node.width) ? Math.max(120, node.width) : 260,
-          h: Number.isFinite(node.height) ? Math.max(48, node.height) : undefined,
+          x: node.x, y: node.y, w: isFiniteNumber(node.width) ? Math.max(120, node.width) : 260,
+          h: isFiniteNumber(node.height) ? Math.max(48, node.height) : undefined,
         };
         if (item.type === "note") item.text = typeof node.text === "string" ? node.text : "";
         if (item.type === "file") {
@@ -409,16 +419,16 @@ export default class MaguilanotePlugin extends Plugin {
         ids.set(node.id, id);
         imported.push(item);
       }
-      for (const node of data.nodes) {
-        if (node?.type !== "group" || !Array.isArray(node.children)) continue;
+      for (const node of nodes) {
+        if (node?.type !== "group" || typeof node.id !== "string" || !Array.isArray(node.children)) continue;
         const parent = groups.get(node.id);
         if (!parent) continue;
-        for (const childId of node.children) {
+        for (const childId of node.children as unknown[]) {
           const child = typeof childId === "string" ? imported.find((it) => it.id === ids.get(childId)) : undefined;
           if (child && child.id !== parent.id) child.parent = parent.id;
         }
       }
-      const edges = canvasEdges.flatMap((edge: any) => {
+      const edges = canvasEdges.flatMap((edge) => {
         if (!edge || typeof edge.fromNode !== "string" || typeof edge.toNode !== "string") return [];
         const from = ids.get(edge.fromNode), to = ids.get(edge.toNode);
         return from && to ? [{ id: newId(), from, to, arrow: true, mode: "free" as const, label: typeof edge.label === "string" ? edge.label : undefined }] : [];
@@ -554,7 +564,7 @@ export default class MaguilanotePlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<MaguilanoteSettings> | null);
     this.settings.keybindings = Object.assign(
       {},
       DEFAULT_KEYBINDINGS,
@@ -618,7 +628,7 @@ class TemplatePicker extends FuzzySuggestModal<TFile> {
     const raw = await this.app.vault.read(f);
     let bundle: TemplateBundle;
     try {
-      bundle = JSON.parse(raw);
+      bundle = JSON.parse(raw) as TemplateBundle;
     } catch {
       new Notice("Invalid template file");
       return;

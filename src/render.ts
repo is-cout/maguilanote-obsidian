@@ -494,8 +494,8 @@ export function renderCardFn(view: BoardView, it: Item, inColumn = false): HTMLE
         // Compact content preview: "2 boards, 5 cards, 1 file"
         void view.app.vault.cachedRead(bf).then((raw) => {
           try {
-            const d = JSON.parse(raw);
-            const items: Item[] = Array.isArray(d.items) ? d.items : [];
+            const d = JSON.parse(raw) as { items?: unknown } | null;
+            const items = (Array.isArray(d?.items) ? d.items : []) as Item[];
             const boards = items.filter((i) => i.type === "board").length;
             const files = items.filter((i) => i.type === "file" || i.type === "image").length;
             const cards = items.length - boards - files;
