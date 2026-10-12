@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **New contributor rule: the user's drafted messages are posted verbatim** (no grammar, capitalization or punctuation fixes). Files: `.claude/CLAUDE.md`.
+
 - **Release assets now ship with GitHub artifact attestations, and the repo has a contributing guide.** Both were flagged on the Obsidian plugin scorecard ([issue #3](https://github.com/is-cout/maguilanote-obsidian/issues/3)). The release workflow signs build provenance for `main.js`, `manifest.json` and `styles.css` via `actions/attest-build-provenance` (takes effect from the next release). No plugin code change, so no version bump. Files: `.github/workflows/release.yml`, `CONTRIBUTING.md`, `README.md`, `.claude/instructions/git.instructions.md`.
 
 - **Follow-up fixes to the iPad input contribution (PR #2), before 1.1.0 ships.** `parseBoard` no longer drops items it can't fully validate (unknown card types, odd values) — whatever it dropped was erased from disk on the next save, including cards written by a newer plugin version on another synced device; it now only drops `null`/non-object entries. Pinch / two-finger pan no longer drifts away: each frame is recomputed from the gesture's start camera instead of re-adding the total midpoint delta. Record card audio is reused across re-renders again (moved into the new card instead of recreated), so playback no longer stops whenever a card moves. Files: `src/types.ts`, `src/board-interaction.ts`, `src/render.ts`, `test/types.test.ts`.

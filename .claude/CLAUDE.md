@@ -55,6 +55,9 @@ Summarize what was done, what's verified, and what's left. Don't continue from a
 ### Match Codebase Conventions
 Conformance over personal taste inside the codebase. If you think a convention is genuinely harmful, surface it — don't fork silently.
 
+### Post the User's Drafts Verbatim
+When the user writes the text of a message to be posted anywhere (issue/PR comment, commit message, release note, chat), post it **exactly** as written — no grammar fixes, no capitalization, no punctuation changes, no rewording. Lowercase and informal style are intentional. If something looks like a real mistake (wrong link, wrong number), ask before changing it.
+
 ### Fail Loud
 "Completed" is wrong if anything was skipped silently. "Tests pass" is wrong if any were skipped. Default to surfacing uncertainty, not hiding it.
 
