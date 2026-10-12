@@ -965,34 +965,6 @@ body.mgn-todo-grabbing * {
   background: var(--mgn-panel-border);
   margin: 4px 2px;
 }
-.mgn-tool-shake {
-  animation: mgn-shake 0.4s ease;
-}
-@keyframes mgn-shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  20%, 60% {
-    transform: translateX(-4px);
-  }
-  40%, 80% {
-    transform: translateX(4px);
-  }
-}
-.mgn-drag-hint {
-  position: absolute;
-  left: calc(100% + 8px);
-  white-space: nowrap;
-  background: var(--mgn-panel-bg);
-  color: var(--mgn-panel-text);
-  border: 1px solid var(--mgn-panel-border);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 12px;
-  box-shadow: var(--mgn-panel-shadow);
-  pointer-events: none;
-  z-index: 30;
-}
 .mgn-zoombar {
   position: absolute;
   right: max(14px, env(safe-area-inset-right));
@@ -1142,6 +1114,9 @@ body.mgn-todo-grabbing * {
   .mgn-toolbar {
     max-height: calc(100vh - 32px);
     overflow-y: auto;
+  }
+  .mgn-toolbar.mgn-toolbar-scrolls {
+    touch-action: pan-y;
   }
 }
 @media (orientation: portrait) and (pointer: coarse) {

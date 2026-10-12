@@ -64,7 +64,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 
 - The ribbon icon or the **"Maguilanote: New board"** command creates a `.board` file.
 - **Double-click the board's name in the breadcrumb trail to rename it** — Markdown links and nested-board references across your vault update automatically.
-- Double-click the canvas to create a note. On iPad, use one finger to pan, Apple Pencil to manipulate cards, pinch or two fingers to zoom/pan, and long-press a card for its context menu. The left toolbar adds every other card type — **drag** a tool onto the canvas to create it where you drop it (a plain click on a drag-only tool just shakes it as a hint). Draw is the exception: click it (or press `D`) to enter draw mode; touch is ignored while Pencil draws.
+- Double-click the canvas to create a note. On iPad, use one finger to pan, Apple Pencil to manipulate cards, pinch or two fingers to zoom/pan, and long-press a card for its context menu. The left toolbar adds every other card type — **drag** a tool onto the canvas to create it where you drop it or tap/click it to create it at the center of the view (handy on phones). Draw is the exception: click it (or press `D`) to enter draw mode; touch is ignored while Pencil draws.
 - Click a card to select it; drag to move. Inputs inside a card only activate once it is selected. Double-click to edit/open.
 - Drag files from the OS or from Obsidian's file explorer straight onto the board (`.board` files become nested boards).
 - Alt+drag duplicates. The bottom bar has zoom controls, 1:1, fit, and a snap-to-grid toggle (Ctrl while dragging inverts snap).

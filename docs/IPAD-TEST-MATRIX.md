@@ -35,7 +35,8 @@ Record the device model, iPadOS version, Obsidian version, orientation, and spli
 ## Toolbar and media
 
 - [ ] Touch/Pencil toolbar drag creates the selected card at the release point.
-- [ ] A stationary toolbar tap shows the drag hint and creates nothing.
+- [ ] A stationary toolbar tap creates the card at the center of the view (exactly one card, also after a short drag that ends on the toolbar).
+- [ ] On a phone (or iPad in a short window), when the toolbar overflows it scrolls vertically, and a sideways drag still pulls a tool onto the board.
 - [ ] Recording with permission granted saves a playable file.
 - [ ] Escape, outside tap, view switching, and app interruption cancel recording without saving.
 - [ ] Stop intentionally saves exactly one recording.

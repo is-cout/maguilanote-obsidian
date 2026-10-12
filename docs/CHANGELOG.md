@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **Card tools work on phones (issue #1).** Tapping/clicking a toolbar card tool now creates the card at the center of the view, instead of only shaking it with a "Drag onto the board" hint — on phones that hint was a dead end. When the toolbar is taller than the screen (phones, landscape) it now scrolls vertically (`touch-action: pan-y`, only while it overflows), while a sideways drag still pulls a tool onto the board; before, `touch-action: none` left the bottom tools unreachable. The unused drag-hint code and CSS were removed. Files: `src/board-view.ts`, `src/styles/chrome.css`, `README.md`, `docs/IPAD-TEST-MATRIX.md`.
+
 - **Follow-up fixes to the iPad input contribution (PR #2), before 1.1.0 ships.** `parseBoard` no longer drops items it can't fully validate (unknown card types, odd values) — whatever it dropped was erased from disk on the next save, including cards written by a newer plugin version on another synced device; it now only drops `null`/non-object entries. Pinch / two-finger pan no longer drifts away: each frame is recomputed from the gesture's start camera instead of re-adding the total midpoint delta. Record card audio is reused across re-renders again (moved into the new card instead of recreated), so playback no longer stops whenever a card moves. Files: `src/types.ts`, `src/board-interaction.ts`, `src/render.ts`, `test/types.test.ts`.
 
 ## 2026-08-26 (1.1.0)
