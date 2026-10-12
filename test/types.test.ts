@@ -8,26 +8,25 @@ test("parseBoard returns an empty board for malformed top-level data", () => {
   assert.deepEqual(parseBoard("not json"), { version: 1, items: [], edges: [] });
 });
 
-test("parseBoard rejects malformed items and edges at the file boundary", () => {
+test("parseBoard drops only entries that carry no data", () => {
   const board = parseBoard(JSON.stringify({
     version: 1,
-    items: [
-      { id: "ok", type: "note", x: 10, y: 20, w: 200 },
-      { id: "bad", type: "unknown", x: 10, y: 20, w: 200 },
-      { id: "bad-number", type: "note", x: "10", y: 20, w: 200 },
-      null,
-    ],
-    edges: [{ id: "edge" }, { id: 42 }],
+    items: [{ id: "ok", type: "note", x: 10, y: 20, w: 200 }, null, 42],
+    edges: [{ id: "edge" }, null],
   }));
-  assert.equal(board.items.length, 1);
+  assert.deepEqual(board.items.map((it) => it.id), ["ok"]);
   assert.equal(board.edges.length, 1);
-  assert.equal(board.items[0].id, "ok");
 });
 
-test("parseBoard rejects non-positive dimensions", () => {
+// whatever parseBoard drops is erased from disk on the next save, so items it
+// doesn't fully understand (newer card types, odd values) must survive the load
+test("parseBoard keeps items it cannot fully validate", () => {
   const board = parseBoard(JSON.stringify({
-    items: [{ id: "zero", type: "note", x: 0, y: 0, w: 0 }, { id: "negative", type: "note", x: 0, y: 0, w: -1 }],
+    items: [
+      { id: "future", type: "card-from-newer-version", x: 0, y: 0, w: 200 },
+      { id: "odd-number", type: "note", x: "10", y: 20, w: 0 },
+    ],
     edges: [],
   }));
-  assert.equal(board.items.length, 0);
+  assert.deepEqual(board.items.map((it) => it.id), ["future", "odd-number"]);
 });

@@ -255,9 +255,11 @@ export function parseBoard(raw: string): BoardData {
     if (!d || typeof d !== "object" || Array.isArray(d)) return structuredClone(DEFAULT_BOARD);
     if (!Array.isArray(d.items)) d.items = [];
     if (!Array.isArray(d.edges)) d.edges = [];
-    const validTypes = new Set<ItemType>(["note", "image", "link", "file", "column", "todo", "swatch", "comment", "board", "drawing", "sketch", "record"]);
-    d.items = d.items.filter((it: any) => it && typeof it.id === "string" && validTypes.has(it.type) && Number.isFinite(it.x) && Number.isFinite(it.y) && Number.isFinite(it.w) && it.w > 0);
-    d.edges = d.edges.filter((edge: any) => edge && typeof edge.id === "string" && (!edge.from || typeof edge.from === "string") && (!edge.to || typeof edge.to === "string"));
+    // drop only entries that carry no data (null/primitives). Never drop a real
+    // item: the next save would erase it for good (e.g. a card type written by a
+    // newer plugin version on another synced device).
+    d.items = d.items.filter((it: unknown) => !!it && typeof it === "object");
+    d.edges = d.edges.filter((edge: unknown) => !!edge && typeof edge === "object");
     d.version = d.version ?? 1;
     return d as BoardData;
   } catch {
