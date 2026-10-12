@@ -65,7 +65,7 @@ Nested boards are just `board`-type items whose `path` points at another `.board
 ## Build pipeline
 
 - TypeScript (`tsconfig.json`) type-checks `src/**/*.ts` (`tsc -noEmit`) — no `.js` is emitted by `tsc` itself.
-- [esbuild](https://esbuild.github.io/) (`esbuild.config.mjs`) bundles `src/main.ts` into a single CommonJS `main.js`, externalizing `obsidian`, `electron`, CodeMirror/Lezer packages (provided by the Obsidian host at runtime) and Node builtins.
+- [esbuild](https://esbuild.github.io/) (`esbuild.config.mjs`) bundles `src/main.ts` into a single CommonJS `main.js`, externalizing `obsidian`, `electron`, CodeMirror/Lezer packages (provided by the Obsidian host at runtime) and Node builtins (`node:module` `builtinModules`). Dynamic `import()` is lowered to `require()` (`supported: { "dynamic-import": false }`), so `src/secrets.ts` can load `fs`/`os`/`path` lazily behind a `Platform.isDesktop` guard — the pattern the Obsidian lint rules accept — and still resolve them as CommonJS at runtime.
 - A second esbuild step bundles `src/styles/index.css` (which `@import`s the partials in `src/styles/`) into the root `styles.css` — the file Obsidian actually loads. The root `styles.css` is generated; edit the partials under `src/styles/` instead.
 - `manifest.json` + `versions.json` follow the standard Obsidian plugin conventions (`minAppVersion` compatibility map).
 

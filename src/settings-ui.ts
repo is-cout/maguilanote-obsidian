@@ -140,11 +140,13 @@ export function renderSettingsUI(containerEl: HTMLElement, plugin: MaguilanotePl
     )
     .addText((t) => {
       t.inputEl.type = "password";
-      t.setPlaceholder("sk-...").setValue(Platform.isDesktopApp ? loadOpenAiApiKey() : s.openaiApiKey);
+      t.setPlaceholder("sk-...");
+      if (Platform.isDesktopApp) void loadOpenAiApiKey().then((key) => t.setValue(key));
+      else t.setValue(s.openaiApiKey);
       t.onChange(async (v) => {
         const key = v.trim();
         if (Platform.isDesktopApp) {
-          saveOpenAiApiKey(key);
+          await saveOpenAiApiKey(key);
         } else {
           s.openaiApiKey = key;
           await save();

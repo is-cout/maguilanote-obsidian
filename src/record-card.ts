@@ -245,7 +245,7 @@ export function openRecordPopup(view: BoardView, it: Item) {
 /** transcribe a record card's audio via the OpenAI Whisper API, dropping the
  * result into a new note card connected back to the recording */
 export async function transcribeRecord(view: BoardView, it: Item) {
-  const apiKey = view.plugin.getOpenAiApiKey();
+  const apiKey = await view.plugin.getOpenAiApiKey();
   if (!apiKey) {
     new Notice("Set an OpenAI API key in Settings → Recording first");
     return;

@@ -75,8 +75,8 @@ export default class MaguilanotePlugin extends Plugin {
   clipboard: { items: Item[]; edges: BoardData["edges"] } | null = null;
 
   /** desktop: key lives outside the vault (src/secrets.ts); mobile: settings fallback */
-  getOpenAiApiKey(): string {
-    return Platform.isDesktopApp ? loadOpenAiApiKey() : this.settings.openaiApiKey;
+  async getOpenAiApiKey(): Promise<string> {
+    return Platform.isDesktopApp ? await loadOpenAiApiKey() : this.settings.openaiApiKey;
   }
 
   async onload() {
