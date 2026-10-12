@@ -8,7 +8,7 @@ All dependency versions in `package.json` are **pinned exactly** (no `^`, no `~`
 
 **How to apply:** when a new dependency is needed, or an existing one needs a bump (security fix, feature, bug fix), propose the exact version and the reason, and wait for approval before editing `package.json`.
 
-## Current pins (as of 2026-07-08)
+## Current pins (as of 2026-10-12)
 
 **Runtime dependency** (bundled into `main.js`):
 
@@ -16,15 +16,20 @@ All dependency versions in `package.json` are **pinned exactly** (no `^`, no `~`
 |---|---|---|
 | `perfect-freehand` | `1.2.3` | Turns freehand pointer input (incl. pen pressure) into smooth stroke outlines for the Draw/Sketch feature. Zero-dependency, ~4KB; bundled by esbuild (not in `external`). |
 
-**Dev dependencies** (type-checking / bundling only):
+**Dev dependencies** (type-checking / bundling / linting only):
 
 | Package | Pinned version | Notes |
 |---|---|---|
 | `typescript` | `5.4.2` | No known CVEs against the `typescript` package itself. |
 | `esbuild` | `0.28.1` | See CVE note below. |
-| `obsidian` (types) | `1.4.0` | Type definitions only, matches `minAppVersion` in `manifest.json`. |
+| `obsidian` (types) | `1.8.7` | Type definitions only. Bumped from `1.4.0` because `eslint-plugin-obsidianmd` requires exactly `1.8.7` as a peer. `minAppVersion` stays `1.4.0`, so the types now expose APIs newer than the minimum supported app — check an API's `@since` before using it. Its `moment` dependency has a moderate advisory (GHSA-4p3w-j4w9-5jqw); types only, never bundled. |
 | `@types/node` | `20.11.0` | Type definitions only, no known CVEs. |
 | `builtin-modules` | `3.3.0` | No known CVEs. |
+| `eslint` | `9.39.5` | Linter. 9.x because the Obsidian plugin peers on `@eslint/js` `^9`; npm marks it deprecated (9.x out of support) — move to 10.x once the plugin supports it. |
+| `@eslint/js` | `9.39.5` | Peer of `eslint-plugin-obsidianmd`. |
+| `@eslint/json` | `0.14.0` | Peer of `eslint-plugin-obsidianmd` (exact pin required). |
+| `typescript-eslint` | `8.70.1` | Type-checked lint rules; peer of `eslint-plugin-obsidianmd`. |
+| `eslint-plugin-obsidianmd` | `0.4.2` | Obsidian's official lint rules — the same TS checks the community plugin scorecard runs. |
 
 ## Known advisory: esbuild dev server (CVE-2024-23334)
 

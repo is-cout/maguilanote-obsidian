@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **Added ESLint with Obsidian's official rules (`npm run lint`).** Reproduces the TypeScript warnings from the Obsidian plugin scorecard locally so they can be fixed and kept fixed. New pinned dev deps: `eslint` 9.39.5, `@eslint/js` 9.39.5, `@eslint/json` 0.14.0, `typescript-eslint` 8.70.1, `eslint-plugin-obsidianmd` 0.4.2; `obsidian` types bumped 1.4.0 → 1.8.7 (required peer). Dev tooling only, no version bump. Files: `eslint.config.mjs`, `package.json`, `package-lock.json`, `docs/DEPENDENCIES.md`, `docs/DEVELOPMENT.md`.
+
 - **New contributor rule: the user's drafted messages are posted verbatim** (no grammar, capitalization or punctuation fixes). Files: `.claude/CLAUDE.md`.
 
 - **Release assets now ship with GitHub artifact attestations, and the repo has a contributing guide.** Both were flagged on the Obsidian plugin scorecard ([issue #3](https://github.com/is-cout/maguilanote-obsidian/issues/3)). The release workflow signs build provenance for `main.js`, `manifest.json` and `styles.css` via `actions/attest-build-provenance` (takes effect from the next release). No plugin code change, so no version bump. Files: `.github/workflows/release.yml`, `CONTRIBUTING.md`, `README.md`, `.claude/instructions/git.instructions.md`.
