@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut and ship a plugin release using Git Flow — creates a release branch off develop, bumps the version, merges into main and develop, tags, and pushes to trigger the GitHub release build. Use when Lucas explicitly asks for a release (e.g. "faz uma release", "cut a release", "ship v0.8.0").
+description: Cut and ship a plugin release using Git Flow — creates a release branch off develop, bumps the version, merges into main and develop, tags, and pushes to trigger the GitHub release build. Use when the user explicitly asks for a release (e.g. "faz uma release", "cut a release", "ship v0.8.0").
 ---
 
 # Release

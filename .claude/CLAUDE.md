@@ -65,7 +65,7 @@ When the user writes the text of a message to be posted anywhere (issue/PR comme
 
 ## Dependency Policy
 
-All dependency versions in `package.json` are pinned **exactly** (no `^`/`~` ranges). Never install `@latest`, never run an automatic update (`npm update`, bumping a version "while at it"), and never bump a version without asking Lucas first and getting explicit approval — even for a patch release. If a security issue is found, flag it and propose the fix; don't apply it silently. See [docs/DEPENDENCIES.md](../docs/DEPENDENCIES.md) for the current pins and rationale.
+All dependency versions in `package.json` are pinned **exactly** (no `^`/`~` ranges). Never install `@latest`, never run an automatic update (`npm update`, bumping a version "while at it"), and never bump a version without asking the user first and getting explicit approval — even for a patch release. If a security issue is found, flag it and propose the fix; don't apply it silently. See [docs/DEPENDENCIES.md](../docs/DEPENDENCIES.md) for the current pins and rationale.
 
 ## Documentation Policy
 

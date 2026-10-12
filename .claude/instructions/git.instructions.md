@@ -32,7 +32,7 @@ one is already open for this task) the `feature/*`/`fix/*`/`chore/*` branch off 
 commit there. This is a standing instruction — it overrides the general "never commit unless
 explicitly asked" default for this project.
 
-**Do not merge the branch into `develop`, delete it, or push anything, unless Lucas explicitly
+**Do not merge the branch into `develop`, delete it, or push anything, unless the user explicitly
 says the feature/fix is done** (e.g. "fecha essa branch", "merge isso", "pode fechar") — same
 rule as releases: a branch may stay open across several commits while he tests it, tries more
 changes, or comes back to it later. Committing is automatic; closing (merge + branch deletion)
@@ -71,7 +71,7 @@ chore: pin esbuild to 0.28.1
 
 ## Release Procedure
 
-Releases are **user-requested**, not automatic. When Lucas asks for a release, use the
+Releases are **user-requested**, not automatic. When the user asks for a release, use the
 `release` skill (`.claude/skills/release/`) instead of doing these steps ad hoc — it
 encodes the full sequence below.
 
