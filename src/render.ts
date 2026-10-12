@@ -91,13 +91,24 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
 
 /** compact play/seek/time player for a record card */
 export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
-  const oldAudio = recordAudio.get(it.id);
-  oldAudio?.pause();
+  let cached = recordAudio.get(it.id);
+  if (!cached || cached.src !== src) {
+    cached?.pause();
+    cached?.remove();
+    cached = document.createElement("audio");
+    cached.addClass("mgn-record-audio");
+    cached.preload = "metadata";
+    cached.src = src;
+    cached.controls = true;
+    recordAudio.set(it.id, cached);
+  }
+  const audio = cached;
   // Keep the media element attached, but outside the drag-control row so the
-  // card can still be grabbed anywhere around its visible player.
-  const audio = el.createEl("audio", { cls: "mgn-record-audio", attr: { src, preload: "metadata" } });
-  audio.controls = true;
-  recordAudio.set(it.id, audio);
+  // card can still be grabbed anywhere around its visible player. Moving the
+  // same element into the new card (rather than recreating it) keeps playback
+  // going across a full render: it is back in the document before the browser
+  // would pause a removed media element.
+  el.appendChild(audio);
   const player = el.createDiv({ cls: "mgn-record-player" });
   const btn = player.createEl("button", { cls: "mgn-record-play" });
   const bar = player.createDiv({ cls: "mgn-record-bar" });

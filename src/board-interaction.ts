@@ -442,6 +442,11 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
       const [a, b] = points;
       const midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
       const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      // recompute from the gesture's start state every frame; adjusting the
+      // current camera would re-add the total midpoint delta each frame
+      view.zoom = d.startZoom;
+      view.panX = d.startPanX;
+      view.panY = d.startPanY;
       view.setZoom(d.startZoom * dist / d.startDist, d.startMidX, d.startMidY);
       view.panX += midX - d.startMidX;
       view.panY += midY - d.startMidY;
