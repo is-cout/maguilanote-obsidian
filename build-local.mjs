@@ -59,6 +59,8 @@ for (const f of files) {
       .join("\n")
   );
   js = js.replace(/import[^;]*?from\s*["']\.[^"']*["'];?/g, "");
+  // dynamic import() of a Node builtin (src/secrets.ts) -> require(), like esbuild's "dynamic-import": false
+  js = js.replace(/\bimport\((["'][a-z:]+["'])\)/g, "Promise.resolve(require($1))");
   js = js.replace(/^\s*export\s+default\s+/m, "");
   js = js.replace(/^export\s+/gm, "");
   chunks.push(`// ---- ${f} ----\n${js}`);

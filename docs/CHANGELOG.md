@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **`build-local.mjs` lowers `import("<builtin>")` to `require()`**, matching the esbuild build, so the no-npm fallback keeps working with the lazy Node imports in `src/secrets.ts`. Files: `build-local.mjs`.
+
 - **Popout-window fixes: DOM work uses the board's own document instead of the global `document`.** Hit-testing (`elementFromPoint`), drag ghosts, the to-do drag cursor class, and the draw/record/popover key and pointer listeners now go through `view.containerEl.doc` (or the anchor element's `doc`), so a board in a popout window works on that window and every add/remove listener pair hits the same document. Google Fonts are registered per document (`ensureGoogleFont(name, doc)`), so boards in popout windows get their fonts too. `eslint.config.mjs` enables `obsidianmd/prefer-active-doc`, which the scorecard reports but the recommended preset leaves off. Files: `src/board-interaction.ts`, `src/board-view.ts`, `src/drawing-toolbar.ts`, `src/fonts.ts`, `src/record-card.ts`, `src/render.ts`, `eslint.config.mjs`.
 
 - **No more untyped `any` flowing through the code (scorecard `no-unsafe-*` warnings).** Every `JSON.parse` result is typed (`BoardData`, `TemplateBundle`, `Stroke[]`, plugin settings), the JSON Canvas import reads nodes/edges as `unknown` fields and checks each one before use, and the file-explorer drag source (Obsidian's internal `dragManager`) is accessed through a minimal local type instead of `any`. No behavior change. `npm run lint` is now clean. Files: `src/main.ts`, `src/board-drop-import.ts`, `src/board-history.ts`, `src/draw.ts`, `src/render.ts`, `src/template-bundle.ts`, `src/types.ts`.
