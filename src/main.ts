@@ -329,23 +329,11 @@ export default class MaguilanotePlugin extends Plugin {
   }
 
   /**
-   * Opens a file picker restricted to `.board.template` files (native dialog on
-   * desktop, defaulting to the templates folder; browser file input otherwise).
+   * Opens a file picker restricted to `.board.template` files.
    * Importing replaces `view`'s board: the picked template is unpacked next to
    * it, opened in its place, and the board it replaces is trashed.
    */
-  async openImportTemplateDialog(view: BoardView) {
-    if (Platform.isDesktopApp) {
-      const picked = this.pickTemplateFileDesktop();
-      if (picked !== undefined) {
-        if (picked === null) return; // user cancelled the native dialog
-        const fs = require("fs");
-        const path = require("path");
-        const raw: string = fs.readFileSync(picked, "utf8");
-        await this.importTemplateFile(raw, path.basename(picked).replace(/\.board\.template$/i, ""), view);
-        return;
-      }
-    }
+  openImportTemplateDialog(view: BoardView) {
     const input = createEl("input");
     input.type = "file";
     input.accept = ".template";
@@ -356,31 +344,6 @@ export default class MaguilanotePlugin extends Plugin {
       await this.importTemplateFile(raw, file.name.replace(/\.board\.template$/i, ""), view);
     };
     input.click();
-  }
-
-  /** Native Electron open-dialog, defaulting to the templates folder on disk. Returns `undefined` if Electron's dialog isn't available (caller should fall back), `null` if the user cancelled, or the chosen absolute path. */
-  private pickTemplateFileDesktop(): string | null | undefined {
-    try {
-      const electron = (window as any).require("electron");
-      const dialog = electron.remote?.dialog ?? electron.dialog;
-      if (!dialog?.showOpenDialogSync) return undefined;
-      const adapter = this.app.vault.adapter as any;
-      let defaultPath: string | undefined;
-      if (adapter?.basePath) {
-        const path = require("path");
-        const folder = this.settings.templatesFolder?.trim();
-        defaultPath = folder ? path.join(adapter.basePath, folder) : adapter.basePath;
-      }
-      const result = dialog.showOpenDialogSync({
-        title: "Import Maguilanote template",
-        defaultPath,
-        filters: [{ name: "Maguilanote template", extensions: ["template"] }],
-        properties: ["openFile"],
-      });
-      return result?.[0] ?? null;
-    } catch {
-      return undefined;
-    }
   }
 
   /**

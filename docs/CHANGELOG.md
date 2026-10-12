@@ -6,6 +6,8 @@ Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
 
 ## 2026-10-12 (1.1.0)
 
+- **"Import template" now always uses the standard file picker.** The desktop-only Electron native dialog (which defaulted to the templates folder) is gone: it needed `require("electron")`, `fs` and `path` plus untyped `any` access, all flagged by the Obsidian scorecard, and relied on Electron's `remote` module. The picker no longer opens in the templates folder by default. Files: `src/main.ts`, `docs/FAQ.md`.
+
 - **`minAppVersion` raised from 1.4.0 to 1.6.6; importing a template now deletes the replaced board via `FileManager.trashFile`.** `trashFile` (first in the 1.6.6 API) follows the user's Settings → Files and links → Deleted files preference (Obsidian trash, system trash, or permanent) instead of always using Obsidian's `.trash` folder. Raising the minimum also clears the scorecard's css-masks partial-support warnings, which were measured against 1.4.x. Files: `manifest.json`, `versions.json`, `src/main.ts`, `docs/FAQ.md`, `docs/DEPENDENCIES.md`, `docs/IPAD-TEST-MATRIX.md`.
 
 - **Promises are now explicitly fire-and-forget (`void`) instead of silently floating.** Async callbacks passed where a `void` return is expected (modal callbacks, zoombar/toolbar buttons, DOM listeners, the template picker's `onChooseItem`, the shortcut recorder) are wrapped or typed as `void | Promise<void>` and invoked with `void`. Clears the scorecard's `no-floating-promises`/`no-misused-promises` warnings. No behavior change. Files: `src/board-interaction.ts`, `src/board-view.ts`, `src/draw.ts`, `src/file-preview.ts`, `src/main.ts`, `src/modals.ts`, `src/record-card.ts`, `src/render.ts`, `src/settings-ui.ts`.
