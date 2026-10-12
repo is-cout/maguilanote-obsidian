@@ -5,8 +5,8 @@ import {
   setIcon,
 } from "obsidian";
 import type MaguilanotePlugin from "./main";
-import { SettingsModal, TextPromptModal } from "./modals";
-import { drawEdgesFn, renderCardFn } from "./render";
+import { ColorPromptModal, SettingsModal, TextPromptModal } from "./modals";
+import { cancelTodoDrags, clearRecordAudio, drawEdgesFn, renderCardFn } from "./render";
 import { ensureGoogleFont, fontFamilyValue } from "./fonts";
 import { ContextToolbar, DrawSession } from "./draw";
 import { closeCardToolbar as closeCardToolbarImpl, syncCardToolbar as syncCardToolbarImpl } from "./card-toolbar";
@@ -34,6 +34,7 @@ import {
   onPointerMove as onPointerMoveImpl,
   processPointerMove as processPointerMoveImpl,
   onPointerUp as onPointerUpImpl,
+  onPointerCancel as onPointerCancelImpl,
   cardIdUnder as cardIdUnderImpl,
   highlightCardUnder as highlightCardUnderImpl,
   clearCardHighlight as clearCardHighlightImpl,
@@ -77,8 +78,10 @@ import {
   exitDrawMode as exitDrawModeImpl,
   addSketch as addSketchImpl,
   openSketchPopup as openSketchPopupImpl,
+  updateSurfaceViewBox,
 } from "./drawing-toolbar";
 import {
+  closeRecordPopups,
   openRecordPopup as openRecordPopupImpl,
   transcribeRecord as transcribeRecordImpl,
 } from "./record-card";
@@ -104,11 +107,21 @@ export class BoardView extends TextFileView {
   panX = 0;
   panY = 0;
   zoom = 1;
+  private fitTimer: number | null = null;
+  rafId: number | null = null;
+  closed = false;
 
   selection = new Set<string>();
   selectedEdges: Set<string> = new Set();
   spaceDown = false;
   drag: DragMode = { kind: "none" };
+  /** Pointer IDs currently participating in a touch gesture. */
+  touchPointers = new Map<number, { x: number; y: number }>();
+  /** Pointer that owns the active single-pointer board gesture. */
+  gesturePointerId: number | null = null;
+  longPressTimer: number | null = null;
+  longPressStartX = 0;
+  longPressStartY = 0;
 
   history: string[] = [];
   histIdx = -1;
@@ -149,10 +162,17 @@ export class BoardView extends TextFileView {
   // manual double-click detection (pointer capture retargets native dblclick)
   lastClickAt = 0;
   lastClickId: string | null = null;
+  lastClickX = 0;
+  lastClickY = 0;
   lastDownOnCanvas = false;
   // pointermove throttling (1x per frame)
   rafPending = false;
   lastMoveEvent: PointerEvent | null = null;
+  // Used to reject a palm touch while an Apple Pencil interaction is active.
+  activePenPointerId: number | null = null;
+  penReleaseTimer: number | null = null;
+  resizeObserver: ResizeObserver | null = null;
+  private toolDragCancel: (() => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: MaguilanotePlugin) {
     super(leaf);
@@ -175,6 +195,23 @@ export class BoardView extends TextFileView {
   }
 
   setViewData(raw: string, clear: boolean): void {
+    const oldRecordIds = this.board.items.filter((it) => it.type === "record").map((it) => it.id);
+    clearRecordAudio(oldRecordIds);
+    closeRecordPopups(this);
+    if (this.longPressTimer !== null) window.clearTimeout(this.longPressTimer);
+    this.longPressTimer = null;
+    this.toolDragCancel?.();
+    this.toolDragCancel = null;
+    cancelTodoDrags(this);
+    this.drag = { kind: "none" };
+    this.touchPointers.clear();    this.gesturePointerId = null;
+    this.activePenPointerId = null;
+    if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+    this.penReleaseTimer = null;
+    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+    this.rafId = null;
+    this.rafPending = false;
+    this.lastMoveEvent = null;
     this.board = parseBoard(raw);
     if (clear) {
       this.history = [JSON.stringify(this.board)];
@@ -185,7 +222,11 @@ export class BoardView extends TextFileView {
     }
     this.render();
     this.renderCrumbs();
-    window.setTimeout(() => this.zoomToFit(true), 50);
+    if (this.fitTimer !== null) window.clearTimeout(this.fitTimer);
+    this.fitTimer = window.setTimeout(() => {
+      this.fitTimer = null;
+      if (!this.closed && this.viewportEl) this.zoomToFit(true);
+    }, 50);
   }
 
   clear(): void {
@@ -219,6 +260,13 @@ export class BoardView extends TextFileView {
         cls: "mgn-crumb" + (last ? " mgn-crumb-current" : ""),
         text: p.name,
       });
+      if (last) {
+        seg.setAttribute("title", "Double-click to rename");
+        seg.addEventListener("dblclick", (e) => {
+          e.preventDefault();
+          this.plugin.renameBoard(this);
+        });
+      }
       if (!last) {
         seg.addEventListener("click", () => {
           const f = this.app.vault.getAbstractFileByPath(p.path);
@@ -309,6 +357,7 @@ export class BoardView extends TextFileView {
 
   // ------------------------------------------------------------------ dom
   async onOpen() {
+    this.closed = false;
     const root = this.contentEl;
     root.empty();
     root.addClass("mgn-root");
@@ -336,6 +385,12 @@ export class BoardView extends TextFileView {
         b.addEventListener("dragstart", (ev: DragEvent) => {
           ev.dataTransfer?.setData("mgn-tool", opts.drag!);
           if (ev.dataTransfer) ev.dataTransfer.effectAllowed = "copy";
+        });
+        // iPadOS does not reliably start native HTML drag-and-drop from Apple
+        // Pencil input, so provide a small Pointer Events fallback.
+        b.addEventListener("pointerdown", (ev) => {
+          if (ev.pointerType === "pen" || ev.pointerType === "touch")
+            this.dragToolWithPointer(b, opts.drag!, label, ev);
         });
       }
       return b;
@@ -500,9 +555,21 @@ export class BoardView extends TextFileView {
     this.applyAppearance();
 
     // events
+    // iPadOS/Obsidian recognizes edge swipes from touchstart, before the
+    // resulting PointerEvent reaches the canvas. Cancel touch at the native
+    // touch boundary; Pencil input is unaffected because it has no touchstart.
+    this.registerDomEvent(this.viewportEl, "touchstart", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest(".mgn-context-toolbar, .mgn-ctx-popover, audio, video, button, input, select, textarea")) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false, capture: true });
     this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPointerDown(e));
     this.registerDomEvent(this.viewportEl, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(this.viewportEl, "pointerup", (e) => this.onPointerUp(e));
+    this.registerDomEvent(this.viewportEl, "pointercancel", (e) => this.onPointerCancel(e));
+    this.registerDomEvent(this.viewportEl, "lostpointercapture", (e) => this.onPointerCancel(e as PointerEvent));
+    this.registerDomEvent(this.viewportEl, "pointerdown", (e) => this.onPencilTap(e));
     this.registerDomEvent(this.viewportEl, "dblclick", (e) => this.onDblClick(e));
     this.registerDomEvent(this.viewportEl, "wheel", (e) => this.onWheel(e), { passive: false });
     this.registerDomEvent(this.viewportEl, "contextmenu", (e) => this.onContextMenu(e));
@@ -515,10 +582,92 @@ export class BoardView extends TextFileView {
     this.registerDomEvent(this.viewportEl, "paste", (e) => this.onPaste(e));
 
     this.applyTransform();
+    this.resizeObserver = new ResizeObserver(() => {
+      this.applyTransform();
+      this.drawEdges();
+      if (this.drawMode) updateSurfaceViewBox(this, this.drawMode.surface);
+    });
+    this.resizeObserver.observe(this.viewportEl);
   }
 
   async onClose() {
+    this.closed = true;
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    if (this.fitTimer !== null) window.clearTimeout(this.fitTimer);
+    this.fitTimer = null;
+    if (this.drawMode) this.exitDrawMode(false);
+    closeRecordPopups(this);
+    this.closePreview();
+    this.toolDragCancel?.();
+    this.toolDragCancel = null;
+    cancelTodoDrags(this);
+    this.drag = { kind: "none" };
+    if (this.longPressTimer !== null) window.clearTimeout(this.longPressTimer);
+    this.longPressTimer = null;
+    this.touchPointers.clear();
+    this.gesturePointerId = null;
+    if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+    this.penReleaseTimer = null;
+    this.activePenPointerId = null;
+    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+    this.rafId = null;
+    this.rafPending = false;
+    this.lastMoveEvent = null;
+    clearRecordAudio(this.board.items.filter((it) => it.type === "record").map((it) => it.id));
+    document.body.removeClass("mgn-todo-grabbing");
     this.contentEl.empty();
+  }
+
+  /** Drag a toolbar tool with Apple Pencil (native HTML DnD is not reliable on iPadOS). */
+  private dragToolWithPointer(btn: HTMLElement, key: string, label: string, start: PointerEvent) {
+    start.preventDefault();
+    const pointerId = start.pointerId;
+    const sx = start.clientX, sy = start.clientY;
+    let moved = false;
+    let ghost: HTMLElement | null = null;
+    const stop = () => {
+      if (this.toolDragCancel === cancel) this.toolDragCancel = null;
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", cancel, true);
+      window.removeEventListener("lostpointercapture", cancel, true);
+      btn.removeClass("mgn-tool-dragging");
+      ghost?.remove();
+    };
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      ev.preventDefault();
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 8) {
+        moved = true;
+        btn.addClass("mgn-tool-dragging");
+        ghost = document.body.createDiv({ cls: "mgn-tool-drag-ghost" });
+        const icon = btn.querySelector("svg");
+        if (icon) ghost.appendChild(icon.cloneNode(true));
+        ghost.createSpan({ text: label });
+      }
+      if (ghost) {
+        ghost.style.left = `${ev.clientX + 14}px`;
+        ghost.style.top = `${ev.clientY + 14}px`;
+      }
+    };
+    const up = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      ev.preventDefault();
+      if (moved && this.viewportEl.contains(document.elementFromPoint(ev.clientX, ev.clientY))) {
+        const w = this.screenToWorld(ev.clientX, ev.clientY);
+        this.createFromTool(key, w.x, w.y);
+      }
+      stop();
+    };
+    const cancel = (ev: PointerEvent) => {
+      if (ev.pointerId === pointerId) { ev.preventDefault(); stop(); }
+    };
+    this.toolDragCancel = () => cancel(start);
+    window.addEventListener("pointermove", move, true);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", cancel, true);
+    window.addEventListener("lostpointercapture", cancel, true);
   }
 
   /** visual nudge for a drag-only tool clicked instead of dragged */
@@ -588,6 +737,8 @@ export class BoardView extends TextFileView {
 
   onPointerUp(e: PointerEvent) { return onPointerUpImpl(this, e); }
 
+  onPointerCancel(e: PointerEvent) { return onPointerCancelImpl(this, e); }
+
   /** id of the topmost card under the pointer, or null over empty canvas */
   cardIdUnder(e: PointerEvent | MouseEvent): string | null { return cardIdUnderImpl(this, e); }
 
@@ -604,6 +755,30 @@ export class BoardView extends TextFileView {
   refreshSelectionClasses() { return refreshSelectionClassesImpl(this); }
 
   onWheel(e: WheelEvent) { return onWheelImpl(this, e); }
+
+  onPencilTap(e: PointerEvent) {
+    if (e.pointerType !== "pen" || e.button !== 0 || this.drawMode) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("input, textarea, audio, iframe, .mgn-connector, .mgn-resize, .mgn-video-bar")) return;
+    const cardEl = target.closest<HTMLElement>(".mgn-card");
+    if (!cardEl?.dataset.id) return;
+    const it = this.item(cardEl.dataset.id);
+    if (!it || (it.type !== "sketch" && it.type !== "swatch")) return;
+    const now = Date.now();
+    const closeEnough = Math.hypot(e.clientX - this.lastClickX, e.clientY - this.lastClickY) < 24;
+    if (this.lastClickId === it.id && closeEnough && now - this.lastClickAt < 450) {
+      this.lastClickId = null;
+      if (it.type === "sketch") this.openSketchPopup(it);
+      else new ColorPromptModal(this.app, it.swatch ?? "#cccccc", (hex) => {
+        it.swatch = hex;
+        this.commit();
+      }).open();
+    }
+    this.lastClickId = it.id;
+    this.lastClickAt = now;
+    this.lastClickX = e.clientX;
+    this.lastClickY = e.clientY;
+  }
 
   onDblClick(e: MouseEvent) {
     if (this.drawMode) return;
@@ -667,6 +842,11 @@ export class BoardView extends TextFileView {
         this.openRecordPopup(it);
         return;
       case "swatch":
+        new ColorPromptModal(this.app, it.swatch ?? "#cccccc", (hex) => {
+          it.swatch = hex;
+          this.commit();
+        }).open();
+        return;
       case "todo":
       case "column":
         return;

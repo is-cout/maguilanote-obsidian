@@ -10,6 +10,7 @@
   font-size: 14px;
   line-height: 1.45;
   user-select: none;
+  -webkit-touch-callout: none;
   cursor: grab;
   overflow: visible; /* content is never clipped; cards grow vertically */
 }
@@ -288,6 +289,12 @@
   flex-direction: column;
   justify-content: center; /* keep the player vertically centered in the card */
 }
+.mgn-record-audio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
+}
 .mgn-record-player {
   display: flex;
   align-items: center;
@@ -296,6 +303,8 @@
 }
 .mgn-card button.mgn-record-play {
   flex: 0 0 auto;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,6 +335,10 @@
   border-radius: 3px;
   background: currentColor;
   pointer-events: none;
+}
+.mgn-media-error {
+  color: var(--mgn-text-muted);
+  font-size: 12px;
 }
 .mgn-record-time {
   flex: 0 0 auto;

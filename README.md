@@ -29,7 +29,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Card-hover blue dot: drag to another card to draw an arrow (drop on empty canvas for a free end)
 - Two routing modes, switchable per line from its right-click menu: **Free** (straight, drag its middle dot to curve it) and **Smart** (auto-routed around cards)
 - Arrows, solid/dashed, arrowhead toggle, reversible, labels, color
-- Rubber-band select works on lines too (both ends must be inside the selection box); Delete removes selected lines
+- Rubber-band select works on lines too (any part touching the selection box is selected); Delete removes selected lines
 
 **Text editing**
 - Full Markdown: headings, bold/italic/strikethrough, lists, quotes, code, links, `[[wikilinks]]`
@@ -42,7 +42,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 **Canvas**
 - Select/drag, multi-select, group move, resize
 - Alt+drag duplicate, snap-to-grid, undo/redo, cut/copy/paste
-- Zoom controls
+- Zoom controls (wheel on desktop; pinch and two-finger pan on touch devices)
 
 **Settings**
 - Gear icon next to the breadcrumb trail opens the Settings panel
@@ -50,7 +50,7 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 - Shortcuts: rebind any keyboard shortcut (click to record, reset to default), plus a collapsible mouse/gesture reference
 
 **Search & export**
-- In-board search, export to Markdown, import from OS/vault
+- In-board search, export to Markdown or JSON Canvas, import JSON Canvas and OS/vault files
 
 **Collaboration**
 - Local comment cards, unlimited local storage (it's your disk)
@@ -63,7 +63,8 @@ A Milanote-style visual workspace for [Obsidian](https://obsidian.md): notes, im
 ## Usage
 
 - The ribbon icon or the **"Maguilanote: New board"** command creates a `.board` file.
-- Double-click the canvas to create a note. The left toolbar adds every other card type — **drag** a tool onto the canvas to create it where you drop it (a plain click on a drag-only tool just shakes it as a hint). Draw is the exception: click it (or press `D`) to enter draw mode.
+- **Double-click the board's name in the breadcrumb trail to rename it** — Markdown links and nested-board references across your vault update automatically.
+- Double-click the canvas to create a note. On iPad, use one finger to pan, Apple Pencil to manipulate cards, pinch or two fingers to zoom/pan, and long-press a card for its context menu. The left toolbar adds every other card type — **drag** a tool onto the canvas to create it where you drop it (a plain click on a drag-only tool just shakes it as a hint). Draw is the exception: click it (or press `D`) to enter draw mode; touch is ignored while Pencil draws.
 - Click a card to select it; drag to move. Inputs inside a card only activate once it is selected. Double-click to edit/open.
 - Drag files from the OS or from Obsidian's file explorer straight onto the board (`.board` files become nested boards).
 - Alt+drag duplicates. The bottom bar has zoom controls, 1:1, fit, and a snap-to-grid toggle (Ctrl while dragging inverts snap).
@@ -92,6 +93,7 @@ This README covers the essentials. For everything else, see [`docs/`](docs/):
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the plugin is built: source layout, data model, rendering and build pipeline.
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md) — full dev setup, build commands, verification checklist.
+- [IPAD-TEST-MATRIX.md](docs/IPAD-TEST-MATRIX.md) — real-device touch and Apple Pencil verification matrix.
 - [DEPENDENCIES.md](docs/DEPENDENCIES.md) — dependency pinning policy and current versions.
 - [FAQ.md](docs/FAQ.md) — "how do I change X" answers (colors, defaults, card types, shortcuts, and more).
 - [CHANGELOG.md](docs/CHANGELOG.md) — living log of significant project changes.

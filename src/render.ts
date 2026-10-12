@@ -32,6 +32,16 @@ export function pauseRecordAudio(id: string) {
   recordAudio.get(id)?.pause();
 }
 
+export function clearRecordAudio(ids?: Iterable<string>) {
+  const keys = ids ?? recordAudio.keys();
+  for (const id of keys) {
+    const audio = recordAudio.get(id);
+    audio?.pause();
+    audio?.remove();
+    recordAudio.delete(id);
+  }
+}
+
 /** video card player: the picture stays a plain drag surface (like an image
  * card) and a custom control bar overlays the bottom, so play/seek work by
  * clicking the bar without first selecting the card — native <video controls>
@@ -44,10 +54,14 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
   v.addEventListener("loadeddata", () => view.drawEdges());
 
   const player = wrap.createDiv({ cls: "mgn-video-bar" });
-  const btn = player.createEl("button", { cls: "mgn-video-play" });
+  const btn = player.createEl("button", { cls: "mgn-video-play", attr: { "aria-label": "Play video" } });
   const bar = player.createDiv({ cls: "mgn-video-progress" });
   const fill = bar.createDiv({ cls: "mgn-video-progress-fill" });
   const time = player.createDiv({ cls: "mgn-video-time" });
+  v.addEventListener("error", () => {
+    wrap.addClass("mgn-media-error");
+    time.setText("Unable to play media");
+  });
 
   const sync = () => {
     setIcon(btn, v.paused ? "play" : "pause");
@@ -58,7 +72,10 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
   v.onloadedmetadata = v.ontimeupdate = v.onplay = v.onpause = v.onended = sync;
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (v.paused) v.play().catch(() => {});
+    if (v.paused) v.play().catch(() => {
+      time.setText("Unable to play media");
+      wrap.addClass("mgn-media-error");
+    });
     else v.pause();
   });
   bar.addEventListener("click", (e) => {
@@ -74,13 +91,13 @@ export function renderVideoPlayer(view: BoardView, el: HTMLElement, src: string)
 
 /** compact play/seek/time player for a record card */
 export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
-  let audio = recordAudio.get(it.id);
-  if (!audio || audio.src !== src) {
-    audio?.pause();
-    audio = new Audio(src);
-    audio.preload = "metadata";
-    recordAudio.set(it.id, audio);
-  }
+  const oldAudio = recordAudio.get(it.id);
+  oldAudio?.pause();
+  // Keep the media element attached, but outside the drag-control row so the
+  // card can still be grabbed anywhere around its visible player.
+  const audio = el.createEl("audio", { cls: "mgn-record-audio", attr: { src, preload: "metadata" } });
+  audio.controls = true;
+  recordAudio.set(it.id, audio);
   const player = el.createDiv({ cls: "mgn-record-player" });
   const btn = player.createEl("button", { cls: "mgn-record-play" });
   const bar = player.createDiv({ cls: "mgn-record-bar" });
@@ -90,26 +107,34 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
   // MediaRecorder webm files carry no duration metadata (audio.duration is
   // Infinity), so fall back to the length measured while recording
   const total = () =>
-    Number.isFinite(audio!.duration) && audio!.duration > 0 ? audio!.duration : it.duration ?? 0;
+    Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : it.duration ?? 0;
   const sync = () => {
-    setIcon(btn, audio!.paused ? "play" : "pause");
+    setIcon(btn, audio.paused ? "play" : "pause");
+    btn.setAttribute("aria-label", audio.paused ? "Play recording" : "Pause recording");
     const t = total();
-    fill.style.width = t ? `${Math.min(100, (audio!.currentTime / t) * 100)}%` : "0%";
-    time.setText(`${fmtTime(audio!.currentTime)} / ${fmtTime(t)}`);
+    fill.style.width = t ? `${Math.min(100, (audio.currentTime / t) * 100)}%` : "0%";
+    time.setText(`${fmtTime(audio.currentTime)} / ${fmtTime(t)}`);
   };
   // assigned (not addEventListener) so re-renders replace the handlers of the reused element
   audio.onloadedmetadata = audio.ontimeupdate = audio.onplay = audio.onpause = audio.onended = sync;
+  audio.onerror = () => {
+    player.addClass("mgn-media-error");
+    time.setText("Unable to play recording");
+  };
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (audio!.paused) audio!.play().catch(() => {});
-    else audio!.pause();
+    if (audio.paused) audio.play().catch(() => {
+      time.setText("Unable to play recording");
+      player.addClass("mgn-media-error");
+    });
+    else audio.pause();
   });
   bar.addEventListener("click", (e) => {
     e.stopPropagation();
     const t = total();
     if (!t) return;
     const r = bar.getBoundingClientRect();
-    audio!.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
+    audio.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * t;
     sync();
   });
   sync();
@@ -125,6 +150,11 @@ export function renderRecordPlayer(el: HTMLElement, it: Item, src: string) {
  * empty by a move, it's deleted. Listens on `window` so nothing kills the drag.
  */
 type TodoDropTarget = { card: Item; index: number } | null;
+const todoDragClosers = new Map<BoardView, Set<() => void>>();
+
+export function cancelTodoDrags(view: BoardView) {
+  [...(todoDragClosers.get(view) ?? [])].forEach((close) => close());
+}
 
 function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: PointerEvent) {
   if (!source.todos || source.todos.length === 0) return;
@@ -150,6 +180,7 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
   };
 
   const onMove = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
     positionGhost(ev);
     const under = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
     const cardEl = under?.closest<HTMLElement>(".mgn-card.mgn-todo");
@@ -174,17 +205,42 @@ function startTodoItemDrag(view: BoardView, source: Item, startIdx: number, e: P
     }
   };
 
-  const onUp = (ev: PointerEvent) => {
+  const cleanup = () => {
     window.removeEventListener("pointermove", onMove, true);
     window.removeEventListener("pointerup", onUp, true);
+    window.removeEventListener("pointercancel", onCancel, true);
+    window.removeEventListener("lostpointercapture", onCancel, true);
+  };
+  const onCancel = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
+    viewClosers.delete(closeForView);
+    if (!viewClosers.size) todoDragClosers.delete(view);
+    cleanup();
+    clearTarget();
+    ghost.remove();
+    document.body.removeClass("mgn-todo-grabbing");
+  };
+  const onUp = (ev: PointerEvent) => {
+    if (ev.pointerId !== e.pointerId) return;
+    viewClosers.delete(closeForView);
+    if (!viewClosers.size) todoDragClosers.delete(view);
+    cleanup();
     clearTarget();
     ghost.remove();
     document.body.removeClass("mgn-todo-grabbing");
     applyTodoDrop(view, source, entry, target, ev);
   };
 
+  const closeForView = () => onCancel(e);
+  const viewClosers = todoDragClosers.get(view) ?? new Set<() => void>();
+  viewClosers.add(closeForView);
+  todoDragClosers.set(view, viewClosers);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
+  window.addEventListener("pointercancel", onCancel, true);
+  window.addEventListener("lostpointercapture", onCancel, true);
+  window.addEventListener("pointercancel", onCancel, true);
+  window.addEventListener("lostpointercapture", onCancel, true);
   onMove(e); // seed the preview immediately (grip pointerdown already located us)
 }
 

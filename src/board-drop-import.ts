@@ -89,6 +89,7 @@ export async function onPaste(view: BoardView, e: ClipboardEvent) {
 }
 
 export async function importOsFile(view: BoardView, f: File, x: number, y: number) {
+  if (!f || !f.name) return;
   const buf = await f.arrayBuffer();
   const base = normalizePath(view.plugin.settings.assetsFolder?.trim() || "Maguilanote Assets");
   if (!view.app.vault.getAbstractFileByPath(base)) {

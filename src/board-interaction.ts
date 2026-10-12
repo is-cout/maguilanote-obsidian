@@ -2,10 +2,12 @@ import { TextPromptModal } from "./modals";
 import type { BoardView } from "./board-view";
 import { Item, newId } from "./types";
 import { segmentIntersectsRect } from "./geometry";
+import { showCardMenu } from "./board-context-menu";
 
 export type DragMode =
   | { kind: "none" }
-  | { kind: "pan"; startX: number; startY: number; panX: number; panY: number }
+  | { kind: "pan"; startX: number; startY: number; panX: number; panY: number; moved: boolean }
+  | { kind: "pinch"; startDist: number; startZoom: number; startMidX: number; startMidY: number; startPanX: number; startPanY: number }
   | {
       kind: "move";
       ids: string[];
@@ -18,11 +20,12 @@ export type DragMode =
       lastX?: number;
       lastT?: number;
       settleTimer?: number;
+      detached?: { parent?: string; order?: number; x: number; y: number };
     }
   | { kind: "rubber"; startX: number; startY: number; el: HTMLElement }
   | { kind: "resize"; id: string; startWX: number; startWY: number; w0: number; h0: number }
   | { kind: "connect"; from: string; tempPath: SVGPathElement }
-  | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean }
+  | { kind: "line-end"; id: string; end: "from" | "to" | "bend"; moved: boolean; original: { from?: string; to?: string; fromPt?: { x: number; y: number }; toPt?: { x: number; y: number }; bend?: { x: number; y: number } } }
   | {
       kind: "line-move";
       id: string;
@@ -35,6 +38,59 @@ export type DragMode =
 
 /** set the live drag-lean angle (deg) on each dragged card via a CSS var the
  * `.mgn-dragging` transform reads, so the tilt eases through the CSS transition */
+function cancelDrag(view: BoardView) {
+  if (view.longPressTimer !== null) window.clearTimeout(view.longPressTimer);
+  view.longPressTimer = null;
+  const d = view.drag;
+  if (d.kind === "move") {
+    window.clearTimeout(d.settleTimer);
+    view.clearColumnHighlight();
+    for (const id of d.ids) {
+      const it = view.item(id), origin = d.orig.get(id);
+      if (it && origin) {
+        it.x = d.detached && id === d.ids[0] ? d.detached.x : origin.x;
+        it.y = d.detached && id === d.ids[0] ? d.detached.y : origin.y;
+        if (d.detached && id === d.ids[0]) {
+          it.parent = d.detached.parent;
+          it.order = d.detached.order;
+        }
+      }
+      view.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${id}"]`)?.classList.remove("mgn-dragging");
+    }
+    view.render();
+  } else if (d.kind === "pan") {
+    view.panX = d.panX;
+    view.panY = d.panY;
+    view.applyTransform();
+  } else if (d.kind === "resize") {
+    const it = view.item(d.id);
+    if (it) { it.w = d.w0; it.h = d.h0; }
+    view.render();
+  } else if (d.kind === "rubber") {
+    d.el.remove();
+    view.selection.clear();
+    view.selectedEdges.clear();
+    view.refreshSelectionClasses();
+    view.drawEdges();
+  } else if (d.kind === "connect") d.tempPath.remove();
+  else if (d.kind === "line-end") {
+    const edge = view.board.edges.find((x) => x.id === d.id);
+    if (edge) {
+      delete edge.from; delete edge.to; delete edge.fromPt; delete edge.toPt; delete edge.bend;
+      Object.assign(edge, structuredClone(d.original));
+    }
+    view.clearCardHighlight();
+    view.drawEdges();
+  } else if (d.kind === "line-move") {
+    const edge = view.board.edges.find((x) => x.id === d.id);
+    if (edge) { edge.fromPt = { ...d.origFrom }; edge.toPt = { ...d.origTo }; }
+    view.drawEdges();
+  }
+  view.drag = { kind: "none" };
+  view.gesturePointerId = null;
+  view.lastMoveEvent = null;
+}
+
 function setDragTilt(view: BoardView, ids: string[], deg: number) {
   for (const id of ids) {
     const el = view.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${id}"]`);
@@ -44,6 +100,37 @@ function setDragTilt(view: BoardView, ids: string[], deg: number) {
 
 export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (view.drawMode) return; // draw surface handles its own pointers
+  if (view.drag.kind !== "none" && view.gesturePointerId === null) cancelDrag(view);
+  if (e.pointerType === "touch" || e.pointerType === "pen") {
+    if (e.pointerType === "touch" && view.activePenPointerId !== null) return;
+    if (e.pointerType === "pen" && view.activePenPointerId !== null && view.activePenPointerId !== e.pointerId) return;
+    if (e.pointerType === "touch" && view.touchPointers.size >= 2) return;
+    if (e.pointerType === "touch") view.touchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (e.pointerType === "touch" && view.touchPointers.size === 2) {
+      cancelDrag(view);
+      const [a, b] = [...view.touchPointers.values()];
+      view.drag = { kind: "pinch", startDist: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        startZoom: view.zoom, startMidX: (a.x + b.x) / 2, startMidY: (a.y + b.y) / 2,
+        startPanX: view.panX, startPanY: view.panY };
+      e.preventDefault();
+      return;
+    }
+  }
+  // Keep touch inside the board. Without cancelling the gesture here, iPadOS /
+  // Obsidian can interpret a horizontal marquee as the mobile side-panel swipe.
+  if (e.pointerType === "touch") {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".mgn-context-toolbar, .mgn-ctx-popover")) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (view.activePenPointerId !== null) return;
+  }
+  if (e.pointerType === "pen") {
+    if (view.penReleaseTimer !== null) window.clearTimeout(view.penReleaseTimer);
+    view.penReleaseTimer = null;
+    view.activePenPointerId = e.pointerId;
+  }
   const target = e.target as HTMLElement;
   // clicks inside the card contextual toolbar (or its color popover) must not
   // reach canvas handling below, or they'd read as an empty-canvas click and
@@ -51,13 +138,16 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (target.closest(".mgn-context-toolbar, .mgn-ctx-popover")) return;
   // never steal focus from active inputs/editors (blur would kill them)
   const interactive = !!target.closest(
-    "input, textarea, audio, iframe, a, button, .mgn-todo-grip, .mgn-record-player, .mgn-video-bar, [contenteditable=true]"
+    // Keep only the actual media controls interactive. The player row itself
+    // must remain a drag surface so Pencil can move a recorded-note card.
+    "input, textarea, audio, iframe, a, button, .mgn-todo-grip, .mgn-record-play, .mgn-record-bar, .mgn-video-bar, [contenteditable=true]"
   );
   if (!interactive) view.viewportEl.focus({ preventScroll: true });
 
   // middle mouse OR space+left => pan
   if (e.button === 1 || (e.button === 0 && view.spaceDown)) {
-    view.drag = { kind: "pan", startX: e.clientX, startY: e.clientY, panX: view.panX, panY: view.panY };
+    view.drag = { kind: "pan", startX: e.clientX, startY: e.clientY, panX: view.panX, panY: view.panY, moved: false };
+    view.gesturePointerId = e.pointerId;
     view.viewportEl.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
@@ -65,6 +155,29 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
   if (e.button !== 0) return;
 
   if (interactive) return;
+
+  // Finger is reserved for navigating the canvas, not moving individual cards.
+  // Pencil keeps the precise object-selection and drag behavior below.
+  if (e.pointerType === "touch") {
+    view.drag = { kind: "pan", startX: e.clientX, startY: e.clientY, panX: view.panX, panY: view.panY, moved: false };
+    view.gesturePointerId = e.pointerId;
+    const cardEl = target.closest<HTMLElement>(".mgn-card");
+    const card = cardEl?.dataset.id ? view.item(cardEl.dataset.id) : undefined;
+    if (card) {
+      view.longPressStartX = e.clientX;
+      view.longPressStartY = e.clientY;
+      view.longPressTimer = window.setTimeout(() => {
+        view.longPressTimer = null;
+        if (view.drag.kind === "pan" && view.gesturePointerId === e.pointerId) {
+          view.drag = { kind: "none" };
+          view.gesturePointerId = null;
+          showCardMenu(view, card, e.clientX, e.clientY);
+        }
+      }, 500);
+    }
+    view.viewportEl.setPointerCapture(e.pointerId);
+    return;
+  }
 
   view.lastDownOnCanvas = false;
 
@@ -75,6 +188,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       attr: { fill: "none" },
     });
     view.drag = { kind: "connect", from: connEl.dataset.for, tempPath };
+    view.gesturePointerId = e.pointerId;
     view.viewportEl.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
@@ -88,6 +202,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
     const cardDom = view.worldEl.querySelector<HTMLElement>(`.mgn-card[data-id="${it.id}"]`);
     const h0 = it.h ?? (cardDom ? cardDom.getBoundingClientRect().height / view.zoom : 60);
     view.drag = { kind: "resize", id: it.id, startWX: w.x, startWY: w.y, w0: it.w, h0 };
+    view.gesturePointerId = e.pointerId;
     view.viewportEl.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
@@ -101,7 +216,12 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       id: handleEl.dataset.id,
       end: handleEl.dataset.end as "from" | "to" | "bend",
       moved: false,
+      original: (() => {
+        const edge = view.board.edges.find((x) => x.id === handleEl.dataset.id)!;
+        return { from: edge.from, to: edge.to, fromPt: edge.fromPt ? { ...edge.fromPt } : undefined, toPt: edge.toPt ? { ...edge.toPt } : undefined, bend: edge.bend ? { ...edge.bend } : undefined };
+      })(),
     };
+    view.gesturePointerId = e.pointerId;
     view.viewportEl.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
@@ -146,6 +266,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
         origTo: { ...edge.toPt },
         moved: false,
       };
+      view.gesturePointerId = e.pointerId;
       view.viewportEl.setPointerCapture(e.pointerId);
     }
     return;
@@ -199,6 +320,16 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
       if (si) orig.set(sid, { x: si.x, y: si.y });
     }
     view.drag = { kind: "move", ids, startWX: w.x, startWY: w.y, orig, moved: false, detach };
+    view.gesturePointerId = e.pointerId;
+    if (e.pointerType === "touch" || e.pointerType === "pen") {
+      view.longPressTimer = window.setTimeout(() => {
+        view.longPressTimer = null;
+        if (view.drag.kind === "move" && !view.drag.moved && view.drag.ids[0] === id) {
+          view.drag = { kind: "none" };
+          showCardMenu(view, it, e.clientX, e.clientY);
+        }
+      }, 500);
+    }
     view.viewportEl.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
@@ -213,6 +344,7 @@ export function onPointerDown(view: BoardView, e: PointerEvent) {
   const band = view.viewportEl.createDiv({ cls: "mgn-rubber" });
   const vr = view.viewportEl.getBoundingClientRect();
   view.drag = { kind: "rubber", startX: e.clientX - vr.left, startY: e.clientY - vr.top, el: band };
+  view.gesturePointerId = e.pointerId;
   view.viewportEl.setPointerCapture(e.pointerId);
 }
 
@@ -250,14 +382,44 @@ export function cloneInPlace(view: BoardView, rootIds: string[]): string[] {
 }
 
 export function onPointerMove(view: BoardView, e: PointerEvent) {
+  if (e.pointerType === "touch") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (view.activePenPointerId !== null) return;
+    if (view.longPressTimer !== null && Math.hypot(e.clientX - view.longPressStartX, e.clientY - view.longPressStartY) > 8) {
+      window.clearTimeout(view.longPressTimer);
+      view.longPressTimer = null;
+    }
+  }
+  if (view.touchPointers.has(e.pointerId))
+    view.touchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (e.pointerType === "touch" && view.drag.kind === "pan" && view.gesturePointerId === e.pointerId && view.longPressTimer !== null && Math.hypot(e.clientX - view.longPressStartX, e.clientY - view.longPressStartY) > 8) {
+    window.clearTimeout(view.longPressTimer);
+    view.longPressTimer = null;
+  }
+  if (view.drag.kind === "pinch") {
+    if (e.pointerType !== "touch") return;
+    if (!view.rafPending) {
+      view.rafPending = true;
+      view.rafId = requestAnimationFrame(() => {
+        view.rafId = null;
+        view.rafPending = false;
+        if (!view.closed && view.drag.kind === "pinch") view.processPointerMove(e);
+      });
+    }
+    return;
+  }
+  if (view.gesturePointerId !== null && view.gesturePointerId !== e.pointerId) return;
+  if (e.pointerType === "pen" && view.activePenPointerId !== e.pointerId) return;
   // throttle: heavy work (layout reads + edge redraw) at most once per frame
   if (view.drag.kind === "none") return;
   view.lastMoveEvent = e;
   if (view.rafPending) return;
   view.rafPending = true;
-  requestAnimationFrame(() => {
+  view.rafId = requestAnimationFrame(() => {
+    view.rafId = null;
     view.rafPending = false;
-    if (view.lastMoveEvent && view.drag.kind !== "none") {
+    if (!view.closed && view.lastMoveEvent && view.drag.kind !== "none") {
       view.processPointerMove(view.lastMoveEvent);
     }
   });
@@ -273,7 +435,22 @@ function snapStep(view: BoardView, e: PointerEvent): number {
 export function processPointerMove(view: BoardView, e: PointerEvent) {
   const d = view.drag;
   switch (d.kind) {
+    case "pinch": {
+      if (e.pointerType === "pen") return;
+      const points = [...view.touchPointers.values()];
+      if (points.length < 2) break;
+      const [a, b] = points;
+      const midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      view.setZoom(d.startZoom * dist / d.startDist, d.startMidX, d.startMidY);
+      view.panX += midX - d.startMidX;
+      view.panY += midY - d.startMidY;
+      view.applyTransform();
+      break;
+    }
     case "pan": {
+      d.moved ||= Math.hypot(e.clientX - d.startX, e.clientY - d.startY) > 8;
+      if (!d.moved && e.pointerType === "touch") return;
       view.panX = d.panX + (e.clientX - d.startX);
       view.panY = d.panY + (e.clientY - d.startY);
       view.applyTransform();
@@ -283,7 +460,10 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
       const w = view.screenToWorld(e.clientX, e.clientY);
       let dx = w.x - d.startWX;
       let dy = w.y - d.startWY;
-      if (!d.moved && Math.abs(dx) + Math.abs(dy) > 3) {
+      const tapSlop = e.pointerType === "pen" ? 12 : 3;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) > tapSlop) {
+        if (view.longPressTimer !== null) window.clearTimeout(view.longPressTimer);
+        view.longPressTimer = null;
         d.moved = true;
         for (const id of d.ids) {
           view.worldEl.querySelector(`.mgn-card[data-id="${id}"]`)?.classList.add("mgn-dragging");
@@ -291,11 +471,11 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
         if (d.detach) {
           const it = view.item(d.ids[0]);
           if (it) {
+            d.detached = { parent: it.parent, order: it.order, x: it.x, y: it.y };
             it.parent = undefined;
             it.order = undefined;
             it.x = w.x - it.w / 2;
             it.y = w.y - 16;
-            d.orig.set(it.id, { x: it.x, y: it.y });
             d.startWX = w.x;
             d.startWY = w.y;
             dx = 0;
@@ -444,10 +624,38 @@ export function processPointerMove(view: BoardView, e: PointerEvent) {
 }
 
 export function onPointerUp(view: BoardView, e: PointerEvent) {
+  if (view.longPressTimer !== null) window.clearTimeout(view.longPressTimer);
+  view.longPressTimer = null;
+  view.touchPointers.delete(e.pointerId);
+  if (view.drag.kind === "pinch") {
+    if (view.touchPointers.size < 2) {
+      view.drag = { kind: "none" };
+      view.gesturePointerId = null;
+    }
+    return;
+  }
+  if (view.gesturePointerId !== null && view.gesturePointerId !== e.pointerId) return;
+  if (e.pointerType === "touch" && view.longPressTimer !== null && view.drag.kind === "pan" && !view.drag.moved) {
+    window.clearTimeout(view.longPressTimer);
+    view.longPressTimer = null;
+  }
+  if (e.pointerType === "touch") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (view.activePenPointerId !== null) return;
+  }
+  if (e.pointerType === "pen" && view.activePenPointerId === e.pointerId) {
+    if (view.penReleaseTimer !== null) window.clearTimeout(view.penReleaseTimer);
+    view.penReleaseTimer = window.setTimeout(() => {
+      view.activePenPointerId = null;
+      view.penReleaseTimer = null;
+    }, 300);
+  }
   // flush the last pointer position (throttled moves may lag one frame)
   if (view.drag.kind !== "none") view.processPointerMove(e);
   const d = view.drag;
   view.drag = { kind: "none" };
+  view.gesturePointerId = null;
   view.lastMoveEvent = null;
   switch (d.kind) {
     case "move": {
@@ -465,9 +673,12 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
           const it = view.item(d.ids[0]);
           if (it) {
             const now = Date.now();
-            const isDouble = view.lastClickId === it.id && now - view.lastClickAt < 450;
+            const closeEnough = Math.hypot(e.clientX - view.lastClickX, e.clientY - view.lastClickY) < 24;
+            const isDouble = view.lastClickId === it.id && closeEnough && now - view.lastClickAt < 450;
             view.lastClickAt = now;
             view.lastClickId = it.id;
+            view.lastClickX = e.clientX;
+            view.lastClickY = e.clientY;
             if (isDouble) {
               view.lastClickId = null; // avoid triple-click re-trigger
               view.openCard(it);
@@ -543,6 +754,27 @@ export function onPointerUp(view: BoardView, e: PointerEvent) {
       break;
     }
   }
+}
+
+export function onPointerCancel(view: BoardView, e: PointerEvent) {
+  if (view.longPressTimer !== null) window.clearTimeout(view.longPressTimer);
+  view.longPressTimer = null;
+  view.touchPointers.delete(e.pointerId);
+  if (e.pointerType === "pen" && view.activePenPointerId === e.pointerId) {
+    view.activePenPointerId = null;
+    if (view.penReleaseTimer !== null) window.clearTimeout(view.penReleaseTimer);
+    view.penReleaseTimer = null;
+  }
+  if (view.drag.kind === "pinch") {
+    if (view.touchPointers.size < 2) {
+      view.drag = { kind: "none" };
+      view.gesturePointerId = null;
+    }
+    return;
+  }
+  if (view.gesturePointerId !== null && view.gesturePointerId !== e.pointerId) return;
+  view.gesturePointerId = null;
+  cancelDrag(view);
 }
 
 /** id of the topmost card under the pointer, or null over empty canvas */

@@ -9,7 +9,7 @@
 /* contextual toolbar: floating popup just right of the main toolbar */
 .mgn-context-toolbar {
   position: absolute;
-  left: 60px;
+  left: max(60px, calc(env(safe-area-inset-left) + 48px));
   top: 50%;
   transform: translateY(-50%);
   z-index: 45;
@@ -42,6 +42,8 @@
   border-radius: 6px;
   color: var(--mgn-panel-text);
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 .mgn-context-inline .mgn-ctx-tool {
   color: var(--text-normal);
@@ -71,6 +73,8 @@
 }
 .mgn-ctx-custom {
   display: flex;
+  pointer-events: auto;
+  touch-action: manipulation;
   align-items: center;
   justify-content: center;
 }
@@ -96,6 +100,9 @@
   border-radius: 8px;
   padding: 8px;
   box-shadow: var(--mgn-panel-shadow);
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
 }
 .mgn-ctx-colorgrid {
   display: grid;
@@ -227,7 +234,8 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  min-width: 280px;
+  min-width: min(280px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
 }
 .mgn-record-mic-row {
   display: flex;
@@ -249,6 +257,18 @@
 .mgn-record-btn-row {
   display: flex;
   gap: 8px;
+}
+
+@media (pointer: coarse) {
+  .mgn-context-toolbar {
+    left: max(52px, calc(env(safe-area-inset-left) + 44px));
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+  }
+  .mgn-record-btn-row button {
+    min-height: 40px;
+    padding-inline: 14px;
+  }
 }
 
 /* drawing card + sketch preview */

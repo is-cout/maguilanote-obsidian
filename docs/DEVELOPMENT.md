@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 22+ (used regardless of which build path below you take).
-- An Obsidian vault to test in (desktop).
+- An Obsidian vault to test in (desktop; iPadOS device strongly recommended for touch/Pencil changes).
 
 ## Install dependencies
 
@@ -45,9 +45,13 @@ Copy `main.js`, `manifest.json` and `styles.css` into `YOUR_VAULT/.obsidian/plug
 
 ## Verifying a change
 
-There is no automated test suite yet. Before considering a change done:
+The automated suite currently covers board-boundary parsing and geometry helpers. Before considering a change done:
 
-1. `npm run build` (or `node build-local.mjs`) completes with no type errors.
+1. `npm test` and `npm run build` (or `node build-local.mjs`) complete successfully.
 2. Reload the plugin in a real vault and manually exercise the affected card type/interaction.
 3. Check the developer console (Ctrl+Shift+I in Obsidian) for runtime errors.
 4. If the change is user-visible or changes a file format, update the relevant doc — see the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md) and add an entry to [CHANGELOG.md](CHANGELOG.md).
+
+### iPad interaction matrix
+
+For touch or Pencil changes, run every applicable item in [IPAD-TEST-MATRIX.md](IPAD-TEST-MATRIX.md) in Obsidian on iPadOS in portrait and landscape, with and without an Apple Pencil. Record the device, iPadOS version, Obsidian version, layout, and result in the issue or change; a successful build is not a substitute for this device pass.

@@ -55,8 +55,10 @@ export function makePopover(view: BoardView, anchor: HTMLElement): HTMLElement {
   const pop = view.contentEl.createDiv({ cls: "mgn-ctx-popover" });
   const cr = view.contentEl.getBoundingClientRect();
   const ar = anchor.getBoundingClientRect();
-  pop.style.left = `${ar.right - cr.left + 8}px`;
-  pop.style.top = `${ar.top - cr.top}px`;
+  const left = Math.min(Math.max(8, ar.right - cr.left + 8), cr.width - 220);
+  const top = Math.min(Math.max(8, ar.top - cr.top), cr.height - 180);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
   const close = (e: PointerEvent) => {
     const t = e.target as Node;
     if (anchor.contains(t) || pop.contains(t)) return; // keep open for clicks inside
@@ -134,10 +136,14 @@ function renderSizeControl(view: BoardView, h: HTMLElement, session: DrawSession
 /** create the world-space SVG surface + viewBox aligned to the current view */
 function makeSurface(view: BoardView): SVGSVGElement {
   const surface = view.viewportEl.createSvg("svg", { cls: "mgn-draw-surface" }) as unknown as SVGSVGElement;
+  updateSurfaceViewBox(view, surface);
+  return surface;
+}
+
+export function updateSurfaceViewBox(view: BoardView, surface: SVGSVGElement) {
   const vr = view.viewportEl.getBoundingClientRect();
   const tl = view.screenToWorld(vr.left, vr.top);
   surface.setAttribute("viewBox", `${tl.x} ${tl.y} ${vr.width / view.zoom} ${vr.height / view.zoom}`);
-  return surface;
 }
 
 export function enterDrawMode(view: BoardView, editItem?: Item) {

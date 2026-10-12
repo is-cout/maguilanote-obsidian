@@ -252,8 +252,12 @@ export function parseBoard(raw: string): BoardData {
   if (!raw || !raw.trim()) return structuredClone(DEFAULT_BOARD);
   try {
     const d = JSON.parse(raw);
+    if (!d || typeof d !== "object" || Array.isArray(d)) return structuredClone(DEFAULT_BOARD);
     if (!Array.isArray(d.items)) d.items = [];
     if (!Array.isArray(d.edges)) d.edges = [];
+    const validTypes = new Set<ItemType>(["note", "image", "link", "file", "column", "todo", "swatch", "comment", "board", "drawing", "sketch", "record"]);
+    d.items = d.items.filter((it: any) => it && typeof it.id === "string" && validTypes.has(it.type) && Number.isFinite(it.x) && Number.isFinite(it.y) && Number.isFinite(it.w) && it.w > 0);
+    d.edges = d.edges.filter((edge: any) => edge && typeof edge.id === "string" && (!edge.from || typeof edge.from === "string") && (!edge.to || typeof edge.to === "string"));
     d.version = d.version ?? 1;
     return d as BoardData;
   } catch {

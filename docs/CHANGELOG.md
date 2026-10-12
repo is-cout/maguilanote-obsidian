@@ -1,8 +1,18 @@
 # Changelog
 
+## 2026-08-26 (1.1.0 beta)
+
+- Improved iPad interaction: finger drags pan the canvas, Apple Pencil keeps precise object manipulation, swatch cards open their color editor on double-tap, toolbar media dragging works with Pencil and touch, record playback uses an attached audio element for iPad reliability, drawing rejects palm touches during Pencil input, and pinch/two-finger navigation, safe-area offsets, pointer-cancellation recovery, and device-compatible recording codecs are supported. Files: `src/board-view.ts`, `src/board-interaction.ts`, `src/draw.ts`, `src/render.ts`, `src/record-card.ts`, `src/styles/chrome.css`, `src/styles/cards.css`, `src/main.ts` (including basic JSON Canvas import/export), and `test/` (interaction-adjacent unit coverage).
+
+- Added `docs/IPAD-TEST-MATRIX.md`, a repeatable real-device checklist for iPad/iPadOS, Pencil, touch, media, cancellation, resizing, JSON Canvas import/export, and desktop regression verification. Files: `docs/IPAD-TEST-MATRIX.md`, `README.md`, `docs/DEVELOPMENT.md`, `manifest.json`.
+
 Living log of significant changes to the project. This is **not** optional bookkeeping — every significant change (new feature, format change, dependency change, removed feature, policy change) gets an entry here at the time it's made. See the documentation policy in [.claude/CLAUDE.md](../.claude/CLAUDE.md).
 
 Format: `YYYY-MM-DD — short description. Why (if not obvious). Files touched.`
+
+## 2026-08-25 (1.1.0)
+
+- **Boards can be renamed from the breadcrumb trail.** Double-click the current board's name in the breadcrumb bar (top-left of the canvas) and enter a new name. The rename uses `fileManager.renameFile`, so Obsidian updates every Markdown link to the board. On top of that, a vault `rename` listener repairs the references Obsidian can't see: nested-board cards (plain JSON `path` fields) inside other `.board` files get their path — and title, unless the user customized it — rewritten, and open boards' breadcrumb trails are refreshed. This also covers renames done in Obsidian's file explorer. Renaming to a name that already exists in the same folder is refused. Files: `src/main.ts`, `src/board-view.ts`, `src/styles/chrome.css`, `README.md`, `docs/ARCHITECTURE.md`, `package.json`, `manifest.json`, `versions.json`.
 
 ## 2026-07-12 (1.0.4)
 

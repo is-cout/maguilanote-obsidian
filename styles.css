@@ -101,6 +101,7 @@
   background-image: radial-gradient(var(--mgn-canvas-dot) 1.2px, transparent 1.2px);
   background-size: 24px 24px;
   touch-action: none;
+  overscroll-behavior: none;
 }
 .mgn-world {
   position: absolute;
@@ -141,6 +142,7 @@
   font-size: 14px;
   line-height: 1.45;
   user-select: none;
+  -webkit-touch-callout: none;
   cursor: grab;
   overflow: visible;
 }
@@ -392,6 +394,12 @@
   flex-direction: column;
   justify-content: center;
 }
+.mgn-record-audio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
+}
 .mgn-record-player {
   display: flex;
   align-items: center;
@@ -400,6 +408,8 @@
 }
 .mgn-card button.mgn-record-play {
   flex: 0 0 auto;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,6 +440,10 @@
   border-radius: 3px;
   background: currentColor;
   pointer-events: none;
+}
+.mgn-media-error {
+  color: var(--mgn-text-muted);
+  font-size: 12px;
 }
 .mgn-record-time {
   flex: 0 0 auto;
@@ -882,8 +896,10 @@ body.mgn-todo-grabbing * {
 
 /* src/styles/chrome.css */
 .mgn-toolbar {
+  touch-action: none;
+  -webkit-touch-callout: none;
   position: absolute;
-  left: 12px;
+  left: max(12px, env(safe-area-inset-left));
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
@@ -909,6 +925,32 @@ body.mgn-todo-grabbing * {
 .mgn-tool:hover {
   background: var(--mgn-panel-hover-bg);
   color: var(--mgn-panel-text-strong);
+}
+.mgn-tool-dragging {
+  background: var(--mgn-accent) !important;
+  color: var(--mgn-white) !important;
+  opacity: 0.7;
+}
+.mgn-tool-drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--mgn-panel-border);
+  border-radius: 6px;
+  background: var(--mgn-panel-bg);
+  color: var(--mgn-panel-text-strong);
+  box-shadow: var(--mgn-panel-shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.95;
+}
+.mgn-tool-drag-ghost svg {
+  width: 17px;
+  height: 17px;
 }
 .mgn-tool-active {
   background: var(--mgn-accent) !important;
@@ -953,8 +995,8 @@ body.mgn-todo-grabbing * {
 }
 .mgn-zoombar {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
   z-index: 20;
   display: flex;
   align-items: center;
@@ -994,8 +1036,8 @@ body.mgn-todo-grabbing * {
 }
 .mgn-search {
   position: absolute;
-  top: 10px;
-  right: 14px;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
   z-index: 20;
   display: flex;
   align-items: center;
@@ -1020,8 +1062,8 @@ body.mgn-todo-grabbing * {
 }
 .mgn-crumbs {
   position: absolute;
-  top: 10px;
-  left: 12px;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
   z-index: 20;
   display: flex;
   align-items: center;
@@ -1054,7 +1096,7 @@ body.mgn-todo-grabbing * {
   cursor: default;
 }
 .mgn-crumb-current:hover {
-  text-decoration: none;
+  text-decoration: underline;
 }
 .mgn-crumb-sep {
   color: var(--mgn-panel-sep);
@@ -1089,6 +1131,47 @@ body.mgn-todo-grabbing * {
   border-bottom: 1px solid var(--background-modifier-border);
   font-size: 13px;
 }
+@media (pointer: coarse) {
+  .mgn-tool,
+  .mgn-zoom-100,
+  .mgn-ctx-tool,
+  .mgn-ctx-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .mgn-toolbar {
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  .mgn-toolbar {
+    left: max(6px, env(safe-area-inset-left));
+    transform: none;
+    top: max(6px, env(safe-area-inset-top));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    justify-content: center;
+  }
+  .mgn-crumbs {
+    left: max(6px, env(safe-area-inset-left));
+    max-width: calc(100% - 12px);
+  }
+  .mgn-search {
+    top: auto;
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    max-width: calc(100% - 12px);
+  }
+  .mgn-search input {
+    width: min(180px, 45vw);
+  }
+  .mgn-zoombar {
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(58px, calc(env(safe-area-inset-bottom) + 48px));
+    max-width: calc(100% - 12px);
+    overflow-x: auto;
+  }
+}
 .mgn-shortcut-key {
   font-family: var(--font-monospace);
   white-space: nowrap;
@@ -1107,7 +1190,7 @@ body.mgn-todo-grabbing * {
 }
 .mgn-preview-panel {
   width: min(760px, 88%);
-  max-height: 86%;
+  max-height: min(86%, calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px));
   display: flex;
   flex-direction: column;
   background: var(--background-primary);
@@ -1149,7 +1232,7 @@ body.mgn-todo-grabbing * {
   flex-shrink: 0;
 }
 .mgn-preview-body {
-  padding: 16px 20px;
+  padding: 16px max(20px, env(safe-area-inset-left)) 16px max(20px, env(safe-area-inset-right));
   overflow-y: auto;
 }
 .mgn-preview-body-pdf {
@@ -1172,7 +1255,7 @@ img.mgn-preview-media {
 }
 .mgn-context-toolbar {
   position: absolute;
-  left: 60px;
+  left: max(60px, calc(env(safe-area-inset-left) + 48px));
   top: 50%;
   transform: translateY(-50%);
   z-index: 45;
@@ -1204,6 +1287,8 @@ img.mgn-preview-media {
   border-radius: 6px;
   color: var(--mgn-panel-text);
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 .mgn-context-inline .mgn-ctx-tool {
   color: var(--text-normal);
@@ -1233,6 +1318,8 @@ img.mgn-preview-media {
 }
 .mgn-ctx-custom {
   display: flex;
+  pointer-events: auto;
+  touch-action: manipulation;
   align-items: center;
   justify-content: center;
 }
@@ -1254,6 +1341,9 @@ img.mgn-preview-media {
   border-radius: 8px;
   padding: 8px;
   box-shadow: var(--mgn-panel-shadow);
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
 }
 .mgn-ctx-colorgrid {
   display: grid;
@@ -1370,7 +1460,8 @@ img.mgn-preview-media {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  min-width: 280px;
+  min-width: min(280px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
 }
 .mgn-record-mic-row {
   display: flex;
@@ -1392,6 +1483,17 @@ img.mgn-preview-media {
 .mgn-record-btn-row {
   display: flex;
   gap: 8px;
+}
+@media (pointer: coarse) {
+  .mgn-context-toolbar {
+    left: max(52px, calc(env(safe-area-inset-left) + 44px));
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+  }
+  .mgn-record-btn-row button {
+    min-height: 40px;
+    padding-inline: 14px;
+  }
 }
 .mgn-drawing {
   padding: 0;

@@ -1,11 +1,13 @@
 {
   "name": "maguilanote",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Visual workspace boards for Obsidian",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && node scripts/copy-to-vault.mjs"
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && node scripts/copy-to-vault.mjs",
+    "test": "node --test --experimental-strip-types test/**/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "20.11.0",

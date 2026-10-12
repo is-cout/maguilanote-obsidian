@@ -17,6 +17,7 @@
   background-image: radial-gradient(var(--mgn-canvas-dot) 1.2px, transparent 1.2px);
   background-size: 24px 24px;
   touch-action: none;
+  overscroll-behavior: none;
 }
 
 .mgn-world {

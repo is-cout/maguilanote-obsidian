@@ -178,6 +178,8 @@ export class DrawSession {
   private redoStack: string[] = [];
 
   private live: number[][] | null = null;
+  private penPointerId: number | null = null;
+  private penReleaseTimer: number | null = null;
   private drag:
     | { kind: "move"; sx: number; sy: number; orig: number[][][] }
     | { kind: "rubber"; sx: number; sy: number; rect: SVGRectElement }
@@ -192,6 +194,8 @@ export class DrawSession {
     this.svg.addEventListener("pointerdown", (e) => this.onDown(e));
     this.svg.addEventListener("pointermove", (e) => this.onMove(e));
     this.svg.addEventListener("pointerup", (e) => this.onUp(e));
+    this.svg.addEventListener("pointercancel", (e) => this.onCancel(e));
+    this.svg.addEventListener("lostpointercapture", (e) => this.onCancel(e as PointerEvent));
     this.render();
   }
 
@@ -238,12 +242,20 @@ export class DrawSession {
 
   // ---------------------------------------------------------------- pointers
   private onDown(e: PointerEvent) {
-    if (e.button !== 0) return;
+    // iPadOS reports a resting palm as touch while Apple Pencil is pen input.
+    // Touch is navigation/palm input, never ink input; mouse and Pencil remain usable.
+    if (e.pointerType === "touch" && this.penPointerId !== null) return;
+    if (e.pointerType === "touch" || e.button !== 0) return;
+    if (e.pointerType === "pen") {
+      if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+      this.penReleaseTimer = null;
+      this.penPointerId = e.pointerId;
+    }
     e.preventDefault();
     this.svg.setPointerCapture(e.pointerId);
     const { x, y } = this.toCoords(e);
-    // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
-    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
+    // Pencil uses real pressure; mouse has none -> draw at the chosen (max) size.
+    const pressure = e.pointerType === "pen" ? e.pressure || 0.5 : 1;
 
     if (this.tool === "pen") {
       this.snapshot();
@@ -274,11 +286,14 @@ export class DrawSession {
   }
 
   private onMove(e: PointerEvent) {
+    if (e.pointerType === "touch" && this.penPointerId !== null) return;
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
     const { x, y } = this.toCoords(e);
 
     if (this.live) {
-      // pen/touch use real pressure; mouse has none -> draw at the chosen (max) size
-    const pressure = e.pointerType === "pen" || e.pointerType === "touch" ? e.pressure || 0.5 : 1;
+      // Ignore touch moves so a palm cannot corrupt an in-progress Pencil stroke.
+      if (e.pointerType === "touch") return;
+      const pressure = e.pointerType === "pen" ? e.pressure || 0.5 : 1;
       this.live.push([x, y, pressure]);
       this.renderLive();
       return;
@@ -316,6 +331,16 @@ export class DrawSession {
   }
 
   private onUp(e: PointerEvent) {
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
+    if (e.pointerId === this.penPointerId) {
+      this.penReleaseTimer = window.setTimeout(() => {
+        this.penPointerId = null;
+        this.penReleaseTimer = null;
+      }, 300);
+    }
+    // Touch never starts a drawing gesture; its up/cancel must not finish a
+    // simultaneous Apple Pencil stroke.
+    if (e.pointerType === "touch") return;
     try { this.svg.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     if (this.live) {
       if (this.live.length >= 1) {
@@ -333,6 +358,31 @@ export class DrawSession {
       if (!wasRubber) this.onChange?.();
       this.render();
     }
+  }
+
+  private onCancel(e: PointerEvent) {
+    if (this.penPointerId !== null && e.pointerId !== this.penPointerId) return;
+    if (e.pointerId === this.penPointerId) {
+      this.penPointerId = null;
+      if (this.penReleaseTimer !== null) window.clearTimeout(this.penReleaseTimer);
+      this.penReleaseTimer = null;
+    }
+    if (this.live) {
+      this.live = null;
+      this.render();
+    }
+    if (this.drag) {
+      if (this.drag.kind === "move") {
+        const sel = [...this.selection];
+        sel.forEach((idx, k) => {
+          const orig = this.drag?.kind === "move" ? this.drag.orig[k] : null;
+          if (orig) this.strokes[idx].points = orig.map((p) => [...p]);
+        });
+      } else if (this.drag.kind === "rubber") this.drag.rect.remove();
+      this.drag = null;
+      this.render();
+    }
+    try { this.svg.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
   }
 
   // ------------------------------------------------------------------ helpers
